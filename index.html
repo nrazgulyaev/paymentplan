@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Installments • Multi‑Villa (v4.1 — client view)</title>
+  <title>Installments • Client edit (v4.2)</title>
   <style>
     *{box-sizing:border-box}
-    :root{--bg:#0b0d12;--card:#0f1420;--line:#1c2233;--muted:#9fb0d0;--ink:#e7ebf3;--brand:#18b3ff}
+    :root{--bg:#0b0d12;--card:#0f1420;--line:#1c2233;--muted:#9fb0d0;--ink:#e7ebf3}
     body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
     .wrap{max-width:1280px;margin:24px auto;padding:0 16px}
     h1{margin:0 0 12px;font-size:24px}
@@ -28,22 +28,20 @@
     th,td{padding:8px 6px;border-bottom:1px solid #202a42;text-align:right;font-variant-numeric:tabular-nums}
     th:first-child,td:first-child{text-align:left}
     .scroll{overflow:auto;max-height:48vh}
-    .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:10px 0}
+    .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:10px 0}
     .kpi{background:#0f1420;border:1px solid #1c2233;border-radius:10px;padding:10px 12px}
     .kpi .v{font-size:18px;font-weight:700}
     .note{font-size:12px;color:#94a6c7}
-    .danger{color:#ff9b9b}
     .banner{background:#12233e;border:1px dashed #2b4d86;padding:8px 12px;border-radius:10px;color:#bcd3ff}
     @media print{body{background:white;color:black}.card{border:1px solid #ccc}.btn{display:none}.scroll{max-height:none}}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Калькулятор рассрочки • Multi‑Villa (v4.1)</h1>
+    <h1>Калькулятор рассрочки • Client‑Edit (v4.2)</h1>
     <div id="root"></div>
   </div>
 
-  <!-- React + Babel -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -51,7 +49,7 @@
   <script type="text/babel">
     const {useEffect,useMemo,useState} = React
 
-    // -------- Utils --------
+    // --- utils ---
     const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v))
     const fmtMoney = (n, currency='USD') =>
       new Intl.NumberFormat('en-US',{style:'currency',currency,maximumFractionDigits:2}).format(n??0)
@@ -82,20 +80,16 @@
       }catch{ return null }
     }
 
-    // -------- App --------
     function App(){
-      // display currency (calc in USD)
-      const [currency,setCurrency] = useState('USD')
-      const [idrPerUsd,setIdrPerUsd] = useState(16500)
-      const [eurPerUsd,setEurPerUsd] = useState(0.92)
-      const toCurrency = usd => currency==='USD' ? usd : currency==='IDR' ? usd*idrPerUsd : usd*eurPerUsd
+      // отображение (валюта для клиента оставим USD фиксированно — чтобы не усложнять)
+      const currency = 'USD'
 
-      // global post-handover (defaults)
+      // глобальные параметры (используются, но в клиентском UI не показываются)
       const [handoverMonth,setHandoverMonth] = useState(12)
-      const [months,setMonths] = useState(12)
+      const [months,setMonths] = useState(12)              // дефолт
       const [monthlyRatePct,setMonthlyRatePct] = useState(8.33)
 
-      // stages
+      // этапы до ключей (структура общая; суммы масштабируются под % виллы)
       const [stages,setStages] = useState([
         {id:1,label:'Договор', pct:30, month:0},
         {id:2,label:'50% готовности', pct:30, month:6},
@@ -104,45 +98,46 @@
         {id:5,label:'Ключи', pct:5, month:12},
       ])
 
-      // villas with own terms
+      // виллы: для клиента — можно менять цену, % до ключей, и первый платёж после ключей
       const [villas,setVillas] = useState([
-        {id:1,name:'Enso 2BR (пример)', area:100, ppsm:2500, override:false, base:250000, prePct:70,
-         ownTerms:false, months:null, monthlyRatePct:null},
+        {id:1,name:'Enso 2BR', area:100, ppsm:2500, override:true, base:250000, prePct:70,
+         ownTerms:false, months:null, monthlyRatePct:null, firstPostUSD:0},
       ])
 
-      // client view flag
+      // флаги режима
       const [isClient,setIsClient] = useState(false)
 
-      // restore from URL or LS
+      // восстановление состояния
       useEffect(()=>{
         const fromUrl = decodeStateFromUrl()
-        const saved = fromUrl?.state || JSON.parse(localStorage.getItem('installment_v41')||'null')
+        const saved = fromUrl?.state || JSON.parse(localStorage.getItem('installment_v42')||'null')
         if(saved){
           try{
-            if(saved.currency) setCurrency(saved.currency)
-            if(typeof saved.idrPerUsd==='number') setIdrPerUsd(saved.idrPerUsd)
-            if(typeof saved.eurPerUsd==='number') setEurPerUsd(saved.eurPerUsd)
             if(typeof saved.handoverMonth==='number') setHandoverMonth(saved.handoverMonth)
             if(typeof saved.months==='number') setMonths(saved.months)
             if(typeof saved.monthlyRatePct==='number') setMonthlyRatePct(saved.monthlyRatePct)
             if(Array.isArray(saved.stages)) setStages(saved.stages)
-            if(Array.isArray(saved.villas) && saved.villas.length) setVillas(saved.villas)
+            if(Array.isArray(saved.villas) && saved.villas.length) {
+              // если нет поля firstPostUSD у старых сохранений — добавим
+              setVillas(saved.villas.map(v=> ({ firstPostUSD:0, ...v })))
+            }
           }catch{}
         }
         if(fromUrl?.view === 'client') setIsClient(true)
       },[])
       useEffect(()=>{
-        const state = {currency,idrPerUsd,eurPerUsd,handoverMonth,months,monthlyRatePct,stages,villas}
-        localStorage.setItem('installment_v41', JSON.stringify(state))
-      },[currency,idrPerUsd,eurPerUsd,handoverMonth,months,monthlyRatePct,stages,villas])
+        const state = {handoverMonth,months,monthlyRatePct,stages,villas}
+        localStorage.setItem('installment_v42', JSON.stringify(state))
+      },[handoverMonth,months,monthlyRatePct,stages,villas])
 
-      // calc
+      // расчёты
       const stagesSumPct = useMemo(()=> stages.reduce((s,x)=>s+(+x.pct||0),0), [stages])
 
       const villaCalcs = useMemo(()=>{
         return villas.map(v=>{
-          const baseComputed = v.area * v.ppsm
-          const base = v.override ? (v.base||0) : baseComputed
+          const base = v.override ? (v.base||0) : (v.area * v.ppsm)
+
+          // масштабируем этапы под выбранный % «до ключей»
           const k = stagesSumPct===0 ? 0 : (v.prePct||0)/stagesSumPct
           const preSchedule = stages.map(s=>({
             month: clamp(Math.round(+s.month||0),0,handoverMonth),
@@ -150,50 +145,59 @@
             amountUSD: base * (((+s.pct||0)*k)/100),
           })).filter(r=>r.amountUSD>0).sort((a,b)=>a.month-b.month)
           const preTotal = preSchedule.reduce((s,r)=>s+r.amountUSD,0)
-          const afterAmount = Math.max(0, base - preTotal)
 
+          // остаток после ключей до "первого платежа клиента"
+          const afterAmountRaw = Math.max(0, base - preTotal)
+
+          // применяем первый платёж клиента после ключей — он идёт сразу в погашение основного долга
+          const firstPostUSD = Math.max(0, +v.firstPostUSD||0)
+          const afterAmount = Math.max(0, afterAmountRaw - firstPostUSD)
+
+          // условия post‑handover (индивидуальные или глобальные)
           const vMonths = v.ownTerms && v.months ? v.months : months
           const vRate   = (v.ownTerms && v.monthlyRatePct!=null) ? (v.monthlyRatePct/100) : (monthlyRatePct/100)
 
+          // график: равные доли основного на оставшиеся vMonths, проценты скрываем в клиентском UI
           const postRows=[]
-          let bal = afterAmount, totalI=0
+          let bal = afterAmount
           const principal = vMonths>0 ? afterAmount / vMonths : 0
           for(let i=1;i<=vMonths;i++){
+            // проценты считаем, но не показываем: interest = bal * vRate
             const interest = bal * vRate
-            totalI += interest
             const payment = principal + interest
             postRows.push({month: handoverMonth + i, label:`Месяц ${i}`, principalUSD:principal, interestUSD:interest, paymentUSD:payment, balanceAfterUSD: Math.max(0, bal - principal)})
             bal -= principal
           }
-          const post = {rows:postRows, totalInterest: totalI, totalPayment: afterAmount + totalI, months:vMonths, ratePct:vRate*100}
-          const finalPrice = base + totalI
-          return { v, baseComputed, base, preSchedule, preTotal, afterAmount, post, finalPrice }
+
+          // итоговая цена = база + сумма процентов (хотя проценты скрыты визуально, итог учитывает их)
+          const totalInterest = postRows.reduce((s,r)=>s+r.interestUSD,0)
+          const finalPrice = base + totalInterest
+
+          return { v, base, preSchedule, preTotal, firstPostUSD, afterAmountRaw, afterAmount, postRows, totalInterest, finalPrice, months:vMonths }
         })
       },[villas, stages, stagesSumPct, handoverMonth, months, monthlyRatePct])
 
-      const project = useMemo(()=>{
-        const totals = {
-          baseUSD: villaCalcs.reduce((s,x)=>s+x.base,0),
-          preUSD: villaCalcs.reduce((s,x)=>s+x.preTotal,0),
-          postPrincipalUSD: villaCalcs.reduce((s,x)=>s+x.afterAmount,0),
-          interestUSD: villaCalcs.reduce((s,x)=>s+x.post.totalInterest,0),
-          finalUSD: villaCalcs.reduce((s,x)=>s+x.finalPrice,0),
-        }
-        return { totals }
-      },[villaCalcs])
+      // агрегаты проекта
+      const totals = useMemo(()=>({
+        baseUSD: villaCalcs.reduce((s,x)=>s+x.base,0),
+        preUSD: villaCalcs.reduce((s,x)=>s+x.preTotal,0),
+        afterUSD: villaCalcs.reduce((s,x)=>s+x.afterAmount,0),
+        finalUSD: villaCalcs.reduce((s,x)=>s+x.finalPrice,0),
+      }),[villaCalcs])
 
+      // обновления вилл
       const updateVilla = (id, patch)=> setVillas(prev=> prev.map(v=> v.id===id? {...v, ...patch}: v))
-      const addVilla = ()=> setVillas(prev=>[...prev,{id:(prev.at(-1)?.id||0)+1,name:'Новая вилла',area:100,ppsm:2500,override:false,base:250000,prePct:70,ownTerms:false,months:null,monthlyRatePct:null}])
+      const addVilla = ()=> setVillas(prev=>[...prev,{id:(prev.at(-1)?.id||0)+1,name:'Новая вилла',area:100,ppsm:2500,override:true,base:250000,prePct:70,ownTerms:false,months:null,monthlyRatePct:null,firstPostUSD:0}])
       const removeVilla = (id)=> setVillas(prev=> prev.filter(v=> v.id!==id))
 
-      // share links
+      // ссылки
       const shareEditor = async ()=>{
-        const state = {currency,idrPerUsd,eurPerUsd,handoverMonth,months,monthlyRatePct,stages,villas}
+        const state = {handoverMonth,months,monthlyRatePct,stages,villas}
         const url = encodeStateToUrl(state, {view:null})
         await navigator.clipboard.writeText(url); alert('Ссылка (редактор) скопирована')
       }
       const shareClient = async ()=>{
-        const state = {currency,idrPerUsd,eurPerUsd,handoverMonth,months,monthlyRatePct,stages,villas}
+        const state = {handoverMonth,months,monthlyRatePct,stages,villas}
         const url = encodeStateToUrl(state, {view:'client'})
         await navigator.clipboard.writeText(url); alert('Ссылка для клиента скопирована')
       }
@@ -201,217 +205,105 @@
       return (
         <div className="grid">
           <div className="card col-4">
-            {isClient && (
-              <div className="banner" style={{marginBottom:10}}>
-                Клиентский режим: ставка и сумма процентов скрыты. Видны только итоговая цена, сумма до ключей и остаток после ключей.
-              </div>
-            )}
-
-            <div className="field">
-              <label>Валюта отображения</label>
-              <select value={currency} onChange={e=>setCurrency(e.target.value)} disabled={isClient}>
-                <option>USD</option><option>IDR</option><option>EUR</option>
-              </select>
+            <div className="banner" style={{marginBottom:10}}>
+              Клиентский режим: ставка и сумма процентов скрыты.
+              Клиент может менять цену виллы, % «до ключей» и первый платёж после ключей.
             </div>
-            {!isClient && (
-              <div className="row">
-                <div className="field" style={{flex:1}}>
-                  <label>IDR за 1 USD</label>
-                  <input type="number" min="1" step="1" value={idrPerUsd} onChange={e=>setIdrPerUsd(clamp(parseFloat(e.target.value||0),1,1e9))}/>
-                </div>
-                <div className="field" style={{flex:1}}>
-                  <label>EUR за 1 USD</label>
-                  <input type="number" min="0.01" step="0.01" value={eurPerUsd} onChange={e=>setEurPerUsd(clamp(parseFloat(e.target.value||0),0.01,100))}/>
-                </div>
-              </div>
-            )}
-
-            <div className="hr"></div>
 
             <div className="field">
               <label>Месяц получения ключей</label>
-              <input type="number" min="1" step="1" value={handoverMonth} onChange={e=>setHandoverMonth(clamp(parseInt(e.target.value||0,10),1,120))} disabled={isClient}/>
+              <input type="number" min="1" step="1" value={handoverMonth} onChange={e=>setHandoverMonth(clamp(parseInt(e.target.value||0,10),1,120))} />
             </div>
 
-            {!isClient && (
-              <>
-                <div className="row">
-                  <div className="field" style={{flex:1}}>
-                    <label>Глобальный срок post‑handover (6–24 мес)</label>
-                    <input type="range" min="6" max="24" step="1" value={months} onChange={e=>setMonths(parseInt(e.target.value,10))}/>
-                    <div className="pill">Срок: {months} мес</div>
-                  </div>
-                  <div className="field" style={{flex:1}}>
-                    <label>Глобальная ставка, %/мес</label>
-                    <input type="number" min="0" step="0.01" value={monthlyRatePct} onChange={e=>setMonthlyRatePct(clamp(parseFloat(e.target.value||0),0,1000))}/>
-                    <div className="note">По умолчанию 8.33%/мес (≈100% годовых)</div>
-                  </div>
-                </div>
-
-                <div className="hr"></div>
-
-                <h3 style={{margin:'6px 0'}}>Этапы ДО ключей</h3>
-                <div className="scroll" style={{maxHeight:'26vh',border:'1px dashed #223',borderRadius:'8px',padding:'6px'}}>
-                  <table>
-                    <thead><tr><th>Этап</th><th>%</th><th>Месяц</th><th></th></tr></thead>
-                    <tbody>
-                      {stages.map(s=>(
-                        <tr key={s.id}>
-                          <td style={{textAlign:'left'}}><input type="text" value={s.label} onChange={e=>setStages(prev=>prev.map(x=>x.id===s.id?{...x,label:e.target.value}:x))}/></td>
-                          <td><input type="number" min="0" step="0.01" value={s.pct} onChange={e=>setStages(prev=>prev.map(x=>x.id===s.id?{...x,pct:clamp(parseFloat(e.target.value||0),0,100)}:x))}/></td>
-                          <td><input type="number" min="0" step="1" value={s.month} onChange={e=>setStages(prev=>prev.map(x=>x.id===s.id?{...x,month:clamp(parseInt(e.target.value||0,10),0,handoverMonth)}:x))}/></td>
-                          <td><button className="btn warn" onClick={()=>setStages(prev=>prev.filter(x=>x.id!==s.id))}>Удалить</button></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="row" style={{marginTop:8}}>
-                  <button className="btn" onClick={()=>setStages(prev=>[...prev,{id:(prev.at(-1)?.id||0)+1,label:'Этап',pct:5,month:Math.min(handoverMonth,(prev.at(-1)?.month||0)+1)}])}>Добавить этап</button>
-                </div>
-
-                <div className="hr"></div>
-
-                <div className="row">
-                  <button className="btn" onClick={shareEditor}>Поделиться (редактор)</button>
-                  <button className="btn" onClick={shareClient}>Поделиться (клиенту)</button>
-                </div>
-              </>
-            )}
-
-            {isClient && (
-              <div className="row">
-                <button className="btn" onClick={async()=>{
-                  const state = {currency,idrPerUsd,eurPerUsd,handoverMonth,months,monthlyRatePct,stages,villas}
-                  const url = encodeStateToUrl(state, {view:null})
-                  await navigator.clipboard.writeText(url)
-                  alert('Ссылка (редактор) скопирована — вернёт полный вид.')
-                }}>Ссылка редактирования</button>
+            <div className="row">
+              <div className="field" style={{flex:1}}>
+                <label>Срок post‑handover (мес)</label>
+                <input type="number" min="6" step="1" value={months} onChange={e=>setMonths(clamp(parseInt(e.target.value||0,10),6,120))}/>
               </div>
-            )}
-          </div>
-
-          <div className="card col-8">
-            <div className="row" style={{justifyContent:'space-between',alignItems:'baseline'}}>
-              <div className="row">
-                <span className="badge">Вилл: {villas.length}</span>
-                <span className="badge">Ключи: мес. {handoverMonth}</span>
-                {!isClient && <span className="badge">Глобальная ставка: {monthlyRatePct}%/мес</span>}
-                {!isClient && <span className="badge">Глобальный срок: {months} мес</span>}
+              <div className="field" style={{flex:1}}>
+                <label>Скрытая ставка (%/мес)</label>
+                <input type="number" min="0" step="0.01" value={monthlyRatePct} onChange={e=>setMonthlyRatePct(clamp(parseFloat(e.target.value||0),0,1000))}/>
+                <div className="note">Клиент её не видит — влияет только на итоговую цену.</div>
               </div>
-              <div className="note">{isClient ? 'Клиентский режим' : 'Редактор'}</div>
             </div>
-
-            {/* KPI: в клиентском режиме показываем ТОЛЬКО 3 карточки */}
-            {isClient ? (
-              <div className="kpis" style={{gridTemplateColumns:'repeat(3,1fr)'}}>
-                <KPI label="Итоговая цена" value={fmtMoney(villas.reduce((s,_,i)=>s + (villaCalcs[i]?.finalPrice||0),0),'USD')}/>
-                <KPI label="Оплата до ключей" value={fmtMoney(villas.reduce((s,_,i)=>s + (villaCalcs[i]?.preTotal||0),0),'USD')}/>
-                <KPI label="Остаток после ключей" value={fmtMoney(villas.reduce((s,_,i)=>s + (villaCalcs[i]?.afterAmount||0),0),'USD')}/>
-              </div>
-            ) : (
-              <div className="kpis">
-                <KPI label="База (сумма цен)" value={fmtMoney(project.totals.baseUSD,'USD')}/>
-                <KPI label="Оплата до ключей" value={fmtMoney(project.totals.preUSD,'USD')}/>
-                <KPI label="Остаток после ключей" value={fmtMoney(project.totals.postPrincipalUSD,'USD')}/>
-                <KPI label="Проценты (post)" value={fmtMoney(project.totals.interestUSD,'USD')}/>
-                <KPI label="Итоговая цена" value={fmtMoney(project.totals.finalUSD,'USD')}/>
-              </div>
-            )}
 
             <div className="hr"></div>
 
-            <h3 style={{margin:'6px 0'}}>Список вилл</h3>
+            <div className="row">
+              <button className="btn" onClick={shareEditor}>Поделиться (редактор)</button>
+              <button className="btn" onClick={shareClient}>Поделиться (клиенту)</button>
+            </div>
+          </div>
+
+          <div className="card col-8">
+            {/* KPI для клиента: только 3 метрики */}
+            <div className="kpis">
+              <KPI label="Итоговая цена (проект)" value={fmtMoney(totals.finalUSD, currency)}/>
+              <KPI label="Оплата до ключей (проект)" value={fmtMoney(totals.preUSD, currency)}/>
+              <KPI label="Остаток после ключей (проект)" value={fmtMoney(totals.afterUSD, currency)}/>
+            </div>
+
+            <div className="hr"></div>
+
+            <h3 style={{margin:'6px 0'}}>Виллы (клиент может редактировать цену, % до ключей и первый платёж)</h3>
             <div className="scroll" style={{maxHeight:'34vh'}}>
               <table>
                 <thead>
                   <tr>
-                    <th>Название</th><th>м²</th><th>$ / м²</th><th>База (USD)</th><th>До ключей, %</th>
-                    {!isClient && <th>СВОИ условия post</th>}
-                    {!isClient && <th>Срок, мес</th>}
-                    {!isClient && <th>Ставка, %/мес</th>}
-                    <th>Удалить</th>
+                    <th>Название</th><th>м²</th><th>$ / м²</th><th>Цена (USD)</th><th>До ключей, %</th><th>Первый платёж после ключей (USD)</th><th>Удалить</th>
                   </tr>
                 </thead>
                 <tbody>
                   {villaCalcs.map(vc=>(
                     <tr key={vc.v.id}>
                       <td style={{textAlign:'left'}}>
-                        <input type="text" value={vc.v.name} onChange={e=>updateVilla(vc.v.id,{name:e.target.value})} disabled={isClient}/>
+                        <input type="text" value={vc.v.name} onChange={e=>updateVilla(vc.v.id,{name:e.target.value})}/>
                       </td>
-                      <td><input type="number" min="1" step="0.1" value={vc.v.area} onChange={e=>updateVilla(vc.v.id,{area:clamp(parseFloat(e.target.value||0),1,100000)})} disabled={isClient}/></td>
-                      <td><input type="number" min="0" step="1" value={vc.v.ppsm} onChange={e=>updateVilla(vc.v.id,{ppsm:clamp(parseFloat(e.target.value||0),0,1e9)})} disabled={isClient}/></td>
+                      <td><input type="number" min="1" step="0.1" value={vc.v.area} onChange={e=>updateVilla(vc.v.id,{area:clamp(parseFloat(e.target.value||0),1,100000), override:false})}/></td>
+                      <td><input type="number" min="0" step="1" value={vc.v.ppsm} onChange={e=>updateVilla(vc.v.id,{ppsm:clamp(parseFloat(e.target.value||0),0,1e9), override:false})}/></td>
                       <td>
-                        <div className="row" style={{justifyContent:'flex-end'}}>
-                          <span className="pill">{fmtMoney(vc.base,'USD')}</span>
-                          {!isClient && (
-                            <label className="pill" style={{display:'inline-flex',gap:6,alignItems:'center'}}>
-                              <input type="checkbox" checked={vc.v.override} onChange={e=>updateVilla(vc.v.id,{override:e.target.checked})}/>
-                              вручную
-                            </label>
-                          )}
-                        </div>
-                        {!isClient && vc.v.override && (
-                          <input type="number" min="0" step="1" value={vc.v.base} onChange={e=>updateVilla(vc.v.id,{base:clamp(parseFloat(e.target.value||0),0,1e12)})}/>
-                        )}
+                        <label className="pill" style={{display:'inline-flex',gap:6,alignItems:'center',marginBottom:6}}>
+                          <input type="checkbox" checked={vc.v.override} onChange={e=>updateVilla(vc.v.id,{override:e.target.checked})}/>
+                          вручную
+                        </label>
+                        <input type="number" min="0" step="1" value={vc.v.override ? vc.v.base : Math.round(vc.v.area*vc.v.ppsm)} onChange={e=>updateVilla(vc.v.id,{base:clamp(parseFloat(e.target.value||0),0,1e12), override:true})}/>
                       </td>
                       <td>
-                        <input type="range" min="0" max="100" step="1" value={vc.v.prePct} onChange={e=>updateVilla(vc.v.id,{prePct:parseInt(e.target.value,10)})} disabled={isClient}/>
+                        <input type="range" min="0" max="100" step="1" value={vc.v.prePct} onChange={e=>updateVilla(vc.v.id,{prePct:parseInt(e.target.value,10)})}/>
                         <div className="pill" style={{display:'inline-block',marginTop:6}}>{vc.v.prePct}%</div>
                       </td>
-
-                      {!isClient && (
-                        <>
-                          <td>
-                            <label className="pill" style={{display:'inline-flex',gap:6,alignItems:'center'}}>
-                              <input type="checkbox" checked={vc.v.ownTerms} onChange={e=>updateVilla(vc.v.id,{ownTerms:e.target.checked})}/>
-                              включить
-                            </label>
-                          </td>
-                          <td>
-                            <input type="number" min="6" step="1" value={vc.v.ownTerms ? (vc.v.months??months) : months}
-                              onChange={e=>updateVilla(vc.v.id,{months:clamp(parseInt(e.target.value||0,10),6,120)})} disabled={!vc.v.ownTerms}/>
-                          </td>
-                          <td>
-                            <input type="number" min="0" step="0.01" value={vc.v.ownTerms ? (vc.v.monthlyRatePct??monthlyRatePct) : monthlyRatePct}
-                              onChange={e=>updateVilla(vc.v.id,{monthlyRatePct:clamp(parseFloat(e.target.value||0),0,1000)})} disabled={!vc.v.ownTerms}/>
-                          </td>
-                        </>
-                      )}
-
-                      <td><button className="btn warn" onClick={()=>removeVilla(vc.v.id)} disabled={isClient}>✕</button></td>
+                      <td>
+                        <input type="number" min="0" step="1" value={vc.v.firstPostUSD} onChange={e=>updateVilla(vc.v.id,{firstPostUSD:clamp(parseFloat(e.target.value||0),0,1e12)})}/>
+                        <div className="note">Сразу уменьшит остаток после ключей.</div>
+                      </td>
+                      <td><button className="btn warn" onClick={()=>removeVilla(vc.v.id)}>✕</button></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            {!isClient && (
-              <div className="row" style={{marginTop:8}}>
-                <button className="btn" onClick={addVilla}>Добавить виллу</button>
-              </div>
-            )}
+            <div className="row" style={{marginTop:8}}>
+              <button className="btn" onClick={addVilla}>Добавить виллу</button>
+            </div>
 
             <div className="hr"></div>
 
-            <h3 style={{margin:'6px 0'}}>Post‑handover (помесячно)</h3>
+            <h3 style={{margin:'6px 0'}}>Post‑handover (помесячно, без показа процентов)</h3>
             <div className="scroll">
               <table>
                 <thead>
                   <tr>
-                    <th>Вилла</th><th>Месяц</th><th>Основной долг (USD)</th>
-                    {!isClient && <th>% (USD)</th>}
-                    <th>Платёж (USD)</th><th>Остаток (USD)</th>
+                    <th>Вилла</th><th>Месяц</th><th>Основной долг (USD)</th><th>Платёж (USD)</th><th>Остаток (USD)</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {villaCalcs.flatMap(vc=> vc.post.rows.map(r=>(
+                  {villaCalcs.flatMap(vc=> vc.postRows.map(r=>(
                     <tr key={`${vc.v.id}-${r.month}`}>
                       <td style={{textAlign:'left'}}>{vc.v.name}</td>
                       <td>{r.month}</td>
-                      <td>{fmtMoney(r.principalUSD,'USD')}</td>
-                      {!isClient && <td>{fmtMoney(r.interestUSD,'USD')}</td>}
-                      <td>{fmtMoney(r.paymentUSD,'USD')}</td>
-                      <td>{fmtMoney(r.balanceAfterUSD,'USD')}</td>
+                      <td>{fmtMoney(r.principalUSD, currency)}</td>
+                      <td>{fmtMoney(r.paymentUSD, currency)}</td>
+                      <td>{fmtMoney(r.balanceAfterUSD, currency)}</td>
                     </tr>
                   )))}
                 </tbody>
@@ -420,13 +312,12 @@
 
             <div className="hr"></div>
 
-            <h3 style={{margin:'6px 0'}}>Итоги</h3>
-            <div className="kpis" style={{gridTemplateColumns:'repeat(3,1fr)'}}>
-              <KPI label="Итоговая цена" value={fmtMoney(project.totals.finalUSD,'USD')}/>
-              <KPI label="Оплата до ключей" value={fmtMoney(project.totals.preUSD,'USD')}/>
-              <KPI label="Остаток после ключей" value={fmtMoney(project.totals.postPrincipalUSD,'USD')}/>
+            <h3 style={{margin:'6px 0'}}>Итоги (для клиента)</h3>
+            <div className="kpis">
+              <KPI label="Итоговая цена (проект)" value={fmtMoney(totals.finalUSD, currency)}/>
+              <KPI label="Оплата до ключей (проект)" value={fmtMoney(totals.preUSD, currency)}/>
+              <KPI label="Остаток после ключей (проект)" value={fmtMoney(totals.afterUSD, currency)}/>
             </div>
-
           </div>
         </div>
       )
