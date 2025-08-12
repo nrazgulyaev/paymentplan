@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Калькулятор рассрочки • Enso / Ahau</title>
+  <!-- Стили -->
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#0b0d12; color:#e7ebf3; }
+    .wrap { max-width: 1100px; margin: 40px auto; padding: 0 20px; }
+    h1 { font-size: 24px; margin: 0 0 16px; }
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+    .card { background: #0f1420; border: 1px solid #1c2233; border-radius: 12px; padding: 16px; }
+    .col-4 { grid-column: span 4; }
+    .col-8 { grid-column: span 8; }
+    .field { display: grid; gap: 6px; margin-bottom: 12px; }
+    .row { display: flex; gap: 12px; align-items: center; }
+    input[type="text"], input[type="number"], input[type="range"], select {
+      width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #26304a; background:#111828; color:#e7ebf3;
+    }
+    input[type="range"] { padding: 0; height: 32px; }
+    label { font-size: 13px; color:#9fb0d0; }
+    .pill { padding: 6px 10px; border-radius: 999px; background:#10192a; border:1px solid #22304a; font-size:12px; }
+    .muted { color:#9fb0d0; }
+    table { width:100%; border-collapse: collapse; }
+    th, td { padding: 10px 8px; border-bottom: 1px solid #202a42; text-align: right; font-variant-numeric: tabular-nums; }
+    th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+    .totals { display:grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top:14px; }
+    .kpi { background:#0f1420; border:1px solid #1c2233; border-radius: 10px; padding: 10px 12px; }
+    .kpi .v { font-size: 18px; font-weight: 700; }
+    .hint { font-size: 12px; color:#94a6c7; }
+    .hr { height:1px; background:#1c2233; margin:12px 0; border:0;}
+    .flex { display:flex; gap:8px; align-items:center; flex-wrap: wrap;}
+    .badge { background:#132039; border:1px solid #243353; padding:4px 8px; border-radius:999px; font-size:12px;}
+    .danger { color: #ff9b9b; }
+    .scroll { overflow: auto; max-height: 55vh; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- React 18 + Babel (для JSX в одном файле) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Приложение -->
+  <script type="text/babel">
+    const { useMemo, useState } = React
+
+    const fmtMoney = (n) =>
+      new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(n ?? 0)
+
+    const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v))
+
+    function App() {
+      // Вводные
+      const [villaType, setVillaType] = useState('Тип не задан')
+      const [area, setArea] = useState(100) // м²
+      const [pricePerM2, setPricePerM2] = useState(2500)
+      const [overrideBase, setOverrideBase] = useState(false)
+      const [basePriceManual, setBasePriceManual] = useState(250000)
+
+      // Рассрочка
+      const [preKeysPct, setPreKeysPct] = useState(70)  // % ДО ключей (ползунок)
+      const afterKeysPct = 100 - preKeysPct
+
+      const [months, setMonths] = useState(12)          // 6..24
+      const [monthlyRatePct, setMonthlyRatePct] = useState(8.33) // % в мес, редактируемо
+
+      // Базовая цена
+      const basePriceComputed = useMemo(() => area * pricePerM2, [area, pricePerM2])
+      const basePrice = overrideBase ? basePriceManual : basePriceComputed
+
+      // Расчёт графика post‑handover: равные платежи по ОСНОВНОМУ долгу + проценты на остаток
+      const schedule = useMemo(() => {
+        const rate = monthlyRatePct / 100
+        const afterAmount = basePrice * (afterKeysPct / 100)
+
+        if (afterAmount <= 0 || months <= 0 || rate < 0) return { rows: [], totalInterest: 0, finalPrice: basePrice }
+
+        const principalMonthly = afterAmount / months
+        let balance = afterAmount
+        let totalInterest = 0
+        const rows = []
+
+        for (let m = 1; m <= months; m++) {
+          const interest = balance * rate
+          const payment = principalMonthly + interest
+          const newBalance = balance - principalMonthly
+          totalInterest += interest
+
+          rows.push({
+            month: m,
+            principal: principalMonthly,
+            interest,
+            payment,
+            balanceAfter: Math.max(0, newBalance),
+          })
+          balance = newBalance
+        }
+
+        return {
+          rows,
+          totalInterest,
+          finalPrice: basePrice + totalInterest,
+        }
+      }, [basePrice, afterKeysPct, months, monthlyRatePct])
+
+      const preAmount = basePrice * (preKeysPct / 100)
+      const postAmount = basePrice * (afterKeysPct / 100)
+
+      return (
+        <div className="wrap">
+          <h1>Калькулятор рассрочки (post‑handover) • Enso / Ahau</h1>
+
+          <div className="grid">
+            <div className="card col-4">
+              <div className="field">
+                <label>Тип виллы</label>
+                <input type="text" value={villaType} onChange={(e)=>setVillaType(e.target.value)} placeholder="Напр., Enso 2BR" />
+              </div>
+
+              <div className="row" style={{gap:16}}>
+                <div style={{flex:1}}>
+                  <div className="field">
+                    <label>Площадь, м²</label>
+                    <input type="number" min="1" step="1" value={area}
+                      onChange={(e)=>setArea(clamp(parseFloat(e.target.value||0), 1, 100000))}/>
+                  </div>
+                </div>
+                <div style={{flex:1}}>
+                  <div className="field">
+                    <label>Цена за м², $</label>
+                    <input type="number" min="0" step="1" value={pricePerM2}
+                      onChange={(e)=>setPricePerM2(clamp(parseFloat(e.target.value||0), 0, 1e9))}/>
+                  </div>
+                </div>
+              </div>
+
+              <div className="row">
+                <span className="pill">Базовая цена (расчёт): <b>{fmtMoney(basePriceComputed)}</b></span>
+              </div>
+
+              <div className="hr"></div>
+
+              <div className="row">
+                <input id="ovr" type="checkbox" checked={overrideBase} onChange={(e)=>setOverrideBase(e.target.checked)} />
+                <label htmlFor="ovr">Ввести цену вручную</label>
+              </div>
+              {overrideBase && (
+                <div className="field">
+                  <label>Базовая цена, $</label>
+                  <input type="number" min="0" step="1" value={basePriceManual}
+                    onChange={(e)=>setBasePriceManual(clamp(parseFloat(e.target.value||0), 0, 1e12))}/>
+                  <div className="hint">Если включено — игнорируем площадь и цену за м².</div>
+                </div>
+              )}
+
+              <div className="hr"></div>
+
+              <div className="field">
+                <label>Оплата ДО ключей: <b>{preKeysPct}%</b> <span className="muted">(после ключей: {afterKeysPct}%)</span></label>
+                <input type="range" min="0" max="100" step="1" value={preKeysPct}
+                  onChange={(e)=>setPreKeysPct(parseInt(e.target.value,10))}/>
+                <div className="flex">
+                  <span className="badge">До ключей: {fmtMoney(preAmount)}</span>
+                  <span className="badge">После ключей: {fmtMoney(postAmount)}</span>
+                </div>
+              </div>
+
+              <div className="row">
+                <div className="field" style={{flex:1}}>
+                  <label>Срок post‑handover, мес. (6–24)</label>
+                  <input type="range" min="6" max="24" step="1" value={months}
+                    onChange={(e)=>setMonths(parseInt(e.target.value,10))}/>
+                  <div className="flex"><span className="pill">Срок: {months} мес.</span></div>
+                </div>
+              </div>
+
+              <div className="row">
+                <div className="field" style={{flex:1}}>
+                  <label>Ставка доходности, % в месяц</label>
+                  <input type="number" min="0" step="0.01" value={monthlyRatePct}
+                    onChange={(e)=>setMonthlyRatePct(clamp(parseFloat(e.target.value||0), 0, 1000))}/>
+                  <div className="hint">По умолчанию 8.33%/мес (≈100% годовых).</div>
+                </div>
+              </div>
+
+              {afterKeysPct === 0 && (
+                <p className="hint">Если «После ключей» = 0%, таблица пост‑рассрочки не формируется.</p>
+              )}
+            </div>
+
+            <div className="card col-8">
+              <div className="row" style={{justifyContent:'space-between', alignItems:'baseline'}}>
+                <div className="flex">
+                  <span className="badge">{villaType}</span>
+                  <span className="badge">{area} м²</span>
+                  <span className="badge">Цена за м²: {fmtMoney(pricePerM2)}</span>
+                  <span className="badge">База: {fmtMoney(basePrice)}</span>
+                </div>
+                <div className="muted">Post‑handover: равные платежи по основной сумме + проценты на остаток</div>
+              </div>
+
+              <div className="totals">
+                <div className="kpi">
+                  <div className="muted">Оплата до ключей</div>
+                  <div className="v">{fmtMoney(preAmount)}</div>
+                </div>
+                <div className="kpi">
+                  <div className="muted">Сумма после ключей</div>
+                  <div className="v">{fmtMoney(postAmount)}</div>
+                </div>
+                <div className="kpi">
+                  <div className="muted">Ставка / срок</div>
+                  <div className="v">{monthlyRatePct}% / {months} мес.</div>
+                </div>
+              </div>
+
+              <div className="totals">
+                <div className="kpi">
+                  <div className="muted">Сумма процентов</div>
+                  <div className="v">{fmtMoney(schedule.totalInterest)}</div>
+                </div>
+                <div className="kpi">
+                  <div className="muted">Итоговая цена (база + %)</div>
+                  <div className="v">{fmtMoney(schedule.finalPrice)}</div>
+                </div>
+                <div className="kpi">
+                  <div className="muted">Итого к оплате клиентом</div>
+                  <div className="v">
+                    {fmtMoney(preAmount + (schedule.rows.reduce((s,r)=>s+r.payment,0)))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="hr"></div>
+
+              {schedule.rows.length === 0 ? (
+                <p className="hint">Выберите «После ключей» &gt; 0% — появится график платежей.</p>
+              ) : (
+                <div className="scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Месяц</th>
+                        <th>Основной долг</th>
+                        <th>Проценты</th>
+                        <th>Платёж</th>
+                        <th>Остаток</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {schedule.rows.map(r=>(
+                        <tr key={r.month}>
+                          <td>{r.month}</td>
+                          <td>{fmtMoney(r.principal)}</td>
+                          <td>{fmtMoney(r.interest)}</td>
+                          <td>{fmtMoney(r.payment)}</td>
+                          <td>{fmtMoney(r.balanceAfter)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <p className="hint" style={{marginTop:10}}>
+                Методика: проценты начисляются ежемесячно на текущий остаток долга; основной долг гасится равными долями.
+              </p>
+              <p className="hint danger">
+                Важно: этот экран моделирует именно пост‑ключевой остаток. «Плавную» рассрочку в период стройки добавим отдельным блоком.
+              </p>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'))
+    root.render(<App />)
+  </script>
+</body>
+</html>
