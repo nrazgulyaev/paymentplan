@@ -1915,3 +1915,381 @@ h1 {
   color: var(--primary);
   text-align: center;
 }
+
+
+/* ... existing code ... */
+
+/* ===== СТИЛИ ДЛЯ БЛОКА ЭТАПОВ РАССРОЧКИ ===== */
+.stages-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.stages-section h3 {
+  margin: 0 0 var(--spacing-md) 0;
+  color: var(--ink);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.stage-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: var(--spacing-sm);
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: var(--card-hover);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.stage-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-size: 13px;
+  transition: all var(--transition-fast);
+}
+
+.stage-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--card-hover);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.stage-input-small {
+  width: 80px;
+  padding: 8px 12px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-size: 13px;
+  text-align: center;
+  transition: all var(--transition-fast);
+}
+
+.stage-input-small:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--card-hover);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* ===== СТИЛИ ДЛЯ КАТАЛОГА ===== */
+.catalog-section {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+}
+
+.catalog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.catalog-controls {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.catalog-filters {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+}
+
+.project-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.project-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.project-header h3 {
+  margin: 0;
+  color: var(--accent);
+  font-size: 1.1rem;
+}
+
+.project-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.villas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.villa-card {
+  background: var(--card-hover);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-md);
+}
+
+.villa-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.villa-header h4 {
+  margin: 0;
+  color: var(--ink);
+}
+
+.villa-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.villa-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detail-label {
+  color: var(--ink-secondary);
+  font-size: 0.9rem;
+}
+
+.detail-value {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* ===== СТИЛИ ДЛЯ МОДАЛЬНЫХ ОКОН ===== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+  animation: fadeInScale 0.3s ease-out;
+}
+
+.modal-content {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 0;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+  animation: fadeInUp 0.4s ease-out 0.1s both;
+  position: relative;
+}
+
+.modal-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--accent), var(--success));
+}
+
+.modal-header {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+.form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.modal-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+  margin-top: var(--spacing-lg);
+}
+
+/* ===== СТИЛИ ДЛЯ КЭШФЛОУ БЛОКА ===== */
+.cashflow-block {
+  grid-column: 1 / -1;
+  margin-top: var(--spacing-xl);
+  animation: fadeInUp 0.6s ease-out 0.4s both;
+}
+
+/* ===== СТИЛИ ДЛЯ КНОПОК ===== */
+.btn-full {
+  width: 100%;
+}
+
+.btn-small {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: 0.9rem;
+}
+
+/* ===== СТИЛИ ДЛЯ ТАБЛИЦЫ КЭШФЛОУ ===== */
+.cashflow-table-container {
+  overflow-x: auto;
+}
+
+.cashflow-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--spacing-md);
+}
+
+.cashflow-table th,
+.cashflow-table td {
+  padding: var(--spacing-sm);
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.cashflow-table th {
+  background: var(--card-hover);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.cashflow-table tbody tr {
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.cashflow-table tbody tr:hover {
+  background: var(--card-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+}
+
+.cashflow-table tbody tr:hover td {
+  border-color: var(--line-hover);
+  color: var(--ink);
+}
+
+.cashflow-table tbody tr:hover td:first-child {
+  border-left: 3px solid var(--primary);
+  background: linear-gradient(90deg, var(--primary), transparent);
+}
+
+.amount {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* ===== СТИЛИ ДЛЯ КАТАЛОГА В МОДАЛЬНОМ ОКНЕ ===== */
+.catalog-grid {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: var(--spacing-lg);
+}
+
+.project-group {
+  margin-bottom: var(--spacing-lg);
+}
+
+.project-group h4 {
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--accent);
+  font-size: 1.1rem;
+}
+
+.villa-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm);
+  background: var(--card-hover);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--spacing-xs);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.villa-item:hover {
+  background: var(--primary);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.villa-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.villa-info strong {
+  font-weight: 600;
+}
+
+.villa-info span {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
