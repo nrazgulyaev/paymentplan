@@ -5,24 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Arconique / Калькулятор рассрочки для любимых клиентов</title>
   
-  <!-- PWA мета-теги -->
-  <meta name="theme-color" content="#0f0f23">
-  <meta name="description" content="Калькулятор рассрочки для недвижимости Arconique">
-  <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>��</text></svg>">
-  
-  <!-- Шрифты -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  
   <!-- Стили -->
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="wrap">
-    <h1 id="app-title">Arconique / Калькулятор рассрочки для любимых клиентов</h1>
-    <div id="boot-diagnostics" style="position:fixed;left:10px;top:10px;z-index:99999;background:#1b2336;color:#fff;border:1px solid #334;padding:8px 10px;border-radius:8px;font:12px/1.4 system-ui;max-width:80vw;display:none"></div>
+    <h1>Arconique / Калькулятор рассрочки для любимых клиентов</h1>
     <div id="root"></div>
   </div>
 
@@ -30,51 +18,8 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script crossorigin src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script crossorigin src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script crossorigin src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
-  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <!-- Наши файлы -->
-  <script src="utils.js"></script>
-  <script src="components.js"></script>
-  <script src="app.js"></script>
-
-  <!-- Диагностика загрузки -->
-  <script>
-    (function(){
-      const box=document.getElementById('boot-diagnostics');
-      const log=(msg)=>{ box.style.display='block'; box.innerHTML+=(box.innerHTML?'<br>':'')+msg; };
-      window.addEventListener('error',e=>log('JS error: '+(e?.message||e)));
-      window.addEventListener('unhandledrejection',e=>log('Promise error: '+(e?.reason?.message||e?.reason||e)));
-
-      let tries=0;
-      function tick(){
-        const okReact=!!(window.React&&window.ReactDOM);
-        const okBabel=!!window.Babel;
-        if(!okReact) log('React не загрузился (CDN?)');
-        if(!okBabel) log('Babel не загрузился — JSX не скомпилируется');
-        if(okReact&&okBabel){
-          try{ window.Babel.transformScriptTags(); }
-          catch(e){ log('Babel.transformScriptTags() error: '+e.message); }
-          return;
-        }
-        if(++tries<30) setTimeout(tick,200);
-        else log('Таймаут ожидания библиотек — проверь блокировщики/фаервол/CDN');
-      }
-      setTimeout(tick,0);
-    })();
-  </script>
-
-  <!-- Регистрация Service Worker -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
-          .then(registration => console.log('SW registered'))
-          .catch(error => console.log('SW registration failed'));
-      });
-    }
-  </script>
+  <!-- Наше приложение -->
+  <script type="text/babel" src="app.js"></script>
 </body>
 </html>
