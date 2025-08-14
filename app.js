@@ -451,65 +451,7 @@ function App() {
           )}
         </div>
 
-        <div className="hr"></div>
-
-        <h3 style={{margin: '6px 0'}}>{t.stagesTitle}</h3>
-        
-        <div className="stages-scroll">
-          <table className="stages-table">
-            <thead>
-              <tr>
-                <th className="col-stage">{t.stage}</th>
-                <th className="col-percent">{t.percent}</th>
-                <th className="col-month">{t.month}</th>
-                <th className="col-actions"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {stages.map(s => (
-                <tr key={s.id}>
-                  <td className="col-stage">
-                    <input 
-                      type="text" 
-                      className="stage-input"
-                      value={s.label} 
-                      onChange={e => setStages(prev => prev.map(x => x.id === s.id ? {...x, label: e.target.value} : x))}
-                    />
-                  </td>
-                  <td className="col-percent">
-                    <input 
-                      type="number" 
-                      className="stage-number-input"
-                      min="0" 
-                      max="100"
-                      step="0.01" 
-                      value={s.pct} 
-                      onChange={e => setStages(prev => prev.map(x => x.id === s.id ? {...x, pct: clamp(parseFloat(e.target.value || 0), 0, 100)} : x))}
-                    />
-                  </td>
-                  <td className="col-month">
-                    <input 
-                      type="number" 
-                      className="stage-number-input"
-                      min="0" 
-                      step="1" 
-                      value={s.month} 
-                      onChange={e => setStages(prev => prev.map(x => x.id === s.id ? {...x, month: clamp(parseInt(e.target.value || 0, 10), 0, handoverMonth)} : x))}
-                    />
-                  </td>
-                  <td className="col-actions">
-                    <div className="stage-actions">
-                      <button className="delete-stage-btn" onClick={() => setStages(prev => prev.filter(x => x.id !== s.id))}>
-                        {t.delete}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
+       
         <div className="row" style={{marginTop: 8, alignItems: 'center', justifyContent: 'space-between'}}>
           <button className="btn primary" onClick={() => setStages(prev => {
             const last = prev[prev.length - 1];
@@ -745,15 +687,49 @@ function App() {
     {!isClient && (
       <div className="editor-mode">
         <h2>Редакторский режим</h2>
-        
-        {/* Каталог проектов и вилл */}
+          {/* Каталог проектов и вилл */}
         <CatalogManager 
           catalog={catalog} 
           setCatalog={setCatalog} 
           t={t} 
           lang={lang} 
-          fmtMoney={fmtMoney} 
+          fmtMoney={fmtMoney}
         />
+        
+        {/* Сводный кэшфлоу по месяцам */}
+        <div className="cashflow-section">
+          <div className="cashflow-header">
+            <h3>{t.cashflowTitle}</h3>
+            <div className="export-buttons">
+              <button className="btn" onClick={exportCSV}>{t.exportCSV}</button>
+              <button className="btn" onClick={exportXLSX}>{t.exportXLSX}</button>
+              <button className="btn" onClick={exportPDF}>{t.exportPDF}</button>
+            </div>
+          </div>
+          
+          <div className="cashflow-scroll">
+            <table className="cashflow-table">
+              <thead>
+                <tr>
+                  <th>Месяц</th>
+                  <th style={{textAlign: 'left'}}>Описание</th>
+                  <th>Сумма к оплате</th>
+                  <th>Остаток долга</th>
+                </tr>
+              </thead>
+              <tbody>
+                {project.cashflow.map(c => (
+                  <tr key={c.month}>
+                    <td>{formatMonth(c.month)}</td>
+                    <td style={{textAlign: 'left'}}>{(c.items || []).join(' + ')}</td>
+                    <td>{fmtMoney(c.amountUSD, currency)}</td>
+                    <td>{fmtMoney(c.balanceUSD, currency)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     )}
   </>
