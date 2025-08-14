@@ -1122,6 +1122,33 @@
       color: var(--ink);
       font-size: 12px;
     }
+    
+    /* Очень компактная кнопка для добавления из каталога */
+    .add-selected-btn {
+      padding: 6px 12px;
+      font-size: 11px;
+      min-width: auto;
+      height: 28px;
+      line-height: 1;
+    }
+    
+    /* Отступы между кнопками экспорта */
+    .export-buttons {
+      display: flex;
+      gap: var(--spacing-sm);
+    }
+    
+    /* Информационный блок для начального месяца */
+    .info-display {
+      padding: 10px 12px;
+      background: var(--card-hover);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      color: var(--ink);
+      font-size: 13px;
+      text-align: center;
+      font-weight: 500;
+    }
 
       </style>
 </head>
@@ -1341,7 +1368,7 @@
       const [months,setMonths]=useState(12);
       const [monthlyRatePct,setMonthlyRatePct]=useState(8.33);
       
-      // НОВОЕ: Начальный месяц для реальных дат
+      // НОВОЕ: Начальный месяц для реальных дат (автоматически текущий)
       const [startMonth,setStartMonth]=useState(new Date());
 
       const [stages,setStages]=useState([
@@ -1685,7 +1712,7 @@
         <>
           <div className="grid">
             <div className="card">
-              {/* УБРАЛИ ВКЛАДКИ - каталог всегда виден в редакторе */}
+              {/* УБРАЛИ ВКЛАДКИ - каталог перемещен в правую часть */}
               
               {/* Оптимизированные поля настроек */}
               <div className="row">
@@ -1717,19 +1744,20 @@
                 </div>
               )}
 
-              {/* НОВОЕ: Поле начального месяца */}
+              {/* НОВОЕ: Информационный блок начального месяца (не редактируемый) */}
               <div className="row">
                 <div className="field compact">
                   <label>{t.startMonth}</label>
-                  <input 
-                    type="month" 
-                    value={startMonth.toISOString().slice(0, 7)} 
-                    onChange={e => setStartMonth(new Date(e.target.value + '-01'))}
-                  />
+                  <div className="info-display">
+                    {startMonth.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { 
+                      month: 'long', 
+                      year: 'numeric' 
+                    })}
+                  </div>
                 </div>
               </div>
 
-              {/* Оптимизированные поля времени */}
+              {/* ИСПРАВЛЕНИЕ: Поменяли местами поля "Глобальная ставка" и "Глобальный срок" */}
               <div className="row">
                 <div className="field compact">
                   <label>{t.handoverMonth}</label>
@@ -1738,13 +1766,13 @@
                 {!isClient ? (
                   <>
                     <div className="field compact">
+                      <label>{t.globalRate}</label>
+                      <input type="number" min="0" step="0.01" value={monthlyRatePct} onChange={e=>setMonthlyRatePct(clamp(parseFloat(e.target.value||0),0,1000))}/>
+                    </div>
+                    <div className="field compact">
                       <label>{t.globalTerm}</label>
                       <input type="range" min="6" max="24" step="1" value={months} onChange={e=>setMonths(parseInt(e.target.value,10))}/>
                       <div className="pill">{t.months}: {months}</div>
-                    </div>
-                    <div className="field compact">
-                      <label>{t.globalRate}</label>
-                      <input type="number" min="0" step="0.01" value={monthlyRatePct} onChange={e=>setMonthlyRatePct(clamp(parseFloat(e.target.value||0),0,1000))}/>
                     </div>
                   </>
                 ) : (
@@ -1827,118 +1855,6 @@
               </div>
 
               <div className="hr"></div>
-
-              {/* ИСПРАВЛЕНИЕ: Каталог всегда виден в редакторе (без вкладок) */}
-              {!isClient && (
-                <>
-                  <h3 style={{margin:'6px 0'}}>{t.catalogTitle}</h3>
-                  
-                  {/* Оптимизированные кнопки каталога */}
-                  <div className="row" style={{gap:'var(--spacing-md)'}}>
-                    <button className="btn success" onClick={addProject}>{t.addProject}</button>
-                    <button className="btn" onClick={()=>{
-                      const json=prompt('Paste catalog JSON:', JSON.stringify(catalog,null,2));
-                      if(!json) return;
-                      try{ const obj=JSON.parse(json); if(Array.isArray(obj)) setCatalog(obj); else alert('Invalid JSON'); }catch{ alert('Invalid JSON'); }
-                    }}>{t.importJSON}</button>
-                    <button className="btn" onClick={()=>{
-                      const blob=new Blob([JSON.stringify(catalog,null,2)],{type:'application/json'});
-                      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`arconique_catalog_${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href);
-                    }}>{t.exportJSON}</button>
-                  </div>
-                  
-                  <div className="scroll" style={{maxHeight:'32vh'}}>
-                    {catalog.map(p=>(
-                      <div key={p.projectId} className="catalog-card">
-                        <div className="catalog-header">
-                          <div className="row" style={{flex:1}}>
-                            <span className="badge">{t.project}:</span>
-                            <input 
-                              type="text" 
-                              value={p.projectName} 
-                              onChange={e=>setCatalog(prev=>prev.map(x=>x.projectId===p.projectId?{...x,projectName:e.target.value}:x))}
-                              style={{flex:1,marginRight:8}}
-                            />
-                            <span className="pill">{p.projectId}</span>
-                          </div>
-                          <div className="catalog-actions">
-                            <button className="btn primary" onClick={()=>addVilla(p.projectId)}>{t.addVilla}</button>
-                            <button className="btn danger" onClick={()=>{
-                              if(confirm(t.remove + ' ' + p.projectName + '?')) {
-                                setCatalog(prev=>prev.filter(x=>x.projectId!==p.projectId));
-                              }
-                            }}>{t.remove}</button>
-                          </div>
-                        </div>
-                        
-                        <table className="catalog-table">
-                          <thead>
-                            <tr>
-                              <th style={{textAlign:'left'}}>{t.villa}</th>
-                              <th>{t.area}</th>
-                              <th>{t.ppsm}</th>
-                              <th>{t.price}</th>
-                              <th></th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {p.villas.map(v=>(
-                              <tr key={v.villaId}>
-                                <td style={{textAlign:'left'}}>
-                                  <input 
-                                    value={v.name} 
-                                    onChange={e=>setCatalog(prev=>prev.map(pr=>pr.projectId===p.projectId?{...pr,villas:pr.villas.map(vv=>vv.villaId===v.villaId?{...vv,name:e.target.value}:vv)}:pr))}
-                                  />
-                                  <div className="muted" style={{fontSize:10}}>{v.villaId}</div>
-                                </td>
-                                <td>
-                                  <input 
-                                    type="number" 
-                                    min="1" 
-                                    step="0.1" 
-                                    value={v.area} 
-                                    onChange={e=>setCatalog(prev=>prev.map(pr=>pr.projectId===p.projectId?{...pr,villas:pr.villas.map(vv=>vv.villaId===v.villaId?{...vv,area:clamp(parseFloat(e.target.value||0),1,100000)}:vv)}:pr))}
-                                  />
-                                </td>
-                                <td>
-                                  <input 
-                                    type="number" 
-                                    min="0" 
-                                    step="1" 
-                                    value={v.ppsm} 
-                                    onChange={e=>setCatalog(prev=>prev.map(pr=>pr.projectId===p.projectId?{...pr,villas:pr.villas.map(vv=>vv.villaId===v.villaId?{...vv,ppsm:clamp(parseFloat(e.target.value||0),0,1e9)}:vv)}:pr))}
-                                  />
-                                </td>
-                                <td>
-                                  <input 
-                                    type="number" 
-                                    min="0" 
-                                    step="1" 
-                                    value={v.baseUSD} 
-                                    onChange={e=>setCatalog(prev=>prev.map(pr=>pr.projectId===p.projectId?{...pr,villas:pr.villas.map(vv=>vv.villaId===v.villaId?{...vv,baseUSD:clamp(parseFloat(e.target.value||0),0,1e12)}:vv)}:pr))}
-                                  />
-                                </td>
-                                <td>
-                                  <button 
-                                    className="btn danger icon" 
-                                    onClick={()=>{
-                                      if(confirm(t.remove + ' ' + v.name + '?')) {
-                                        setCatalog(prev=>prev.map(pr=>pr.projectId===p.projectId?{...pr,villas:pr.villas.filter(vv=>vv.villaId!==v.villaId)}:pr));
-                                      }
-                                    }}
-                                  >
-                                    ✕
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
 
               {!isClient && (
                 <div className="row">
@@ -2117,6 +2033,7 @@
               <div className="hr"></div>
 
               <h3 style={{margin:'6px 0'}}>{t.cashflowTitle}</h3>
+              {/* ИСПРАВЛЕНИЕ: Отступы между кнопками экспорта */}
               <div className="row" style={{justifyContent:'space-between',alignItems:'center'}}>
                 <div className="export-buttons">
                   <button className="btn" onClick={exportCSV}>{t.exportCSV}</button>
@@ -2152,6 +2069,119 @@
               <div className="hr"></div>
 
               <canvas ref={chartRef} style={{height:'200px',width:'100%'}}></canvas>
+
+              {/* ИСПРАВЛЕНИЕ: Каталог перемещен в правую часть под графиком */}
+              {!isClient && (
+                <>
+                  <div className="hr"></div>
+                  <h3 style={{margin:'6px 0'}}>{t.catalogTitle}</h3>
+                  
+                  {/* Оптимизированные кнопки каталога */}
+                  <div className="row" style={{gap:'var(--spacing-md)'}}>
+                    <button className="btn success" onClick={addProject}>{t.addProject}</button>
+                    <button className="btn" onClick={()=>{
+                      const json=prompt('Paste catalog JSON:', JSON.stringify(catalog,null,2));
+                      if(!json) return;
+                      try{ const obj=JSON.parse(json); if(Array.isArray(obj)) setCatalog(obj); else alert('Invalid JSON'); }catch{ alert('Invalid JSON'); }
+                    }}>{t.importJSON}</button>
+                    <button className="btn" onClick={()=>{
+                      const blob=new Blob([JSON.stringify(catalog,null,2)],{type:'application/json'});
+                      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`arconique_catalog_${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href);
+                    }}>{t.exportJSON}</button>
+                  </div>
+                  
+                  <div className="scroll" style={{maxHeight:'32vh'}}>
+                    {catalog.map(p=>(
+                      <div key={p.projectId} className="catalog-card">
+                        <div className="catalog-header">
+                          <div className="row" style={{flex:1}}>
+                            <span className="badge">{t.project}:</span>
+                            <input 
+                              type="text" 
+                              value={p.projectName} 
+                              onChange={e=>setCatalog(prev=>prev.map(x=>x.projectId===p.projectId?{...x,projectName:e.target.value}:x))}
+                              style={{flex:1,marginRight:8}}
+                            />
+                            <span className="pill">{p.projectId}</span>
+                          </div>
+                          <div className="catalog-actions">
+                            <button className="btn primary" onClick={()=>addVilla(p.projectId)}>{t.addVilla}</button>
+                            <button className="btn danger" onClick={()=>{
+                              if(confirm(t.remove + ' ' + p.projectName + '?')) {
+                                setCatalog(prev=>prev.filter(x=>x.projectId!==p.projectId));
+                              }
+                            }}>{t.remove}</button>
+                          </div>
+                        </div>
+                        
+                        <table className="catalog-table">
+                          <thead>
+                            <tr>
+                              <th style={{textAlign:'left'}}>{t.villa}</th>
+                              <th>{t.area}</th>
+                              <th>{t.ppsm}</th>
+                              <th>{t.price}</th>
+                              <th></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {p.villas.map(v=>(
+                              <tr key={v.villaId}>
+                                <td style={{textAlign:'left'}}>
+                                  <input 
+                                    value={v.name} 
+                                    onChange={e=>setCatalog(prev=>prev.map(pr=>pr.projectId===p.projectId?{...pr,villas:pr.villas.map(vv=>vv.villaId===v.villaId?{...vv,name:e.target.value}:vv)}:pr))}
+                                  />
+                                  <div className="muted" style={{fontSize:10}}>{v.villaId}</div>
+                                </td>
+                                <td>
+                                  <input 
+                                    type="number" 
+                                    min="1" 
+                                    step="0.1" 
+                                    value={v.area} 
+                                    onChange={e=>setCatalog(prev=>prev.map(pr=>pr.projectId===p.projectId?{...pr,villas:pr.villas.map(vv=>vv.villaId===v.villaId?{...vv,area:clamp(parseFloat(e.target.value||0),1,100000)}:vv)}:pr))}
+                                  />
+                                </td>
+                                <td>
+                                  <input 
+                                    type="number" 
+                                    min="0" 
+                                    step="1" 
+                                    value={v.ppsm} 
+                                    onChange={e=>setCatalog(prev=>prev.map(pr=>pr.projectId===p.projectId?{...pr,villas:pr.villas.map(vv=>vv.villaId===v.villaId?{...vv,ppsm:clamp(parseFloat(e.target.value||0),0,1e9)}:vv)}:pr))}
+                                  />
+                                </td>
+                                <td>
+                                  <input 
+                                    type="number" 
+                                    min="0" 
+                                    step="1" 
+                                    value={v.baseUSD} 
+                                    onChange={e=>setCatalog(prev=>prev.map(pr=>pr.projectId===p.projectId?{...pr,villas:pr.villas.map(vv=>vv.villaId===v.villaId?{...vv,baseUSD:clamp(parseFloat(e.target.value||0),0,1e12)}:vv)}:pr))}
+                                  />
+                                </td>
+                                <td>
+                                  <button 
+                                    className="btn danger icon" 
+                                    onClick={()=>{
+                                      if(confirm(t.remove + ' ' + v.name + '?')) {
+                                        setCatalog(prev=>prev.map(pr=>pr.projectId===p.projectId?{...pr,villas:pr.villas.filter(vv=>vv.villaId!==v.villaId)}:pr));
+                                      }
+                                    }}
+                                  >
+                                    ✕
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -2356,8 +2386,9 @@
                                   <span>{fmtMoney(v.baseUSD,'USD')}</span>
                                 </div>
                               </div>
+                              {/* ИСПРАВЛЕНИЕ: Очень компактная кнопка "Добавить выбранные" */}
                               <button 
-                                className="btn success" 
+                                className="btn success add-selected-btn" 
                                 onClick={()=>{
                                   const newLine={
                                     id:Date.now()+Math.random(),
