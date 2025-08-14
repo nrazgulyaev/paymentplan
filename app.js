@@ -1,4 +1,4 @@
-// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (ИДЕАЛЬНАЯ ВЕРСИЯ) =====
+// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (ИСПРАВЛЕННАЯ ВЕРСИЯ) =====
 
 const {useEffect,useMemo,useRef,useState} = React;
 
@@ -249,15 +249,11 @@ function App(){
         }
       }else setIsClient(true);
     }catch(e){ console.error(e); }
-    document.getElementById('app-title').textContent=t.title;
-    document.title=t.title;
   })()},[]);
 
   const snapshot=()=>({lang,currency,idrPerUsd,eurPerUsd,handoverMonth,months,monthlyRatePct,stages,catalog,lines,startMonth});
   useEffect(()=>{
     localStorage.setItem('arconique_v76',JSON.stringify(snapshot()));
-    document.getElementById('app-title').textContent=t.title;
-    document.title=t.title;
   },[lang,currency,idrPerUsd,eurPerUsd,handoverMonth,months,monthlyRatePct,stages,catalog,lines,startMonth]);
 
   const findProject=pid=>catalog.find(p=>p.projectId===pid);
@@ -512,712 +508,446 @@ function App(){
   const delLine=(id)=>setLines(prev=>prev.filter(l=>l.id!==id));
   const dupLine=(id)=>setLines(prev=>{const src=prev.find(x=>x.id===id); if(!src)return prev; const nid=(prev[prev.length-1]?.id||0)+1; return [...prev,{...src,id:nid,qty:1}]});
 
+    const addFromCatalog=()=>setModalOpen(true);
+  const addFromCatalogLine=(villa,projectId)=>{
+    const nid=(lines[lines.length-1]?.id||0)+1;
+    const newLine={
+      id:nid,
+      projectId:projectId,
+      villaId:villa.villaId,
+      qty:1,
+      prePct:70,
+      ownTerms:false,
+      months:null,
+      monthlyRatePct:null,
+      firstPostUSD:0,
+      discountPct:0,
+      snapshot:{name:villa.name,area:villa.area,ppsm:villa.ppsm,baseUSD:villa.baseUSD}
+    };
+    setLines(prev=>[...prev,newLine]);
+    setModalOpen(false);
+  };
+
+  const addStage=()=>{
+    const newId=stages.length+1;
+    setStages(prev=>[...prev,{id:newId,label:'',pct:0,month:0}]);
+  };
+
+  const delStage=(id)=>setStages(prev=>prev.filter(s=>s.id!==id));
+
+  const updStage=(id,patch)=>setStages(prev=>prev.map(s=>s.id===id?{...s,...patch}:s));
+
+  const toggleClientMode=async()=>{
+    if(isClient){
+      const ok=await verifyPinFlow();
+      if(ok){
+        setIsClient(false);
+        const url=encodeState(snapshot(),{view:'editor'});
+        if(url) history.pushState(null,'',url);
+      }else{
+        alert(lang==='ru'?'Неверный PIN':'Wrong PIN');
+      }
+    }else{
+      setIsClient(true);
+      const url=encodeState(snapshot(),{view:'client'});
+      if(url) history.pushState(null,'',url);
+    }
+  };
+
+  // Обновляем заголовок страницы
+  useEffect(() => {
+    const titleElement = document.getElementById('app-title');
+    if (titleElement) {
+      titleElement.textContent = t.title;
+    }
+    document.title = t.title;
+  }, [t.title]);
+
   return (
     <>
-      <div className="grid">
-        <div className="card">
-          {/* УБРАЛИ ВКЛАДКИ - каталог перемещен в правую часть */}
-          
-          {/* Оптимизированные поля настроек */}
-          <div className="row">
-            <div className="field compact">
-              <label>{t.lang}</label>
-              <select value={lang} onChange={e=>setLang(e.target.value)}>
-                <option value="ru">Русский</option><option value="en">English</option>
+      <div className="wrap">
+        <header className="header">
+          <div className="header-content">
+            <div className="logo">
+              <h1>{t.title}</h1>
+            </div>
+            <div className="header-controls">
+              <button className="btn btn-secondary" onClick={toggleClientMode}>
+                {isClient ? t.editor : t.client}
+              </button>
+              <select value={lang} onChange={e=>setLang(e.target.value)} className="select">
+                <option value="ru">🇷🇺 RU</option>
+                <option value="en">🇺🇸 EN</option>
+              </select>
+              <select value={currency} onChange={e=>setCurrency(e.target.value)} className="select">
+                <option value="USD">💵 USD</option>
+                <option value="IDR">🇮🇩 IDR</option>
+                <option value="EUR">🇪🇺 EUR</option>
               </select>
             </div>
-            
-            <div className="field compact">
-              <label>{t.currencyDisplay}</label>
-              <select value={currency} onChange={e=>setCurrency(e.target.value)}>
-                <option>USD</option><option>IDR</option><option>EUR</option>
-              </select>
-            </div>
           </div>
+        </header>
 
-          {!isClient && (
-            <div className="row">
-              <div className="field compact">
-                <label>{t.idrRate}</label>
-                <input type="number" min="1" step="1" value={idrPerUsd} onChange={e=>setIdrPerUsd(clamp(parseFloat(e.target.value||0),1,1e9))}/>
-              </div>
-              <div className="field compact">
-                <label>{t.eurRate}</label>
-                <input type="number" min="0.01" step="0.01" value={eurPerUsd} onChange={e=>setEurPerUsd(clamp(parseFloat(e.target.value||0),0.01,100))}/>
-              </div>
-            </div>
-          )}
-
-          {/* НОВОЕ: Информационный блок начального месяца (не редактируемый) */}
-          <div className="row">
-            <div className="field compact">
-              <label>{t.startMonth}</label>
-              <div className="info-display">
-                {startMonth.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { 
-                  month: 'long', 
-                  year: 'numeric' 
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* ИСПРАВЛЕНИЕ: Поменяли местами поля "Глобальная ставка" и "Глобальный срок" */}
-          <div className="row">
-            <div className="field compact">
-              <label>{t.handoverMonth}</label>
-              <input type="number" min="1" step="1" value={handoverMonth} onChange={e=>setHandoverMonth(clamp(parseInt(e.target.value||0,10),1,120))}/>
-            </div>
-            {!isClient ? (
-              <>
-                <div className="field compact">
-                  <label>{t.globalRate}</label>
-                  <input type="number" min="0" step="0.01" value={monthlyRatePct} onChange={e=>setMonthlyRatePct(clamp(parseFloat(e.target.value||0),0,1000))}/>
+        <main className="main">
+          <div className="grid">
+            {/* ЛЕВАЯ ПАНЕЛЬ */}
+            <div className="left-panel">
+              <div className="card">
+                <h2>{t.stagesTitle}</h2>
+                <div className="stages">
+                  {stages.map(stage=>(
+                    <div key={stage.id} className="stage-row">
+                      <input type="text" value={stage.label} onChange={e=>updStage(stage.id,{label:e.target.value})} placeholder="Название этапа" className="input" />
+                      <input type="number" value={stage.pct} onChange={e=>updStage(stage.id,{pct:+e.target.value})} placeholder="%" className="input input-small" />
+                      <input type="number" value={stage.month} onChange={e=>updStage(stage.id,{month:+e.target.value})} placeholder="Месяц" className="input input-small" />
+                      <button onClick={()=>delStage(stage.id)} className="btn btn-danger btn-small">{t.delete}</button>
+                    </div>
+                  ))}
+                  <button onClick={addStage} className="btn btn-primary">{t.addStage}</button>
                 </div>
-                <div className="field compact">
-                  <label>{t.globalTerm}</label>
-                  <input type="range" min="6" max="24" step="1" value={months} onChange={e=>setMonths(parseInt(e.target.value,10))}/>
-                  <div className="pill">{t.months}: {months}</div>
+                <div className="stages-summary">
+                  <span>{t.sumStages}: {stagesSumPct}%</span>
+                  {stagesSumPct!==100 && <span className="warning">— {stagesSumPct<100?'не хватает':'превышает'} 100%</span>}
                 </div>
-              </>
-            ) : (
-              <div className="field compact">
-                <label>{t.clientTerm}</label>
-                <input type="number" min="6" step="1" value={months} onChange={e=>setMonths(clamp(parseInt(e.target.value||0,10),6,120))}/>
               </div>
-            )}
-          </div>
 
-          <div className="hr"></div>
-
-          <h3 style={{margin:'6px 0'}}>{t.stagesTitle}</h3>
-          
-          {/* ИСПРАВЛЕНИЕ: Динамическая высота блока этапов */}
-          <div className="stages-scroll">
-            <table className="stages-table">
-              <thead>
-                <tr>
-                  <th className="col-stage">{t.stage}</th>
-                  <th className="col-percent">{t.percent}</th>
-                  <th className="col-month">{t.month}</th>
-                  <th className="col-actions"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {stages.map(s=>(
-                  <tr key={s.id}>
-                    <td className="col-stage">
-                      <input 
-                        type="text" 
-                        className="stage-input"
-                        value={s.label} 
-                        onChange={e=>setStages(prev=>prev.map(x=>x.id===s.id?{...x,label:e.target.value}:x))}
-                      />
-                    </td>
-                    <td className="col-percent">
-                      <input 
-                        type="number" 
-                        className="stage-number-input"
-                        min="0" 
-                        max="100"
-                        step="0.01" 
-                        value={s.pct} 
-                        onChange={e=>setStages(prev=>prev.map(x=>x.id===s.id?{...x,pct:clamp(parseFloat(e.target.value||0),0,100)}:x))}
-                      />
-                    </td>
-                    <td className="col-month">
-                      <input 
-                        type="number" 
-                        min="0" 
-                        step="1" 
-                        value={s.month} 
-                        onChange={e=>setStages(prev=>prev.map(x=>x.id===s.id?{...x,month:clamp(parseInt(e.target.value||0,10),0,handoverMonth)}:x))}
-                      />
-                    </td>
-                    <td className="col-actions">
-                      <div className="stage-actions">
-                        <button className="delete-stage-btn" onClick={()=>setStages(prev=>prev.filter(x=>x.id!==s.id))}>
-                          {t.delete}
-                        </button>
+              <div className="card">
+                <h2>{t.villasTitle}</h2>
+                <div className="lines">
+                  {lines.map(line=>(
+                    <div key={line.id} className="line-card">
+                      <div className="line-header">
+                        <div className="line-info">
+                          <strong>{line.snapshot?.name || 'Villa'}</strong>
+                          <span className="line-project">{findProject(line.projectId)?.projectName || line.projectId}</span>
+                        </div>
+                        <div className="line-actions">
+                          <button onClick={()=>dupLine(line.id)} className="btn btn-secondary btn-small">📋</button>
+                          <button onClick={()=>delLine(line.id)} className="btn btn-danger btn-small">🗑️</button>
+                        </div>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="row" style={{marginTop:8,alignItems:'center',justifyContent:'space-between'}}>
-            <button className="btn primary" onClick={()=>setStages(prev=>{const last=prev[prev.length-1];const id=(last?.id||0)+1;const nextMonth=Math.min(handoverMonth,(last?.month??0)+1);return [...prev,{id,label:(lang==='ru'?'Этап':'Stage'),pct:5,month:nextMonth}]})}>{t.addStage}</button>
-            {(() => {
-              const vals=lines.map(l=>l.prePct||0);
-              const allSame=vals.length?vals.every(v=>v===vals[0]):true;
-              const targetText=allSame?`${vals[0]||0}%`:`${Math.min(...vals||[0])}%–${Math.max(...vals||[0])}%`;
-              const mismatch=allSame ? (Math.round(stagesSumPct*100)/100!==(vals[0]||0)) : true;
-              return <div className={`hint ${mismatch?'warn':''}`}>{t.sumStages}: {Math.round(stagesSumPct*100)/100}% · {t.targetPrepay}: {targetText} {mismatch? (allSame? ` ${t.mismatch}` : ` (${t.mixedTargets})`) : ''}</div>;
-            })()}
-          </div>
-
-          <div className="hr"></div>
-
-          {!isClient && (
-            <div className="row">
-              <button className="btn primary" onClick={()=>share('editor')}>Поделиться (редактор)</button>
-              <button className="btn" onClick={()=>share('client')}>Поделиться (клиент)</button>
-            </div>
-          )}
-          {isClient && <div className="row"><button className="btn" onClick={()=>share('client')}>Поделиться</button></div>}
-        </div>
-
-        <div className="card">
-          <div className="row" style={{justifyContent:'space-between',alignItems:'baseline'}}>
-            <div className="row">
-              <span className="badge">{t.lines}: {lines.length}</span>
-              <span className="badge">{t.keys} {handoverMonth} мес.</span>
-              {!isClient && <span className="badge">{t.months}: {months}</span>}
-            </div>
-            <div className="muted">{isClient ? t.client : t.editor}</div>
-          </div>
-
-          <KPIBlock isClient={isClient} t={t} totals={project.totals} currency={currency} toCurrency={toCurrency}/>
-
-          <div className="hr"></div>
-
-          {/* ИСПРАВЛЕНИЕ: Отступ между блоками и кнопка видна в клиентском режиме */}
-          <div className="calculation-header">
-            <h3 style={{margin:'6px 0'}}>{t.villasTitle}</h3>
-            <button className="btn success" onClick={()=>setModalOpen(true)}>{t.addFromCatalog}</button>
-          </div>
-
-          <div className="calc-scroll">
-            <table className="calc-table">
-              <thead>
-                <tr>
-                  <th className="col-project">{t.project}</th>
-                  <th className="col-villa">{t.villa}</th>
-                  <th className="col-qty">{t.qty}</th>
-                  <th className="col-area">{t.area}</th>
-                  <th className="col-ppsm">{t.ppsm}</th>
-                  <th className="col-base">{t.price}</th>
-                  {!isClient && <th className="col-disc">{t.discount}</th>}
-                  <th className="col-pre">{t.prePct}</th>
-                  {!isClient && <th className="col-months">{t.months}</th>}
-                  {!isClient && <th className="col-rate">{t.rate}</th>}
-                  <th className="col-first">{t.firstPost}</th>
-                  <th className="col-lineTotal">{t.lineTotal}</th>
-                  <th className="col-actions"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {linesData.map(ld=>{
-                  const projName=findProject(ld.line.projectId)?.projectName || ld.line.projectId;
-                  const villaName=ld.line.snapshot?.name || ld.line.villaId;
-                  return (
-                    <tr key={ld.line.id}>
-                      <td className="col-project" style={{textAlign:'left'}}>
-                        <div className="project-name-display">
-                          {projName}
+                      
+                      <div className="line-inputs">
+                        <div className="input-group">
+                          <label>{t.qty}:</label>
+                          <input type="number" value={line.qty} onChange={e=>updLine(line.id,{qty:+e.target.value})} min="1" className="input input-small" />
                         </div>
-                      </td>
-                      <td className="col-villa" style={{textAlign:'left'}}>
-                        <div className="villa-name-display">
-                          {villaName}
+                        <div className="input-group">
+                          <label>{t.area}:</label>
+                          <input type="number" value={line.snapshot?.area || 0} onChange={e=>updLine(line.id,{snapshot:{...line.snapshot,area:+e.target.value}})} className="input input-small" />
+                          <span className="unit">м²</span>
                         </div>
-                      </td>
-                      <td className="col-qty">
-                        <input 
-                          type="number" 
-                          min="1" 
-                          step="1" 
-                          value={ld.line.qty} 
-                          onChange={e=>updLine(ld.line.id,{qty:clamp(parseInt(e.target.value||0,10),1,9999)})}
-                          style={{width:'100%',minWidth:'50px'}}
-                        />
-                      </td>
-                      <td className="col-area">
-                        <div className="area-display">
-                          {ld.line.snapshot?.area||0}
+                        <div className="input-group">
+                          <label>{t.ppsm}:</label>
+                          <input type="number" value={line.snapshot?.ppsm || 0} onChange={e=>updLine(line.id,{snapshot:{...line.snapshot,ppsm:+e.target.value}})} className="input input-small" />
+                          <span className="unit">$</span>
                         </div>
-                      </td>
-                      <td className="col-ppsm">
-                        <div className="ppsm-display">
-                          {ld.line.snapshot?.ppsm||0}
+                        <div className="input-group">
+                          <label>{t.price}:</label>
+                          <input type="number" value={line.snapshot?.baseUSD || 0} onChange={e=>updLine(line.id,{snapshot:{...line.snapshot,baseUSD:+e.target.value}})} className="input input-small" />
+                          <span className="unit">USD</span>
                         </div>
-                      </td>
-                      <td className="col-base base-strong">
-                        {fmtMoney(toCurrency(ld.base),currency)}
-                      </td>
-                      {!isClient && (
-                        <td className="col-disc">
-                          <input 
-                            type="number" 
-                            min="0" 
-                            max="20" 
-                            step="0.1" 
-                            value={ld.line.discountPct||0} 
-                                                       onChange={e=>updLine(ld.line.id,{discountPct:clamp(parseFloat(e.target.value||0),0,20)})}
-                            style={{width:'100%',minWidth:'50px'}}
-                          />
-                        </td>
-                      )}
-                      <td className="col-pre">
-                        {/* ИСПРАВЛЕНИЕ: Ограничение "До ключей" от 50% до 100% */}
-                        <input 
-                          type="range" 
-                          min="50" 
-                          max="100" 
-                          step="1" 
-                          value={Math.max(50, Math.min(100, ld.prePct || 0))} 
-                          onChange={e => {
-                            const value = parseInt(e.target.value, 10);
-                            const clampedValue = Math.max(50, Math.min(100, value));
-                            updLine(ld.line.id, { prePct: clampedValue });
-                          }}
-                          style={{width:'100%',minWidth:'80px'}}
-                        />
-                        <div className="pill">{Math.max(50, Math.min(100, ld.prePct || 0))}%</div>
-                      </td>
-                      {!isClient && (
-                        <>
-                          <td className="col-months">
-                            <input 
-                              type="checkbox" 
-                              checked={ld.line.ownTerms||false} 
-                              onChange={e=>updLine(ld.line.id,{ownTerms:e.target.checked})}
-                            />
-                            <input 
-                              type="number" 
-                              min="6" 
-                              step="1" 
-                              value={ld.line.months||months} 
-                              onChange={e=>updLine(ld.line.id,{months:clamp(parseInt(e.target.value||0,10),6,120)})}
-                              disabled={!ld.line.ownTerms}
-                              style={{width:'100%',minWidth:'50px'}}
-                            />
-                          </td>
-                          <td className="col-rate">
-                            <input 
-                              type="number" 
-                              min="0" 
-                              step="0.01" 
-                              value={ld.line.monthlyRatePct||monthlyRatePct} 
-                              onChange={e=>updLine(ld.line.id,{monthlyRatePct:clamp(parseFloat(e.target.value||0),0,1000)})}
-                              disabled={!ld.line.ownTerms}
-                              style={{width:'100%',minWidth:'60px'}}
-                            />
-                          </td>
-                        </>
-                      )}
-                      <td className="col-first">
-                        <input 
-                          type="number" 
-                          min="0" 
-                          step="1" 
-                          value={ld.line.firstPostUSD||0} 
-                          onChange={e=>updLine(ld.line.id,{firstPostUSD:clamp(parseFloat(e.target.value||0),0,ld.base)})}
-                          style={{width:'100%',minWidth:'80px'}}
-                        />
-                      </td>
-                      <td className="col-lineTotal line-total">
-                        {fmtMoney(toCurrency(ld.lineTotal),currency)}
-                      </td>
-                      <td className="col-actions">
-                        <div className="row" style={{gap:4}}>
-                          <button className="btn icon" onClick={()=>dupLine(ld.line.id)}>📋</button>
-                          {!isClient && <button className="btn danger icon" onClick={()=>delLine(ld.line.id)}>🗑️</button>}
+                        <div className="input-group">
+                          <label>{t.discount}:</label>
+                          <input type="number" value={line.discountPct || 0} onChange={e=>updLine(line.id,{discountPct:+e.target.value})} min="0" max="20" className="input input-small" />
+                          <span className="unit">%</span>
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="hr"></div>
-
-          <h3 style={{margin:'6px 0'}}>{t.cashflowTitle}</h3>
-          {/* ИСПРАВЛЕНИЕ: Отступы между кнопками экспорта */}
-          <div className="row" style={{justifyContent:'space-between',alignItems:'center'}}>
-            <div className="export-buttons">
-              <button className="btn" onClick={exportCSV}>{t.exportCSV}</button>
-              <button className="btn" onClick={exportXLSX}>{t.exportXLSX}</button>
-              <button className="btn" onClick={exportPDF}>{t.exportPDF}</button>
-            </div>
-          </div>
-
-          {/* ИСПРАВЛЕНИЕ: Реальные даты в кэшфлоу и убрали ограничение высоты */}
-          <div className="cashflow-scroll">
-            <table className="cashflow-table">
-              <thead>
-                <tr>
-                  <th>{t.cashMonth}</th>
-                  <th style={{textAlign:'left'}}>{t.cashDesc}</th>
-                  <th>{t.cashTotal}</th>
-                  <th>{t.cashBalance}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {project.cashflow.map(c=>(
-                  <tr key={c.month}>
-                    <td>{formatMonth(c.month)}</td>
-                    <td style={{textAlign:'left'}}>{(c.items||[]).join(' + ')}</td>
-                    <td>{fmtMoney(toCurrency(c.amountUSD),currency)}</td>
-                    <td>{fmtMoney(toCurrency(c.balanceUSD),currency)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="hr"></div>
-
-          <canvas ref={chartRef} style={{height:'200px',width:'100%'}}></canvas>
-
-          {/* ИСПРАВЛЕНИЕ: Каталог перемещен в правую часть под графиком */}
-          {!isClient && (
-            <>
-              <div className="hr"></div>
-              <h3 style={{margin:'6px 0'}}>{t.catalogTitle}</h3>
-              
-              {/* Оптимизированные кнопки каталога */}
-              <div className="row" style={{gap:'var(--spacing-md)'}}>
-                <button className="btn success" onClick={addProject}>{t.addProject}</button>
-                <button className="btn" onClick={()=>{
-                  const json=prompt('Paste catalog JSON:', JSON.stringify(catalog,null,2));
-                  if(!json) return;
-                  try{ const obj=JSON.parse(json); if(Array.isArray(obj)) setCatalog(obj); else alert('Invalid JSON'); }catch{ alert('Invalid JSON'); }
-                }}>{t.importJSON}</button>
-                <button className="btn" onClick={()=>{
-                  const blob=new Blob([JSON.stringify(catalog,null,2)],{type:'application/json'});
-                  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`arconique_catalog_${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href);
-                }}>{t.exportJSON}</button>
-              </div>
-              
-              <div className="scroll" style={{maxHeight:'32vh'}}>
-                {catalog.map(p=>(
-                  <div key={p.projectId} className="catalog-card">
-                    <div className="catalog-header">
-                      <div className="row" style={{flex:1}}>
-                        <span className="badge">{t.project}:</span>
-                        <input 
-                          type="text" 
-                          value={p.projectName} 
-                          onChange={e=>setCatalog(prev=>prev.map(x=>x.projectId===p.projectId?{...x,projectName:e.target.value}:x))}
-                          style={{flex:1,marginRight:8}}
-                        />
-                        <span className="pill">{p.projectId}</span>
+                        <div className="input-group">
+                          <label>{t.prePct}:</label>
+                          <input type="number" value={line.prePct || 0} onChange={e=>updLine(line.id,{prePct:+e.target.value})} min="50" max="100" className="input input-small" />
+                          <span className="unit">%</span>
+                        </div>
+                        <div className="input-group">
+                          <label>{t.months}:</label>
+                          <input type="number" value={line.months || months} onChange={e=>updLine(line.id,{months:+e.target.value})} min="1" max="60" className="input input-small" />
+                          <span className="unit">мес</span>
+                        </div>
+                        <div className="input-group">
+                          <label>{t.rate}:</label>
+                          <input type="number" value={line.monthlyRatePct || monthlyRatePct} onChange={e=>updLine(line.id,{monthlyRatePct:+e.target.value})} min="0.1" max="20" step="0.1" className="input input-small" />
+                          <span className="unit">%/мес</span>
+                        </div>
+                        <div className="input-group">
+                          <label>{t.firstPost}:</label>
+                          <input type="number" value={line.firstPostUSD || 0} onChange={e=>updLine(line.id,{firstPostUSD:+e.target.value})} min="0" className="input input-small" />
+                          <span className="unit">USD</span>
+                        </div>
                       </div>
-                      <div className="catalog-actions">
-                        <button className="btn primary" onClick={()=>addVilla(p.projectId)}>{t.addVilla}</button>
-                        <button className="btn danger" onClick={()=>{
-                          if(confirm(t.remove + ' ' + p.projectName + '?')) {
-                            setCatalog(prev=>prev.filter(x=>x.projectId!==p.projectId));
-                          }
-                        }}>{t.remove}</button>
+                      
+                      <div className="line-total">
+                        <strong>{t.lineTotal}: {fmtMoney(line.snapshot?.baseUSD * (line.qty || 1), 'USD')}</strong>
                       </div>
                     </div>
-                    
-                    <table className="catalog-table">
-                      <thead>
-                        <tr>
-                          <th style={{textAlign:'left'}}>{t.villa}</th>
-                          <th>{t.area}</th>
-                          <th>{t.ppsm}</th>
-                          <th>{t.price}</th>
-                          <th></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {p.villas.map(v=>(
-                          <tr key={v.villaId}>
-                            <td style={{textAlign:'left'}}>
-                              <input 
-                                value={v.name} 
-                                onChange={e=>setCatalog(prev=>prev.map(pr=>pr.projectId===p.projectId?{...pr,villas:pr.villas.map(vv=>vv.villaId===v.villaId?{...vv,name:e.target.value}:vv)}:pr))}
-                              />
-                              <div className="muted" style={{fontSize:10}}>{v.villaId}</div>
-                            </td>
-                            <td>
-                              <input 
-                                type="number" 
-                                min="1" 
-                                step="0.1" 
-                                value={v.area} 
-                                onChange={e=>setCatalog(prev=>prev.map(pr=>pr.projectId===p.projectId?{...pr,villas:pr.villas.map(vv=>vv.villaId===v.villaId?{...vv,area:clamp(parseFloat(e.target.value||0),1,100000)}:vv)}:pr))}
-                              />
-                            </td>
-                            <td>
-                              <input 
-                                type="number" 
-                                min="0" 
-                                step="1" 
-                                value={v.ppsm} 
-                                onChange={e=>setCatalog(prev=>prev.map(pr=>pr.projectId===p.projectId?{...pr,villas:pr.villas.map(vv=>vv.villaId===v.villaId?{...vv,ppsm:clamp(parseFloat(e.target.value||0),0,1e9)}:vv)}:pr))}
-                              />
-                            </td>
-                            <td>
-                              <input 
-                                type="number" 
-                                min="0" 
-                                step="1" 
-                                value={v.baseUSD} 
-                                onChange={e=>setCatalog(prev=>prev.map(pr=>pr.projectId===p.projectId?{...pr,villas:pr.villas.map(vv=>vv.villaId===v.villaId?{...vv,baseUSD:clamp(parseFloat(e.target.value||0),0,1e12)}:vv)}:pr))}
-                              />
-                            </td>
-                            <td>
-                              <button 
-                                className="btn danger icon" 
-                                onClick={()=>{
-                                  if(confirm(t.remove + ' ' + v.name + '?')) {
-                                    setCatalog(prev=>prev.map(pr=>pr.projectId===p.projectId?{...pr,villas:pr.villas.filter(vv=>vv.villaId!==v.villaId)}:pr));
-                                  }
-                                }}
-                              >
-                                ✕
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ))}
+                  ))}
+                  
+                  <button onClick={addFromCatalog} className="btn btn-primary btn-full">
+                    {t.addFromCatalog}
+                  </button>
+                </div>
               </div>
-            </>
+            </div>
+
+            {/* ПРАВАЯ ПАНЕЛЬ */}
+            <div className="right-panel">
+              <div className="card">
+                <h2>{t.totals}</h2>
+                <div className="totals-grid">
+                  <div className="total-item">
+                    <span className="total-label">{t.base}:</span>
+                    <span className="total-value">{fmtMoney(project.totals.baseUSD, 'USD')}</span>
+                  </div>
+                  <div className="total-item">
+                    <span className="total-label">{t.prepay}:</span>
+                    <span className="total-value">{fmtMoney(project.totals.preUSD, 'USD')}</span>
+                  </div>
+                  <div className="total-item">
+                    <span className="total-label">{t.after}:</span>
+                    <span className="total-value">{fmtMoney(project.totals.afterUSD, 'USD')}</span>
+                  </div>
+                  <div className="total-item total-item-highlight">
+                    <span className="total-label">{t.interestTotal}:</span>
+                    <span className="total-value">{fmtMoney(project.totals.interestUSD, 'USD')}</span>
+                  </div>
+                  <div className="total-item total-item-final">
+                    <span className="total-label">{t.final}:</span>
+                    <span className="total-value">{fmtMoney(project.totals.finalUSD, 'USD')}</span>
+                  </div>
+                </div>
+                
+                <div className="summary-stats">
+                  <div className="stat-item">
+                    <span className="stat-label">{t.lines}:</span>
+                    <span className="stat-value">{lines.length}</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">{t.keys}:</span>
+                    <span className="stat-value">{handoverMonth} {lang==='ru'?'мес':'mo'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="card">
+                <h2>{t.chartTitle}</h2>
+                <canvas ref={chartRef} className="chart"></canvas>
+              </div>
+
+              <div className="card">
+                <div className="card-header">
+                  <h2>{t.cashflowTitle}</h2>
+                  <div className="card-actions">
+                    <button onClick={exportCSV} className="btn btn-secondary btn-small">{t.exportCSV}</button>
+                    <button onClick={exportXLSX} className="btn btn-secondary btn-small">{t.exportXLSX}</button>
+                    <button onClick={exportPDF} className="btn btn-secondary btn-small">{t.exportPDF}</button>
+                  </div>
+                </div>
+                <div className="cashflow-table-container">
+                  <table className="cashflow-table">
+                    <thead>
+                      <tr>
+                        <th>{t.cashMonth}</th>
+                        <th>{t.cashDesc}</th>
+                        <th>{t.cashTotal}</th>
+                        <th>{t.cashBalance}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {project.cashflow.map((cash, index) => (
+                        <tr key={index}>
+                          <td>{formatMonth(cash.month)}</td>
+                          <td>{(cash.items || []).join(' + ')}</td>
+                          <td className="amount">{fmtMoney(cash.amountUSD, 'USD')}</td>
+                          <td className="amount">{fmtMoney(cash.balanceUSD, 'USD')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* РЕДАКТОРСКИЙ РЕЖИМ */}
+          {!isClient && (
+            <div className="editor-mode">
+              <h2>{t.catalogTitle}</h2>
+              <CatalogManager 
+                catalog={catalog} 
+                setCatalog={setCatalog} 
+                fmtMoney={fmtMoney}
+                showAddProjectModal={showAddProjectModal}
+                setShowAddProjectModal={setShowAddProjectModal}
+                showAddVillaModal={showAddVillaModal}
+                setShowAddVillaModal={setShowAddVillaModal}
+                editingProject={editingProject}
+                setEditingProject={setEditingProject}
+                newProjectForm={newProjectForm}
+                setNewProjectForm={setNewProjectForm}
+                newVillaForm={newVillaForm}
+                setNewVillaForm={setNewVillaForm}
+                addProject={addProject}
+                saveProject={saveProject}
+                addVilla={addVilla}
+                saveVilla={saveVilla}
+                t={t}
+              />
+            </div>
           )}
-        </div>
+
+          {/* СВОДНЫЙ КЭШФЛОУ ПО МЕСЯЦАМ (ОТДЕЛЬНЫЙ БЛОК ВНИЗУ) */}
+          <div className="cashflow-block">
+            <div className="card">
+              <div className="card-header">
+                <h2>{t.cashflowTitle}</h2>
+                <div className="card-actions">
+                  <button onClick={exportCSV} className="btn btn-secondary btn-small">{t.exportCSV}</button>
+                  <button onClick={exportXLSX} className="btn btn-secondary btn-small">{t.exportXLSX}</button>
+                  <button onClick={exportPDF} className="btn btn-secondary btn-small">{t.exportPDF}</button>
+                </div>
+              </div>
+              <div className="cashflow-table-container">
+                <table className="cashflow-table">
+                  <thead>
+                    <tr>
+                      <th>{t.cashMonth}</th>
+                      <th>{t.cashDesc}</th>
+                      <th>{t.cashTotal}</th>
+                      <th>{t.cashBalance}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {project.cashflow.map((cash, index) => (
+                      <tr key={index}>
+                        <td>{formatMonth(cash.month)}</td>
+                        <td>{(cash.items || []).join(' + ')}</td>
+                        <td className="amount">{fmtMoney(cash.amountUSD, 'USD')}</td>
+                        <td className="amount">{fmtMoney(cash.balanceUSD, 'USD')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
 
-      {/* Модальное окно добавления проекта */}
+      {/* МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ ИЗ КАТАЛОГА */}
+      {modalOpen && (
+        <div className="modal-overlay" onClick={() => setModalOpen(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>{t.selectFromCatalog}</h3>
+            <div className="catalog-grid">
+              {catalog.map(project => (
+                <div key={project.projectId} className="project-group">
+                  <h4>{project.projectName}</h4>
+                  {project.villas.map(villa => (
+                    <div key={villa.villaId} className="villa-item" onClick={() => addFromCatalogLine(villa, project.projectId)}>
+                      <div className="villa-info">
+                        <strong>{villa.name}</strong>
+                        <span>{villa.area} м² × ${villa.ppsm} = {fmtMoney(villa.baseUSD, 'USD')}</span>
+                      </div>
+                      <button className="btn btn-primary btn-small">{t.addSelected}</button>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setModalOpen(false)} className="btn btn-secondary">{t.cancel}</button>
+          </div>
+        </div>
+      )}
+
+      {/* МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ ПРОЕКТА */}
       {showAddProjectModal && (
         <div className="modal-overlay" onClick={() => setShowAddProjectModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{t.addProject}</h3>
-              <button className="btn icon" onClick={() => setShowAddProjectModal(false)}>✕</button>
+            <h3>{t.addProject}</h3>
+            <div className="form-group">
+              <label>{t.projectId}:</label>
+              <input 
+                type="text" 
+                value={newProjectForm.projectId} 
+                onChange={e => setNewProjectForm(prev => ({...prev, projectId: e.target.value}))}
+                placeholder="ID проекта"
+                className="input"
+              />
             </div>
-            
-            <div className="modal-body">
-              <div className="form-section">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>{t.projectId}</label>
-                    <input 
-                      type="text" 
-                      placeholder="project-id"
-                      value={newProjectForm.projectId}
-                      onChange={e => setNewProjectForm(prev => ({ ...prev, projectId: e.target.value }))}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>{t.projectName}</label>
-                    <input 
-                      type="text" 
-                      placeholder={t.projectName}
-                      value={newProjectForm.projectName}
-                      onChange={e => setNewProjectForm(prev => ({ ...prev, projectName: e.target.value }))}
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="form-actions">
-                <button className="btn" onClick={() => setShowAddProjectModal(false)}>{t.cancel}</button>
-                <button className="btn success" onClick={saveProject}>{t.save}</button>
-              </div>
+            <div className="form-group">
+              <label>{t.projectName}:</label>
+              <input 
+                type="text" 
+                value={newProjectForm.projectName} 
+                onChange={e => setNewProjectForm(prev => ({...prev, projectName: e.target.value}))}
+                placeholder="Название проекта"
+                className="input"
+              />
+            </div>
+            <div className="modal-actions">
+              <button onClick={saveProject} className="btn btn-primary">{t.save}</button>
+              <button onClick={() => setShowAddProjectModal(false)} className="btn btn-secondary">{t.cancel}</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Модальное окно добавления виллы */}
+      {/* МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ ВИЛЛЫ */}
       {showAddVillaModal && (
         <div className="modal-overlay" onClick={() => setShowAddVillaModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{t.addVilla}</h3>
-              <button className="btn icon" onClick={() => setShowAddVillaModal(false)}>✕</button>
+            <h3>{t.addVilla}</h3>
+            <div className="form-group">
+              <label>{t.villaId}:</label>
+              <input 
+                type="text" 
+                value={newVillaForm.villaId} 
+                onChange={e => setNewVillaForm(prev => ({...prev, villaId: e.target.value}))}
+                placeholder="ID виллы"
+                className="input"
+              />
             </div>
-            
-            <div className="modal-body">
-              <div className="form-section">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>{t.villaId}</label>
-                    <input 
-                      type="text" 
-                      placeholder="villa-id"
-                      value={newVillaForm.villaId}
-                      onChange={e => setNewVillaForm(prev => ({ ...prev, villaId: e.target.value }))}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>{t.villaName}</label>
-                    <input 
-                      type="text" 
-                      placeholder={t.villaName}
-                      value={newVillaForm.name}
-                      onChange={e => setNewVillaForm(prev => ({ ...prev, name: e.target.value }))}
-                    />
-                  </div>
-                </div>
-                
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>{t.villaArea}</label>
-                    <input 
-                      type="number" 
-                      min="1" 
-                      step="0.1" 
-                      placeholder="100"
-                      value={newVillaForm.area}
-                      onChange={e => setNewVillaForm(prev => ({ ...prev, area: parseFloat(e.target.value) || 0 }))}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>{t.villaPpsm}</label>
-                    <input 
-                      type="number" 
-                      min="0" 
-                      step="1" 
-                      placeholder="2500"
-                      value={newVillaForm.ppsm}
-                      onChange={e => setNewVillaForm(prev => ({ ...prev, ppsm: parseFloat(e.target.value) || 0 }))}
-                    />
-                  </div>
-                </div>
-                
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>{t.villaBasePrice}</label>
-                    <input 
-                      type="number" 
-                      min="0" 
-                      step="1000" 
-                      placeholder="250000"
-                      value={newVillaForm.baseUSD}
-                      onChange={e => setNewVillaForm(prev => ({ ...prev, baseUSD: parseFloat(e.target.value) || 0 }))}
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="form-actions">
-                <button className="btn" onClick={() => setShowAddVillaModal(false)}>{t.cancel}</button>
-                <button className="btn success" onClick={saveVilla}>{t.save}</button>
-              </div>
+            <div className="form-group">
+              <label>{t.villaName}:</label>
+              <input 
+                type="text" 
+                value={newVillaForm.name} 
+                onChange={e => setNewVillaForm(prev => ({...prev, name: e.target.value}))}
+                placeholder="Название виллы"
+                className="input"
+              />
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Модальное окно добавления из каталога */}
-      {modalOpen && (
-        <div className="modal-overlay" onClick={()=>setModalOpen(false)}>
-          <div className="modal-content" onClick={e=>e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{t.selectFromCatalog}</h3>
-              <button className="btn icon" onClick={()=>setModalOpen(false)}>✕</button>
+            <div className="form-group">
+              <label>{t.villaArea}:</label>
+              <input 
+                type="number" 
+                value={newVillaForm.area} 
+                onChange={e => setNewVillaForm(prev => ({...prev, area: +e.target.value}))}
+                placeholder="Площадь"
+                className="input"
+              />
             </div>
-            
-            <div className="modal-body">
-              <div className="search-filters">
-                                <input 
-                  type="text" 
-                  placeholder={t.search} 
-                  className="search-input"
-                  onChange={e=>{
-                    const query=e.target.value.toLowerCase();
-                    const filtered=catalog.map(p=>({
-                      ...p,
-                      villas:p.villas.filter(v=>
-                        p.projectName.toLowerCase().includes(query) ||
-                        v.name.toLowerCase().includes(query) ||
-                        v.villaId.toLowerCase().includes(query)
-                      )
-                    })).filter(p=>p.villas.length>0);
-                    // Здесь можно добавить состояние для фильтрации
-                  }}
-                />
-                
-                <div className="filter-row">
-                  <div className="filter-group">
-                    <label>{t.areaFrom}</label>
-                    <input type="number" min="0" step="1" placeholder="0" />
-                  </div>
-                  <div className="filter-group">
-                    <label>{t.areaTo}</label>
-                    <input type="number" min="0" step="1" placeholder="1000" />
-                  </div>
-                </div>
-                
-                <div className="filter-row">
-                  <div className="filter-group">
-                    <label>{t.priceFrom}</label>
-                    <input type="number" min="0" step="1000" placeholder="0" />
-                  </div>
-                  <div className="filter-group">
-                    <label>{t.priceTo}</label>
-                    <input type="number" min="0" step="1000" placeholder="1000000" />
-                  </div>
-                </div>
-                
-                <div className="filter-row">
-                  <div className="filter-group">
-                    <label>{t.sort}</label>
-                    <select>
-                      <option value="name">{t.byName}</option>
-                      <option value="area">{t.byArea}</option>
-                      <option value="price">{t.byPrice}</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="catalog-selection">
-                {catalog.map(p=>(
-                  <div key={p.projectId} className="catalog-selection-project">
-                    <h4>{p.projectName}</h4>
-                    <div className="villas-selection">
-                      {p.villas.map(v=>(
-                        <div key={v.villaId} className="villa-selection-item">
-                          <div className="villa-info">
-                            <div className="villa-name">{v.name}</div>
-                            <div className="villa-details">
-                              <span>{v.area} {t.area}</span>
-                              <span>{v.ppsm} {t.ppsm}</span>
-                              <span>{fmtMoney(v.baseUSD,'USD')}</span>
-                            </div>
-                          </div>
-                          {/* ИСПРАВЛЕНИЕ: Очень компактная кнопка "Добавить выбранные" */}
-                          <button 
-                            className="btn success add-selected-btn" 
-                            onClick={()=>{
-                              const newLine={
-                                id:Date.now()+Math.random(),
-                                projectId:p.projectId,
-                                villaId:v.villaId,
-                                qty:1,
-                                prePct:stagesSumPct,
-                                ownTerms:false,
-                                months:null,
-                                monthlyRatePct:null,
-                                firstPostUSD:0,
-                                discountPct:0,
-                                snapshot:{name:v.name,area:v.area,ppsm:v.ppsm,baseUSD:v.baseUSD}
-                              };
-                              setLines(prev=>[...prev,newLine]);
-                              setModalOpen(false);
-                            }}
-                          >
-                            {t.addSelected}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="form-group">
+              <label>{t.villaPpsm}:</label>
+              <input 
+                type="number" 
+                value={newVillaForm.ppsm} 
+                onChange={e => setNewVillaForm(prev => ({...prev, ppsm: +e.target.value}))}
+                placeholder="Цена за м²"
+                className="input"
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.villaBasePrice}:</label>
+              <input 
+                type="number" 
+                value={newVillaForm.baseUSD} 
+                onChange={e => setNewVillaForm(prev => ({...prev, baseUSD: +e.target.value}))}
+                placeholder="Базовая цена"
+                className="input"
+              />
+            </div>
+            <div className="modal-actions">
+              <button onClick={saveVilla} className="btn btn-primary">{t.save}</button>
+              <button onClick={() => setShowAddVillaModal(false)} className="btn btn-secondary">{t.cancel}</button>
             </div>
           </div>
         </div>
@@ -1226,35 +956,258 @@ function App(){
   );
 }
 
-/* ---------- KPI Block Component ---------- */
-function KPIBlock({isClient, t, totals, currency, toCurrency}){
+// ===== КОМПОНЕНТ КАТАЛОГА =====
+function CatalogManager({ 
+  catalog, 
+  setCatalog, 
+  fmtMoney,
+  showAddProjectModal,
+  setShowAddProjectModal,
+  showAddVillaModal,
+  setShowAddVillaModal,
+  editingProject,
+  setEditingProject,
+  newProjectForm,
+  setNewProjectForm,
+  newVillaForm,
+  setNewVillaForm,
+  addProject,
+  saveProject,
+  addVilla,
+  saveVilla,
+  t 
+}) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('name');
+  const [areaFilter, setAreaFilter] = useState({ from: '', to: '' });
+  const [priceFilter, setPriceFilter] = useState({ from: '', to: '' });
+
+  const filteredCatalog = useMemo(() => {
+    let filtered = [...catalog];
+    
+    // Фильтрация по поиску
+    if (searchTerm) {
+      filtered = filtered.filter(project => 
+        project.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.villas.some(villa => 
+          villa.name.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      );
+    }
+    
+    // Фильтрация по площади
+    if (areaFilter.from || areaFilter.to) {
+      filtered = filtered.map(project => ({
+        ...project,
+        villas: project.villas.filter(villa => {
+          const area = villa.area;
+          const from = areaFilter.from ? +areaFilter.from : 0;
+          const to = areaFilter.to ? +areaFilter.to : Infinity;
+          return area >= from && area <= to;
+        })
+      })).filter(project => project.villas.length > 0);
+    }
+    
+    // Фильтрация по цене
+    if (priceFilter.from || priceFilter.to) {
+      filtered = filtered.map(project => ({
+        ...project,
+        villas: project.villas.filter(villa => {
+          const price = villa.baseUSD;
+          const from = priceFilter.from ? +priceFilter.from : 0;
+          const to = priceFilter.to ? +priceFilter.to : Infinity;
+          return price >= from && price <= to;
+        })
+      })).filter(project => project.villas.length > 0);
+    }
+    
+    // Сортировка
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'price':
+          const aPrice = Math.min(...a.villas.map(v => v.baseUSD));
+          const bPrice = Math.min(...b.villas.map(v => v.baseUSD));
+          return aPrice - bPrice;
+        case 'area':
+          const aArea = Math.min(...a.villas.map(v => v.area));
+          const bArea = Math.min(...b.villas.map(v => v.area));
+          return aArea - bArea;
+        case 'name':
+        default:
+          return a.projectName.localeCompare(b.projectName);
+      }
+    });
+    
+    return filtered;
+  }, [catalog, searchTerm, sortBy, areaFilter, priceFilter]);
+
+  const deleteProject = (projectId) => {
+    if (confirm('Удалить проект и все его виллы?')) {
+      setCatalog(prev => prev.filter(p => p.projectId !== projectId));
+    }
+  };
+
+  const deleteVilla = (projectId, villaId) => {
+    if (confirm('Удалить виллу?')) {
+      setCatalog(prev => prev.map(p => 
+        p.projectId === projectId 
+          ? { ...p, villas: p.villas.filter(v => v.villaId !== villaId) }
+          : p
+      ));
+    }
+  };
+
+  const exportCatalog = () => {
+    const dataStr = JSON.stringify(catalog, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'arconique_catalog.json';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importCatalog = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            setCatalog(imported);
+            alert('Каталог успешно импортирован');
+          } else {
+            alert('Неверный формат файла');
+          }
+        } catch (error) {
+          alert('Ошибка при импорте файла');
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
   return (
-    <div className="kpis">
-      <div className="kpi">
-        <div className="muted">{t.base}</div>
-        <div className="v">{fmtMoney(toCurrency(totals.baseUSD),currency)}</div>
-      </div>
-      <div className="kpi">
-        <div className="muted">{t.prepay}</div>
-        <div className="v">{fmtMoney(toCurrency(totals.preUSD),currency)}</div>
-      </div>
-      <div className="kpi">
-        <div className="muted">{t.after}</div>
-        <div className="v">{fmtMoney(toCurrency(totals.afterUSD),currency)}</div>
-      </div>
-      {!isClient && (
-        <div className="kpi">
-          <div className="muted">{t.interestTotal}</div>
-          <div className="v">{fmtMoney(toCurrency(totals.interestUSD),currency)}</div>
+    <div className="catalog-section">
+      <div className="catalog-header">
+        <div className="catalog-controls">
+          <button onClick={addProject} className="btn btn-primary">{t.addProject}</button>
+          <button onClick={() => setShowAddVillaModal(true)} className="btn btn-primary">{t.addVilla}</button>
+          <button onClick={exportCatalog} className="btn btn-secondary">{t.exportJSON}</button>
+          <label className="btn btn-secondary">
+            {t.importJSON}
+            <input type="file" accept=".json" onChange={importCatalog} style={{ display: 'none' }} />
+          </label>
         </div>
-      )}
-      <div className="kpi">
-        <div className="muted">{t.final}</div>
-        <div className="v">{fmtMoney(toCurrency(totals.finalUSD),currency)}</div>
+        
+        <div className="catalog-filters">
+          <input 
+            type="text" 
+            placeholder={t.search} 
+            value={searchTerm} 
+            onChange={e => setSearchTerm(e.target.value)}
+            className="input"
+          />
+          
+          <div className="filter-group">
+            <input 
+              type="number" 
+              placeholder={t.areaFrom} 
+              value={areaFilter.from} 
+              onChange={e => setAreaFilter(prev => ({...prev, from: e.target.value}))}
+              className="input input-small"
+            />
+            <input 
+              type="number" 
+              placeholder={t.areaTo} 
+              value={areaFilter.to} 
+              onChange={e => setAreaFilter(prev => ({...prev, to: e.target.value}))}
+              className="input input-small"
+            />
+          </div>
+          
+          <div className="filter-group">
+            <input 
+              type="number" 
+              placeholder={t.priceFrom} 
+              value={priceFilter.from} 
+              onChange={e => setPriceFilter(prev => ({...prev, from: e.target.value}))}
+              className="input input-small"
+            />
+            <input 
+              type="number" 
+              placeholder={t.priceTo} 
+              value={priceFilter.to} 
+              onChange={e => setPriceFilter(prev => ({...prev, to: e.target.value}))}
+              className="input input-small"
+            />
+          </div>
+          
+          <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="select">
+            <option value="name">{t.sort} {t.byName}</option>
+            <option value="price">{t.sort} {t.byPrice}</option>
+            <option value="area">{t.sort} {t.byArea}</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="catalog-content">
+        {filteredCatalog.map(project => (
+          <div key={project.projectId} className="project-card">
+            <div className="project-header">
+              <h3>{project.projectName}</h3>
+              <div className="project-actions">
+                <button onClick={() => setShowAddVillaModal(true)} className="btn btn-secondary btn-small">{t.addVilla}</button>
+                <button onClick={() => deleteProject(project.projectId)} className="btn btn-danger btn-small">{t.remove}</button>
+              </div>
+            </div>
+            
+            <div className="villas-grid">
+              {project.villas.map(villa => (
+                <div key={villa.villaId} className="villa-card">
+                  <div className="villa-header">
+                    <h4>{villa.name}</h4>
+                    <div className="villa-actions">
+                      <button onClick={() => deleteVilla(project.projectId, villa.villaId)} className="btn btn-danger btn-small">{t.remove}</button>
+                    </div>
+                  </div>
+                  
+                  <div className="villa-details">
+                    <div className="detail-item">
+                      <span className="detail-label">{t.villaArea}:</span>
+                      <span className="detail-value">{villa.area} м²</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">{t.villaPpsm}:</span>
+                      <span className="detail-value">${villa.ppsm}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">{t.villaBasePrice}:</span>
+                      <span className="detail-value">{fmtMoney(villa.baseUSD, 'USD')}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
-/* ---------- Render ---------- */
-ReactDOM.render(<App/>,document.getElementById('root'));
+// ===== КОМПОНЕНТ KPI =====
+function KPIBlock({ title, value, subtitle, className = '' }) {
+  return (
+    <div className={`kpi-block ${className}`}>
+      <div className="kpi-title">{title}</div>
+      <div className="kpi-value">{value}</div>
+      {subtitle && <div className="kpi-subtitle">{subtitle}</div>}
+    </div>
+  );
+}
+
+// ===== ЗАПУСК =====
+ReactDOM.render(<App />, document.getElementById('root'));
