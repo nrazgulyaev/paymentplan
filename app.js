@@ -742,22 +742,21 @@ function App() {
           <div className="calc-scroll">
             <table className="calc-table">
               <thead>
-                <tr>
-                  <th className="col-project">{t.project}</th>
-                  <th className="col-villa">{t.villa}</th>
-                  <th className="col-qty">{t.qty}</th>
-                  <th className="col-area">{t.area}</th>
-                  <th className="col-ppsm">{t.ppsm}</th>
-                  <th className="col-base">{t.price}</th>
-                  <th className="col-disc">{t.discount}</th>
-                  <th className="col-pre">{t.prePct}</th>
-                  <th className="col-months">{t.months}</th>
-                  <th className="col-rate">{t.rate}</th>
-                  <th className="col-first">{t.firstPost}</th>
-                  <th className="col-lineTotal">{t.lineTotal}</th>
-                  <th className="col-actions"></th>
-                </tr>
-              </thead>
+  <tr>
+    <th className="col-project">{t.project}</th>
+    <th className="col-villa">{t.villa}</th>
+    <th className="col-qty">{t.qty}</th>
+    <th className="col-area">{t.area}</th>
+    <th className="col-ppsm">{t.ppsm}</th>
+    <th className="col-base">{t.price}</th>
+    {!isClient && <th className="col-disc">{t.discount}</th>}
+    <th className="col-pre">{t.prePct}</th>
+    {!isClient && <th className="col-months">{t.months}</th>}
+    {!isClient && <th className="col-rate">{t.rate}</th>}
+    <th className="col-lineTotal">{t.lineTotal}</th>
+    <th className="col-actions"></th>
+  </tr>
+</thead>
               <tbody>
                 {linesData.map(ld => (
                   <tr key={ld.line.id}>
@@ -788,17 +787,19 @@ function App() {
                     <td className="col-base base-strong">
                       {fmtMoney(ld.base, currency)}
                     </td>
-                    <td className="col-disc">
-                      <input 
-                        type="number" 
-                        min="0" 
-                        max="20" 
-                        step="0.1" 
-                        value={ld.line.discountPct || 0} 
-                        onChange={e => updLine(ld.line.id, {discountPct: clamp(parseFloat(e.target.value || 0), 0, 20)})}
-                        style={{width: '100%', minWidth: '50px'}}
-                      />
-                    </td>
+                    {!isClient && (
+  <td className="col-disc">
+    <input 
+      type="number" 
+      min="0" 
+      max="20" 
+      step="0.1" 
+      value={ld.line.discountPct || 0} 
+      onChange={e => updLine(ld.line.id, {discountPct: clamp(parseFloat(e.target.value || 0), 0, 20)})}
+      style={{width: '100%', minWidth: '50px'}}
+    />
+  </td>
+)}
                     <td className="col-pre">
                       <input 
                         type="range" 
@@ -815,43 +816,38 @@ function App() {
                       />
                       <div className="pill">{Math.max(50, Math.min(100, ld.prePct || 0))}%</div>
                     </td>
-                    <td className="col-months">
-                      <input 
-                        type="checkbox" 
-                        checked={ld.line.ownTerms || false} 
-                        onChange={e => updLine(ld.line.id, {ownTerms: e.target.checked})}
-                      />
-                      <input 
-                        type="number" 
-                        min="6" 
-                        step="1" 
-                        value={ld.line.months || months} 
-                        onChange={e => updLine(ld.line.id, {months: clamp(parseInt(e.target.value || 0, 10), 6, 120)})}
-                        disabled={!ld.line.ownTerms}
-                        style={{width: '100%', minWidth: '50px'}}
-                      />
-                    </td>
-                    <td className="col-rate">
-                      <input 
-                        type="number" 
-                        min="0" 
-                        step="0.01" 
-                        value={ld.line.monthlyRatePct || monthlyRatePct} 
-                        onChange={e => updLine(ld.line.id, {monthlyRatePct: clamp(parseFloat(e.target.value || 0), 0, 1000)})}
-                        disabled={!ld.line.ownTerms}
-                        style={{width: '100%', minWidth: '60px'}}
-                      />
-                    </td>
-                    <td className="col-first">
-                      <input 
-                        type="number" 
-                        min="0" 
-                        step="1" 
-                        value={ld.line.firstPostUSD || 0} 
-                        onChange={e => updLine(ld.line.id, {firstPostUSD: clamp(parseFloat(e.target.value || 0), 0, ld.base)})}
-                        style={{width: '100%', minWidth: '80px'}}
-                      />
-                    </td>
+                    {!isClient && (
+  <td className="col-months">
+    <input 
+      type="checkbox" 
+      checked={ld.line.ownTerms || false} 
+      onChange={e => updLine(ld.line.id, {ownTerms: e.target.checked})}
+    />
+    <input 
+      type="number" 
+      min="6" 
+      step="1" 
+      value={ld.line.months || months} 
+      onChange={e => updLine(ld.line.id, {months: clamp(parseInt(e.target.value || 0, 10), 6, 120)})}
+      disabled={!ld.line.ownTerms}
+      style={{width: '100%', minWidth: '50px'}}
+    />
+  </td>
+)}
+{!isClient && (
+  <td className="col-rate">
+    <input 
+      type="number" 
+      min="0" 
+      step="0.01" 
+      value={ld.line.monthlyRatePct || monthlyRatePct} 
+      onChange={e => updLine(ld.line.id, {monthlyRatePct: clamp(parseFloat(e.target.value || 0), 0, 1000)})}
+      disabled={!ld.line.ownTerms}
+      style={{width: '100%', minWidth: '60px'}}
+    />
+  </td>
+)}
+                
                     <td className="col-lineTotal line-total">
                       {fmtMoney(ld.lineTotal, currency)}
                     </td>
