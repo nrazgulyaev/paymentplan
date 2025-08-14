@@ -1808,4 +1808,29 @@ h1 {
   content: '•';
 }
 
+/* ===== СТИЛИ ДЛЯ ТАБЛИЦЫ КЭШФЛОУ ===== */
+
+.cashflow-table tbody tr {
+  transition: background-color var(--transition-fast);
+  cursor: pointer;
+}
+
+.cashflow-table tbody tr:hover {
+  background-color: rgba(59, 130, 246, 0.1); /* Синяя подсветка */
+  border-left: 3px solid var(--primary);
+}
+
+.cashflow-table tbody tr:hover td {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* Альтернативный вариант - более мягкая подсветка */
+.cashflow-table tbody tr:hover {
+  background: linear-gradient(90deg, 
+    rgba(59, 130, 246, 0.08) 0%, 
+    rgba(59, 130, 246, 0.03) 100%);
+  border-left: 2px solid var(--primary);
+}
+
 /* ===== КОНЕЦ СТИЛЕЙ ===== */
