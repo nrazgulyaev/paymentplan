@@ -956,101 +956,81 @@ function App() {
         </div>
       )}
 
-      {/* МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ ПРОЕКТА */}
-      {showAddProjectModal && (
-        <div className="modal-overlay" onClick={() => setShowAddProjectModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3>{t.addProject}</h3>
-            <div className="form-group">
-              <label>{t.projectId}:</label>
-              <input 
-                type="text" 
-                value={newProjectForm.projectId} 
-                onChange={e => setNewProjectForm(prev => ({...prev, projectId: e.target.value}))}
-                placeholder="ID проекта"
-                className="input"
-              />
-            </div>
-            <div className="form-group">
-              <label>{t.projectName}:</label>
-              <input 
-                type="text" 
-                               value={newProjectForm.projectName} 
-                onChange={e => setNewProjectForm(prev => ({...prev, projectName: e.target.value}))}
-                placeholder="Название проекта"
-                className="input"
-              />
-            </div>
-            <div className="modal-actions">
-              <button onClick={saveProject} className="btn primary">{t.save}</button>
-              <button onClick={() => setShowAddProjectModal(false)} className="btn">{t.cancel}</button>
-            </div>
-          </div>
-        </div>
-      )}
+    {/* МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ ПРОЕКТА */}
+{showAddProjectModal && (
+  <div className="modal-overlay" onClick={() => setShowAddProjectModal(false)}>
+    <div className="modal-content" onClick={e => e.stopPropagation()}>
+      <h3>{t.addProject}</h3>
+      <div className="form-group">
+        <label>{t.projectName}:</label>
+        <input 
+          type="text" 
+          value={newProjectForm.projectName} 
+          onChange={e => setNewProjectForm(prev => ({...prev, projectName: e.target.value}))}
+          placeholder="Название проекта"
+          className="input"
+        />
+      </div>
+      <div className="modal-actions">
+        <button onClick={saveProject} className="btn primary">{t.save}</button>
+        <button onClick={() => setShowAddProjectModal(false)} className="btn">{t.cancel}</button>
+      </div>
+    </div>
+  </div>
+)}
 
-      {/* МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ ВИЛЛЫ */}
-      {showAddVillaModal && (
-        <div className="modal-overlay" onClick={() => setShowAddVillaModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3>{t.addVilla}</h3>
-            <div className="form-group">
-              <label>{t.villaId}:</label>
-              <input 
-                type="text" 
-                value={newVillaForm.villaId} 
-                onChange={e => setNewVillaForm(prev => ({...prev, villaId: e.target.value}))}
-                placeholder="ID виллы"
-                className="input"
-              />
-            </div>
-            <div className="form-group">
-              <label>{t.villaName}:</label>
-              <input 
-                type="text" 
-                value={newVillaForm.name} 
-                onChange={e => setNewVillaForm(prev => ({...prev, name: e.target.value}))}
-                placeholder="Название виллы"
-                className="input"
-              />
-            </div>
-            <div className="form-group">
-              <label>{t.villaArea}:</label>
-              <input 
-                type="number" 
-                value={newVillaForm.area} 
-                onChange={e => setNewVillaForm(prev => ({...prev, area: +e.target.value}))}
-                placeholder="Площадь"
-                className="input"
-              />
-            </div>
-            <div className="form-group">
-              <label>{t.villaPpsm}:</label>
-              <input 
-                type="number" 
-                value={newVillaForm.ppsm} 
-                onChange={e => setNewVillaForm(prev => ({...prev, ppsm: +e.target.value}))}
-                placeholder="Цена за м²"
-                className="input"
-              />
-            </div>
-            <div className="form-group">
-              <label>{t.villaBasePrice}:</label>
-              <input 
-                type="number" 
-                value={newVillaForm.baseUSD} 
-                onChange={e => setNewVillaForm(prev => ({...prev, baseUSD: +e.target.value}))}
-                placeholder="Базовая цена"
-                className="input"
-              />
-            </div>
-            <div className="modal-actions">
-              <button onClick={saveVilla} className="btn primary">{t.save}</button>
-              <button onClick={() => setShowAddVillaModal(false)} className="btn">{t.cancel}</button>
-            </div>
-          </div>
-        </div>
-      )}
+     {/* МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ ВИЛЛЫ */}
+{showAddVillaModal && (
+  <div className="modal-overlay" onClick={() => setShowAddVillaModal(false)}>
+    <div className="modal-content" onClick={e => e.stopPropagation()}>
+      <h3>{t.addVilla}</h3>
+      <div className="form-group">
+        <label>{t.villaName}:</label>
+        <input 
+          type="text" 
+          value={newVillaForm.name} 
+          onChange={e => setNewVillaForm(prev => ({...prev, name: e.target.value}))}
+          placeholder="Название виллы"
+          className="input"
+        />
+      </div>
+      <div className="form-group">
+        <label>{t.villaArea}:</label>
+        <input 
+          type="number" 
+          value={newVillaForm.area} 
+          onChange={e => setNewVillaForm(prev => ({...prev, area: +e.target.value}))}
+          placeholder="Площадь"
+          className="input"
+        />
+      </div>
+      <div className="form-group">
+        <label>{t.villaPpsm}:</label>
+        <input 
+          type="number" 
+          value={newVillaForm.ppsm} 
+          onChange={e => setNewVillaForm(prev => ({...prev, ppsm: +e.target.value}))}
+          placeholder="Цена за м²"
+          className="input"
+        />
+      </div>
+      <div className="form-group">
+        <label>{t.villaBasePrice}:</label>
+        <input 
+          type="number" 
+          value={newVillaForm.baseUSD} 
+          onChange={e => setNewVillaForm(prev => ({...prev, baseUSD: +e.target.value}))}
+          placeholder="Базовая цена"
+          className="input"
+        />
+      </div>
+      <div className="modal-actions">
+        <button onClick={saveVilla} className="btn primary">{t.save}</button>
+        <button onClick={() => setShowAddVillaModal(false)} className="btn">{t.cancel}</button>
+      </div>
+    </div>
+  </div>
+)}
     </>
   );
 }
