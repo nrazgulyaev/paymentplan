@@ -1,4 +1,4 @@
-/* ===== ОСНОВНЫЕ СТИЛИ ===== */
+/* ===== ПОЛНЫЕ СТИЛИ ОРИГИНАЛЬНОГО ДИЗАЙНА ===== */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
@@ -1055,6 +1055,96 @@ h1 {
   color: var(--accent);
 }
 
+/* ===== СТИЛИ ДЛЯ ЭТАПОВ ===== */
+
+.stages-scroll {
+  min-height: 120px;
+  border: 1px dashed #223;
+  border-radius: 8px;
+  padding: 6px;
+  margin-bottom: var(--spacing-lg);
+}
+
+.stage-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-size: 13px;
+  transition: all var(--transition-fast);
+}
+
+.stage-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--card-hover);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.stage-number-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-size: 13px;
+  text-align: center;
+  max-width: 80px;
+}
+
+.stage-number-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--card-hover);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.stage-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+  justify-content: center;
+}
+
+.delete-stage-btn {
+  padding: 6px 10px;
+  background: var(--danger);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.delete-stage-btn:hover {
+  background: var(--danger-hover);
+  transform: translateY(-1px);
+}
+
+/* ===== СТИЛИ ДЛЯ ТАБЛИЦ ===== */
+
+.calculation-header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.project-name-display,
+.villa-name-display,
+.area-display,
+.ppsm-display {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.base-strong,
+.line-total {
+  font-weight: 600;
+  color: var(--primary);
+}
+
 /* ===== АДАПТИВНОСТЬ ===== */
 
 @media (max-width: 767px) {
@@ -1117,7 +1207,6 @@ h1 {
 
 /* ===== PWA СТИЛИ ===== */
 
-/* Стили для установленного приложения */
 @media (display-mode: standalone) {
   .wrap {
     margin: 0;
@@ -1189,7 +1278,6 @@ h1 {
   animation: bounce 1.4s ease-in-out infinite both;
 }
 
-.loader-dots span:nth-child(1) { animation-delay: -0.32s; }
 .loader-dots span:nth-child(2) { animation-delay: -0.16s; }
 
 @keyframes bounce {
@@ -1200,3 +1288,524 @@ h1 {
     transform: scale(1);
   }
 }
+
+/* ===== ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ДЛЯ КАТАЛОГА ===== */
+
+.catalog-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.catalog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.catalog-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.catalog-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.catalog-table th,
+.catalog-table td {
+  padding: var(--spacing-sm);
+  text-align: center;
+  border-bottom: 1px solid var(--line);
+}
+
+.catalog-table th {
+  background: var(--card-hover);
+  font-weight: 600;
+}
+
+.catalog-table input {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.catalog-selection-project {
+  margin-bottom: var(--spacing-lg);
+}
+
+.catalog-selection-project h4 {
+  margin: 0 0 var(--spacing-md);
+  color: var(--ink);
+}
+
+.villas-selection {
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+.villa-selection-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.villa-info {
+  flex: 1;
+}
+
+.villa-name {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.villa-details {
+  display: flex;
+  gap: var(--spacing-md);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.search-filters {
+  margin-bottom: var(--spacing-lg);
+}
+
+.search-input {
+  width: 100%;
+  padding: var(--spacing-sm);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  margin-bottom: var(--spacing-md);
+}
+
+.filter-row {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.filter-group {
+  flex: 1;
+}
+
+.filter-group label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.filter-group input,
+.filter-group select {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-size: 12px;
+}
+
+/* ===== КОМПАКТНЫЕ КНОПКИ ===== */
+
+.add-selected-btn {
+  padding: 6px 12px;
+  font-size: 11px;
+  min-width: auto;
+  height: 28px;
+  line-height: 1;
+}
+
+.export-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+/* ===== ИНФОРМАЦИОННЫЕ БЛОКИ ===== */
+
+.info-display {
+  padding: 10px 12px;
+  background: var(--card-hover);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-size: 13px;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* ===== ДОПОЛНИТЕЛЬНЫЕ АНИМАЦИИ ===== */
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes rotateIn {
+  from {
+    opacity: 0;
+    transform: rotate(-200deg);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(0);
+  }
+}
+
+/* ===== АНИМИРОВАННЫЕ ЭЛЕМЕНТЫ ===== */
+
+.animate-slide-up {
+  animation: slideInUp 0.6s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.4s ease-out;
+}
+
+.animate-rotate-in {
+  animation: rotateIn 0.8s ease-out;
+}
+
+/* ===== HOVER ЭФФЕКТЫ ===== */
+
+.hover-lift {
+  transition: transform var(--transition-normal);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+}
+
+.hover-glow {
+  transition: box-shadow var(--transition-normal);
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+}
+
+.hover-border {
+  transition: border-color var(--transition-normal);
+}
+
+.hover-border:hover {
+  border-color: var(--accent);
+}
+
+/* ===== ГРАДИЕНТНЫЕ ТЕКСТЫ ===== */
+
+.gradient-text-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-accent {
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-success {
+  background: linear-gradient(135deg, var(--success), var(--success-hover));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ===== СПЕЦИАЛЬНЫЕ ЭЛЕМЕНТЫ ===== */
+
+.floating-element {
+  animation: float 6s ease-in-out infinite;
+}
+
+.pulsing-element {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.shimmer-element {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background-size: 200px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* ===== СКРОЛЛБАРЫ ===== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--card);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 4px;
+  transition: background var(--transition-fast);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--line-hover);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--card);
+}
+
+/* ===== ВЫБОР ТЕКСТА ===== */
+
+::selection {
+  background: var(--primary);
+  color: white;
+}
+
+::-moz-selection {
+  background: var(--primary);
+  color: white;
+}
+
+/* ===== ФОКУС ДЛЯ ДОСТУПНОСТИ ===== */
+
+.btn:focus,
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ===== СОСТОЯНИЯ ЗАГРУЗКИ ===== */
+
+.loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+/* ===== ТОЛТИПЫ ===== */
+
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 200px;
+  background-color: var(--card);
+  color: var(--ink);
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px;
+  position: absolute;
+  z-index: var(--z-tooltip);
+  bottom: 125%;
+  left: 50%;
+  margin-left: -100px;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(20px);
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* ===== СКЕЛЕТОН ЗАГРУЗКИ ===== */
+
+.skeleton {
+  background: linear-gradient(90deg, var(--card) 25%, var(--card-hover) 50%, var(--card) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-text {
+  height: 1em;
+  margin: 0.5em 0;
+  border-radius: 4px;
+}
+
+.skeleton-button {
+  height: 40px;
+  width: 120px;
+  border-radius: var(--radius-sm);
+}
+
+/* ===== АДАПТИВНЫЕ СЕТКИ ===== */
+
+.grid-auto-fit {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.grid-auto-fill {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.grid-masonry {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-auto-rows: 0;
+  gap: var(--spacing-md);
+}
+
+/* ===== МЕДИА ЗАПРОСЫ ДЛЯ ПЛАНШЕТОВ ===== */
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .card {
+    padding: 20px;
+  }
+  
+  .kpis {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .stages-table .col-stage {
+    min-width: 140px;
+  }
+}
+
+/* ===== МЕДИА ЗАПРОСЫ ДЛЯ БОЛЬШИХ ЭКРАНОВ ===== */
+
+@media (min-width: 1400px) {
+  .wrap {
+    max-width: 1600px;
+  }
+  
+  .grid {
+    gap: 32px;
+  }
+  
+  .card {
+    padding: 32px;
+  }
+  
+  .kpis {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+/* ===== ПЕЧАТНЫЕ СТИЛИ ===== */
+
+@media print {
+  .card {
+    background: white !important;
+    color: black !important;
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+  }
+  
+  .btn,
+  .modal-overlay,
+  .scenarios-panel {
+    display: none !important;
+  }
+  
+  .grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ===== ВЫСОКИЙ КОНТРАСТ ===== */
+
+@media (prefers-contrast: high) {
+  :root {
+    --line: rgba(255,255,255,0.3);
+    --line-hover: rgba(255,255,255,0.5);
+    --card: rgba(255,255,255,0.1);
+    --card-hover: rgba(255,255,255,0.2);
+  }
+}
+
+/* ===== УМЕНЬШЕННОЕ ДВИЖЕНИЕ ===== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .animated-card,
+  .hover-lift:hover {
+    transform: none !important;
+  }
+}
+
+/* ===== ТЕМНАЯ ТЕМА (ПО УМОЛЧАНИЮ) ===== */
+
+/* Все стили уже настроены для темной темы */
+
+/* ===== ЛОКАЛИЗАЦИЯ ===== */
+
+[lang="en"] .field label::before {
+  content: '•';
+}
+
+[lang="ru"] .field label::before {
+  content: '•';
+}
+
+/* ===== КОНЕЦ СТИЛЕЙ ===== */
