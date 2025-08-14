@@ -752,6 +752,7 @@ function App() {
           setCatalog={setCatalog} 
           t={t} 
           lang={lang} 
+          fmtMoney={fmtMoney} 
         />
       </div>
     )}
@@ -760,7 +761,7 @@ function App() {
 }
 
 // ===== КОМПОНЕНТ КАТАЛОГА =====
-function CatalogManager({ catalog, setCatalog, t, lang }) {
+function CatalogManager({ catalog, setCatalog, t, lang, fmtMoney }) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [form, setForm] = useState({
     villaId: '',
