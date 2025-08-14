@@ -38,6 +38,7 @@
   <!-- Наши файлы -->
   <script src="utils.js"></script>
   <script src="components.js"></script>
+  <script src="app.js"></script>
 
   <!-- Диагностика загрузки -->
   <script>
@@ -65,9 +66,8 @@
     })();
   </script>
 
-  <!-- Основное приложение -->
-  <script type="text/babel" data-presets="env,react">
-    // Регистрируем service worker для PWA
+  <!-- Регистрация Service Worker -->
+  <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/service-worker.js')
@@ -75,9 +75,6 @@
           .catch(error => console.log('SW registration failed'));
       });
     }
-
-    // Рендерим приложение
-    ReactDOM.render(<App/>, document.getElementById('root'));
   </script>
 </body>
 </html>
