@@ -425,7 +425,7 @@
       }
     }
 
-          /* Современные таблицы */
+        /* Современные таблицы */
     .calc-scroll{
       overflow:auto;
       max-height:35vh;
@@ -653,12 +653,26 @@
       border-bottom: none;
     }
     
+    .cashflow-table tbody tr {
+      transition: all var(--transition-fast);
+      cursor: pointer;
+    }
+    
     .cashflow-table tbody tr:hover {
       background: var(--card-hover);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary);
     }
     
     .cashflow-table tbody tr:hover td {
       border-color: var(--line-hover);
+      color: var(--ink);
+    }
+    
+    .cashflow-table tbody tr:hover td:first-child {
+      border-left: 3px solid var(--primary);
+      background: linear-gradient(90deg, var(--primary), transparent);
     }
     
     /* Современные модальные окна */
@@ -969,6 +983,13 @@
       margin-bottom: var(--spacing-lg);
     }
     
+    .cashflow-scroll {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--card);
+      overflow: visible;
+    }
+    
     .catalog-card {
       background: var(--card);
       border: 1px solid var(--line);
@@ -1102,7 +1123,7 @@
       font-size: 12px;
     }
 
-        </style>
+      </style>
 </head>
 <body>
   <div class="wrap">
@@ -1190,23 +1211,23 @@
         globalRate:'Глобальная ставка, %/мес',
         clientTerm:'Срок post‑handover (мес)',
         startMonth:'Начальный месяц',
-        stagesTitle:'Этапы ДО ключей',
+        stagesTitle:'Базовая рассрочка',
         stage:'Этап', percent:'%', month:'Месяц',
         addStage:'Добавить этап', delete:'Удалить',
         villasTitle:'Расчёт (позиции)',
         project:'Проект', villa:'Вилла', qty:'Кол-во',
-        area:'м²', ppsm:'$ / м²', price:'База (USD)',
+        area:'м²', ppsm:'$ / м²', price:'Базовая стоимость (USD)',
         discount:'Скидка, %', prePct:'До ключей, %',
-        months:'Срок, мес', rate:'Ставка, %/мес',
-        firstPost:'Первый платёж', lineTotal:'Итог по строке',
+        months:'Срок рассрочки, мес', rate:'Ставка, %/мес',
+        firstPost:'Первый платёж', lineTotal:'Итоговая стоимость',
         addFromCatalog:'Добавить из каталога',
         cashflowTitle:'Сводный кэшфлоу по месяцам',
         cashMonth:'Месяц', cashDesc:'Описание',
         cashTotal:'Сумма к оплате', cashBalance:'Остаток долга',
-        totals:'Итоги', base:'База', prepay:'Оплата до ключей',
+        totals:'Итоги', base:'Базовая стоимость', prepay:'Оплата до ключей',
         after:'Остаток после ключей', interestTotal:'Проценты (post)',
         final:'Итоговая цена',
-        lines:'Позиций', keys:'Ключи: мес.',
+        lines:'Выбрано вилл', keys:'Ключи через',
         chartTitle:'Платежи по месяцам',
         sumStages:'Сумма этапов', targetPrepay:'Целевой % до ключей',
         mismatch:'— отличается от целевого', mixedTargets:'разные цели у строк',
@@ -1221,7 +1242,7 @@
         priceFrom:'Цена от', priceTo:'Цена до',
         sort:'Сортировать', byPrice:'по цене', byArea:'по площади', byName:'по названию',
         addSelected:'Добавить выбранные', cancel:'Отмена',
-        qtyShort:'Кол-во', baseUSD:'База (USD)',
+        qtyShort:'Кол-во', baseUSD:'Базовая стоимость (USD)',
         projectId:'ID проекта', projectName:'Название проекта',
         villaId:'ID виллы', villaName:'Название виллы',
         villaArea:'Площадь (м²)', villaPpsm:'Цена за м² ($)',
@@ -1240,23 +1261,23 @@
         globalRate:'Global rate, %/month',
         clientTerm:'Post‑handover term (months)',
         startMonth:'Start month',
-        stagesTitle:'Pre‑handover stages',
+        stagesTitle:'Basic installments',
         stage:'Stage', percent:'%', month:'Month',
         addStage:'Add stage', delete:'Delete',
         villasTitle:'Calculation (lines)',
         project:'Project', villa:'Villa', qty:'Qty',
-        area:'sqm', ppsm:'$ / sqm', price:'Base (USD)',
+        area:'sqm', ppsm:'$ / sqm', price:'Base Price (USD)',
         discount:'Discount, %', prePct:'Pre‑handover, %',
-        months:'Term, mo', rate:'Rate, %/mo',
-        firstPost:'First payment', lineTotal:'Line total',
+        months:'Installment term, mo', rate:'Rate, %/mo',
+        firstPost:'First payment', lineTotal:'Final price',
         addFromCatalog:'Add from catalog',
         cashflowTitle:'Monthly consolidated cashflow',
         cashMonth:'Month', cashDesc:'Description',
         cashTotal:'Amount due', cashBalance:'Remaining balance',
-        totals:'Totals', base:'Base', prepay:'Paid before keys',
+        totals:'Totals', base:'Base price', prepay:'Paid before keys',
         after:'Balance after keys', interestTotal:'Interest (post)',
         final:'Final price',
-        lines:'Lines', keys:'Keys: mo.',
+        lines:'Selected villas', keys:'Keys in',
         chartTitle:'Payments by month',
         sumStages:'Stages sum', targetPrepay:'Target pre‑handover %',
         mismatch:'— differs from target', mixedTargets:'different line targets',
@@ -1271,7 +1292,7 @@
         priceFrom:'Price from', priceTo:'Price to',
         sort:'Sort', byPrice:'by price', byArea:'by area', byName:'by name',
         addSelected:'Add selected', cancel:'Cancel',
-        qtyShort:'Qty', baseUSD:'Base (USD)',
+        qtyShort:'Qty', baseUSD:'Base Price (USD)',
         projectId:'Project ID', projectName:'Project Name',
         villaId:'Villa ID', villaName:'Villa Name',
         villaArea:'Area (sqm)', villaPpsm:'Price per sqm ($)',
@@ -1410,7 +1431,7 @@
 
       const findProject=pid=>catalog.find(p=>p.projectId===pid);
 
-            // Функции для работы с проектами
+          // Функции для работы с проектами
       const addProject = () => {
         setNewProjectForm({
           projectId: '',
@@ -1928,11 +1949,11 @@
               {isClient && <div className="row"><button className="btn" onClick={()=>share('client')}>Поделиться</button></div>}
             </div>
 
-                          <div className="card">
+                        <div className="card">
               <div className="row" style={{justifyContent:'space-between',alignItems:'baseline'}}>
                 <div className="row">
                   <span className="badge">{t.lines}: {lines.length}</span>
-                  <span className="badge">{t.keys} {handoverMonth}</span>
+                  <span className="badge">{t.keys} {handoverMonth} мес.</span>
                   {!isClient && <span className="badge">{t.months}: {months}</span>}
                 </div>
                 <div className="muted">{isClient ? t.client : t.editor}</div>
@@ -2104,8 +2125,8 @@
                 </div>
               </div>
 
-              {/* ИСПРАВЛЕНИЕ: Реальные даты в кэшфлоу */}
-              <div className="scroll">
+              {/* ИСПРАВЛЕНИЕ: Реальные даты в кэшфлоу и убрали ограничение высоты */}
+              <div className="cashflow-scroll">
                 <table className="cashflow-table">
                   <thead>
                     <tr>
@@ -2406,4 +2427,3 @@
   </script>
 </body>
 </html>
-
