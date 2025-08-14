@@ -1,10 +1,14 @@
-// ===== ОСНОВНОЕ ПРИЛОЖЕНИЕ ARCONIQUE =====
+// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE =====
 
 const { useState, useEffect, useMemo } = React;
+
+// PIN для редакторского режима
+const PIN_CODE = '334346';
 
 // Основной компонент приложения
 function App() {
   const [lang, setLang] = useState('ru');
+  const [isClient, setIsClient] = useState(true); // По умолчанию клиентский режим
   const [currency, setCurrency] = useState('USD');
   const [idrPerUsd, setIdrPerUsd] = useState(16500);
   const [eurPerUsd, setEurPerUsd] = useState(0.92);
@@ -31,9 +35,13 @@ function App() {
     title: 'Arconique / Калькулятор рассрочки для любимых клиентов',
     lang: 'Язык интерфейса',
     currencyDisplay: 'Валюта отображения',
+    idrRate: 'IDR за 1 USD',
+    eurRate: 'EUR за 1 USD',
     handoverMonth: 'Месяц получения ключей',
     globalTerm: 'Глобальный срок post‑handover (6–24 мес)',
     globalRate: 'Глобальная ставка, %/мес',
+    clientTerm: 'Срок post‑handover (мес)',
+    startMonth: 'Начальный месяц',
     stagesTitle: 'Базовая рассрочка',
     stage: 'Этап',
     percent: '%',
@@ -57,13 +65,27 @@ function App() {
     cashflowTitle: 'Сводный кэшфлоу по месяцам',
     exportCSV: 'Экспорт CSV',
     exportXLSX: 'Экспорт Excel',
-    exportPDF: 'Сохранить в PDF'
+    exportPDF: 'Сохранить в PDF',
+    lines: 'Выбрано вилл',
+    keys: 'Ключи через',
+    client: 'Клиент',
+    editor: 'Редактор'
   };
 
   // Утилиты
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
   const fmtMoney = (n, c = 'USD') => new Intl.NumberFormat('en-US', {style: 'currency', currency: c, maximumFractionDigits: 2}).format(n || 0);
   const stagesSumPct = stages.reduce((s, x) => s + (+x.pct || 0), 0);
+
+  // Форматирование месяца для кэшфлоу
+  const formatMonth = (monthOffset) => {
+    const date = new Date(startMonth);
+    date.setMonth(date.getMonth() + monthOffset);
+    return date.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { 
+      month: 'long', 
+      year: 'numeric' 
+    });
+  };
 
   // Расчет данных по строкам
   const linesData = useMemo(() => lines.map(line => {
@@ -174,7 +196,7 @@ function App() {
     const rows = [
       ['Месяц', 'Описание', 'Сумма к оплате', 'Остаток долга'],
       ...project.cashflow.map(c => [
-        `Месяц ${c.month}`,
+        formatMonth(c.month),
         (c.items || []).join(' + '),
         fmtMoney(c.amountUSD, currency),
         fmtMoney(c.balanceUSD, currency)
@@ -196,7 +218,7 @@ function App() {
     }
     
     const ws1 = XLSX.utils.json_to_sheet(project.cashflow.map(c => ({
-      'Месяц': `Месяц ${c.month}`,
+      'Месяц': formatMonth(c.month),
       'Описание': (c.items || []).join(' + '),
       'Сумма к оплате': c.amountUSD,
       'Остаток долга': c.balanceUSD
@@ -272,7 +294,7 @@ function App() {
           <tbody>
             ${project.cashflow.map(c => `
               <tr>
-                <td>Месяц ${c.month}</td>
+                <td>${formatMonth(c.month)}</td>
                 <td>${(c.items || []).join(' + ')}</td>
                 <td class="amount">${fmtMoney(c.amountUSD, 'USD')}</td>
                 <td class="amount">${fmtMoney(c.balanceUSD, 'USD')}</td>
@@ -296,14 +318,20 @@ function App() {
       });
   };
 
-  // Форматирование месяца для кэшфлоу
-  const formatMonth = (monthOffset) => {
-    const date = new Date(startMonth);
-    date.setMonth(date.getMonth() + monthOffset);
-    return date.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { 
-      month: 'long', 
-      year: 'numeric' 
-    });
+  // Функция переключения режима
+  const toggleMode = () => {
+    if (isClient) {
+      const pin = prompt('Введите PIN для входа в редакторский режим:');
+      if (pin === PIN_CODE) {
+        setIsClient(false);
+        alert('Режим редактора активирован');
+      } else if (pin !== null) {
+        alert('Неверный PIN');
+      }
+    } else {
+      setIsClient(true);
+      alert('Переключено в клиентский режим');
+    }
   };
 
   return (
@@ -329,6 +357,45 @@ function App() {
           </div>
         </div>
 
+        {/* Курсы валют (только для редактора) */}
+        {!isClient && (
+          <div className="row">
+            <div className="field compact">
+              <label>{t.idrRate}</label>
+              <input 
+                type="number" 
+                min="1" 
+                step="1" 
+                value={idrPerUsd} 
+                onChange={e => setIdrPerUsd(clamp(parseFloat(e.target.value || 0), 1, 1e9))}
+              />
+            </div>
+            <div className="field compact">
+              <label>{t.eurRate}</label>
+              <input 
+                type="number" 
+                min="0.01" 
+                step="0.01" 
+                value={eurPerUsd} 
+                onChange={e => setEurPerUsd(clamp(parseFloat(e.target.value || 0), 0.01, 100))}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Начальный месяц */}
+        <div className="row">
+          <div className="field compact">
+            <label>{t.startMonth}</label>
+            <div className="info-display">
+              {startMonth.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { 
+                month: 'long', 
+                year: 'numeric' 
+              })}
+            </div>
+          </div>
+        </div>
+
         <div className="row">
           <div className="field compact">
             <label>{t.handoverMonth}</label>
@@ -340,28 +407,43 @@ function App() {
               onChange={e => setHandoverMonth(clamp(parseInt(e.target.value || 0, 10), 1, 120))}
             />
           </div>
-          <div className="field compact">
-            <label>{t.globalRate}</label>
-            <input 
-              type="number" 
-              min="0" 
-              step="0.01" 
-              value={monthlyRatePct} 
-              onChange={e => setMonthlyRatePct(clamp(parseFloat(e.target.value || 0), 0, 1000))}
-            />
-          </div>
-          <div className="field compact">
-            <label>{t.globalTerm}</label>
-            <input 
-              type="range" 
-              min="6" 
-              max="24" 
-              step="1" 
-              value={months} 
-              onChange={e => setMonths(parseInt(e.target.value, 10))}
-            />
-            <div className="pill">{t.months}: {months}</div>
-          </div>
+          {!isClient ? (
+            <>
+              <div className="field compact">
+                <label>{t.globalRate}</label>
+                <input 
+                  type="number" 
+                  min="0" 
+                  step="0.01" 
+                  value={monthlyRatePct} 
+                  onChange={e => setMonthlyRatePct(clamp(parseFloat(e.target.value || 0), 0, 1000))}
+                />
+              </div>
+              <div className="field compact">
+                <label>{t.globalTerm}</label>
+                <input 
+                  type="range" 
+                  min="6" 
+                  max="24" 
+                  step="1" 
+                  value={months} 
+                  onChange={e => setMonths(parseInt(e.target.value, 10))}
+                />
+                <div className="pill">{t.months}: {months}</div>
+              </div>
+            </>
+          ) : (
+            <div className="field compact">
+              <label>{t.clientTerm}</label>
+              <input 
+                type="number" 
+                min="6" 
+                step="1" 
+                value={months} 
+                onChange={e => setMonths(clamp(parseInt(e.target.value || 0, 10), 6, 120))}
+              />
+            </div>
+          )}
         </div>
 
         <div className="hr"></div>
@@ -434,17 +516,26 @@ function App() {
             Сумма этапов: {Math.round(stagesSumPct * 100) / 100}%
           </div>
         </div>
+
+        <div className="hr"></div>
+
+        {/* Кнопка переключения режима */}
+        <div className="row">
+          <button className="btn" onClick={toggleMode}>
+            {isClient ? 'Переключиться в редактор' : 'Переключиться в клиент'}
+          </button>
+        </div>
       </div>
 
       {/* Правая панель - расчеты */}
       <div className="card">
         <div className="row" style={{justifyContent: 'space-between', alignItems: 'baseline'}}>
           <div className="row">
-            <span className="badge">Выбрано вилл: {lines.length}</span>
-            <span className="badge">Ключи через {handoverMonth} мес.</span>
+            <span className="badge">{t.lines}: {lines.length}</span>
+            <span className="badge">{t.keys} {handoverMonth} мес.</span>
             <span className="badge">Срок: {months} мес.</span>
           </div>
-          <div className="muted">Редактор</div>
+          <div className="muted">{isClient ? t.client : t.editor}</div>
         </div>
 
         {/* KPI блок */}
@@ -475,6 +566,9 @@ function App() {
 
         <div className="calculation-header">
           <h3 style={{margin: '6px 0'}}>{t.villasTitle}</h3>
+          <button className="btn success" onClick={() => alert('Функция добавления из каталога будет добавлена позже')}>
+            {t.addFromCatalog}
+          </button>
         </div>
 
         <div className="calc-scroll">
@@ -594,7 +688,9 @@ function App() {
                   <td className="col-actions">
                     <div className="row" style={{gap: 4}}>
                       <button className="btn icon" onClick={() => dupLine(ld.line.id)}>📋</button>
-                      <button className="btn danger icon" onClick={() => delLine(ld.line.id)}>🗑️</button>
+                      {!isClient && (
+                        <button className="btn danger icon" onClick={() => delLine(ld.line.id)}>🗑️</button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -628,7 +724,7 @@ function App() {
             <tbody>
               {project.cashflow.map(c => (
                 <tr key={c.month}>
-                  <td>Месяц {c.month}</td>
+                  <td>{formatMonth(c.month)}</td>
                   <td style={{textAlign: 'left'}}>{(c.items || []).join(' + ')}</td>
                   <td>{fmtMoney(c.amountUSD, currency)}</td>
                   <td>{fmtMoney(c.balanceUSD, currency)}</td>
