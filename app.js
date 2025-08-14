@@ -29,6 +29,10 @@ function App() {
     {id:1,projectId:'demo',villaId:'demo-villa',qty:1,prePct:70,ownTerms:false,months:null,monthlyRatePct:null,firstPostUSD:0,discountPct:0,
      snapshot:{name:'Демо вилла',area:100,ppsm:2500,baseUSD:250000}}
   ]);
+   // ДОБАВЬТЕ ЭТУ СТРОКУ:
+  const [catalog, setCatalog] = useState([
+    {id:1,villaId:'V001',name:'Демо вилла',project:'Демо проект',price:250000,currency:'USD',area:100,ppsm:2500}
+  ]);
 
   // Переводы
   const t = {
@@ -734,9 +738,203 @@ function App() {
           </table>
         </div>
       </div>
+                   {/* РЕДАКТОРСКИЙ РЕЖИМ - ВСТАВЬТЕ ЗДЕСЬ */}
+      {!isClient && (
+        <div className="editor-mode">
+          <h2>Редакторский режим</h2>
+          
+          {/* Каталог проектов и вилл */}
+          <CatalogManager 
+            catalog={catalog} 
+            setCatalog={setCatalog} 
+            t={t} 
+            lang={lang} 
+          />
+        </div>
+      )}
     </div>
   );
 }
+
+// ===== КОМПОНЕНТ КАТАЛОГА =====
+function CatalogManager({ catalog, setCatalog, t, lang }) {
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [form, setForm] = useState({
+    villaId: '',
+    name: '',
+    project: '',
+    price: '',
+    currency: 'USD',
+    area: '',
+    ppsm: ''
+  });
+
+  const addVilla = () => {
+    if (!form.villaId || !form.name) {
+      alert('Заполните ID и название виллы');
+      return;
+    }
+    
+    const newVilla = {
+      id: Date.now(),
+      villaId: form.villaId,
+      name: form.name,
+      project: form.project,
+      price: parseFloat(form.price) || 0,
+      currency: form.currency,
+      area: parseFloat(form.area) || 0,
+      ppsm: parseFloat(form.ppsm) || 0
+    };
+    
+    setCatalog(prev => [...prev, newVilla]);
+    setForm({ villaId: '', name: '', project: '', price: '', currency: 'USD', area: '', ppsm: '' });
+    setShowAddModal(false);
+  };
+
+  const deleteVilla = (id) => {
+    if (confirm('Удалить виллу?')) {
+      setCatalog(prev => prev.filter(v => v.id !== id));
+    }
+  };
+
+  return (
+    <div className="catalog-section">
+      <div className="catalog-header">
+        <h3>Каталог проектов и вилл</h3>
+        <button 
+          className="btn primary" 
+          onClick={() => setShowAddModal(true)}
+        >
+          Добавить виллу
+        </button>
+      </div>
+
+      <div className="catalog-table-wrapper">
+        <table className="catalog-table">
+          <thead>
+            <tr>
+              <th>ID виллы</th>
+              <th>Название</th>
+              <th>Проект</th>
+              <th>Площадь (м²)</th>
+              <th>Цена за м²</th>
+              <th>Базовая стоимость</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            {catalog.map(villa => (
+              <tr key={villa.id}>
+                <td>{villa.villaId}</td>
+                <td>{villa.name}</td>
+                <td>{villa.project}</td>
+                <td>{villa.area}</td>
+                <td>${villa.ppsm}</td>
+                <td>{fmtMoney(villa.price, villa.currency)}</td>
+                <td>
+                  <button 
+                    className="btn danger small" 
+                    onClick={() => deleteVilla(villa.id)}
+                  >
+                    ✕
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Модальное окно добавления */}
+      {showAddModal && (
+        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Добавить виллу</h3>
+              <button className="btn icon" onClick={() => setShowAddModal(false)}>✕</button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="form-group">
+                <label>ID виллы</label>
+                <input 
+                  type="text" 
+                  value={form.villaId} 
+                  onChange={e => setForm(prev => ({...prev, villaId: e.target.value}))}
+                  placeholder="V001"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Название</label>
+                <input 
+                  type="text" 
+                  value={form.name} 
+                  onChange={e => setForm(prev => ({...prev, name: e.target.value}))}
+                  placeholder="Вилла на берегу моря"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Проект</label>
+                <input 
+                  type="text" 
+                  value={form.project} 
+                  onChange={e => setForm(prev => ({...prev, project: e.target.value}))}
+                  placeholder="Проект Paradise"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Площадь (м²)</label>
+                <input 
+                  type="number" 
+                  value={form.area} 
+                  onChange={e => setForm(prev => ({...prev, area: e.target.value}))}
+                  placeholder="100"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Цена за м² (USD)</label>
+                <input 
+                  type="number" 
+                  value={form.ppsm} 
+                  onChange={e => setForm(prev => ({...prev, ppsm: e.target.value}))}
+                  placeholder="2500"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Валюта</label>
+                <select 
+                  value={form.currency} 
+                  onChange={e => setForm(prev => ({...prev, currency: e.target.value}))}
+                >
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="IDR">IDR</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button className="btn" onClick={() => setShowAddModal(false)}>
+                Отмена
+              </button>
+              <button className="btn primary" onClick={addVilla}>
+                Сохранить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Рендерим приложение
+ReactDOM.render(React.createElement(App), document.getElementById('root'));
 
 // Рендерим приложение
 ReactDOM.render(React.createElement(App), document.getElementById('root'));
