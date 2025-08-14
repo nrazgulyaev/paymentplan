@@ -703,28 +703,32 @@ function App() {
           </div>
 
           {/* KPI блок */}
-          <div className="kpis">
-            <div className="kpi">
-              <div className="muted">Базовая стоимость</div>
-              <div className="v">{fmtMoney(project.totals.baseUSD, currency)}</div>
-            </div>
-            <div className="kpi">
-              <div className="muted">Оплата до ключей</div>
-              <div className="v">{fmtMoney(project.totals.preUSD, currency)}</div>
-            </div>
-            <div className="kpi">
-              <div className="muted">Остаток после ключей</div>
-              <div className="v">{fmtMoney(project.totals.afterUSD, currency)}</div>
-            </div>
-            <div className="kpi">
-              <div className="muted">Проценты</div>
-              <div className="v">{fmtMoney(project.totals.interestUSD, currency)}</div>
-            </div>
-            <div className="kpi">
-              <div className="muted">Итоговая цена</div>
-              <div className="v">{fmtMoney(project.totals.finalUSD, currency)}</div>
-            </div>
-          </div>
+<div className="kpis">
+  {!isClient && (
+    <div className="kpi">
+      <div className="muted">Базовая стоимость</div>
+      <div className="v">{fmtMoney(project.totals.baseUSD, currency)}</div>
+    </div>
+  )}
+  <div className="kpi">
+    <div className="muted">Оплата до ключей</div>
+    <div className="v">{fmtMoney(project.totals.preUSD, currency)}</div>
+  </div>
+  <div className="kpi">
+    <div className="muted">Остаток после ключей</div>
+    <div className="v">{fmtMoney(project.totals.afterUSD, currency)}</div>
+  </div>
+  {!isClient && (
+    <div className="kpi">
+      <div className="muted">Проценты</div>
+      <div className="v">{fmtMoney(project.totals.interestUSD, currency)}</div>
+    </div>
+  )}
+  <div className="kpi">
+    <div className="muted">Итоговая цена</div>
+    <div className="v">{fmtMoney(project.totals.finalUSD, currency)}</div>
+  </div>
+</div>
 
           <div className="hr"></div>
 
