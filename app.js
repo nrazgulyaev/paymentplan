@@ -339,7 +339,8 @@ function App() {
   };
 
   return (
-    <div className="grid">
+    <>
+      <div className="grid">
       {/* Левая панель - настройки */}
       <div className="card">
         <div className="row">
@@ -736,7 +737,7 @@ function App() {
               ))}
             </tbody>
           </table>
-        </div>
+                </div>
       </div>
     </div>
     
