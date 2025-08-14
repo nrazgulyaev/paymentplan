@@ -935,6 +935,3 @@ function CatalogManager({ catalog, setCatalog, t, lang }) {
 
 // Рендерим приложение
 ReactDOM.render(React.createElement(App), document.getElementById('root'));
-
-// Рендерим приложение
-ReactDOM.render(React.createElement(App), document.getElementById('root'));
