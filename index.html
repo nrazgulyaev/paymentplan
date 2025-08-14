@@ -330,6 +330,11 @@
       justify-content:center;
     }
     
+    .btn.compact{
+      padding:8px 16px;
+      font-size:13px;
+    }
+    
     /* Современные поля ввода */
     .field{
       display:grid;
@@ -488,130 +493,6 @@
       border-left:3px solid var(--primary);
     }
     
-    /* Оптимизированная таблица этапов */
-    .stages-table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      border: 1px solid var(--line);
-      border-radius: var(--radius-sm);
-      overflow: hidden;
-    }
-    
-    .stages-table th,
-    .stages-table td {
-      padding: var(--spacing-sm);
-      text-align: center;
-      vertical-align: middle;
-      border-bottom: 1px solid var(--line);
-    }
-    
-    .stages-table th {
-      background: var(--card-hover);
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 2px solid var(--line);
-    }
-    
-    .stages-table .col-stage {
-      width: 40%;
-      min-width: 150px;
-      text-align: left;
-    }
-    
-    .stages-table .col-percent {
-      width: 15%;
-      min-width: 80px;
-      max-width: 100px;
-    }
-    
-    .stages-table .col-month {
-      width: 15%;
-      min-width: 80px;
-      max-width: 100px;
-    }
-    
-    .stages-table .col-actions {
-      width: 20%;
-      min-width: 100px;
-    }
-    
-    .stages-table tr:last-child td {
-      border-bottom: none;
-    }
-    
-    .stages-table tr:hover {
-      background: var(--card-hover);
-    }
-    
-    .stages-table tr:hover td {
-      border-color: var(--line-hover);
-    }
-    
-    /* Стилизованные поля для этапов */
-    .stage-input {
-      width: 100%;
-      padding: 8px 12px;
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--radius-sm);
-      color: var(--ink);
-      font-size: 13px;
-      transition: all var(--transition-fast);
-    }
-    
-    .stage-input:focus {
-      outline: none;
-      border-color: var(--primary);
-      background: var(--card-hover);
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-    
-    .stage-number-input {
-      width: 100%;
-      padding: 8px 12px;
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--radius-sm);
-      color: var(--ink);
-      font-size: 13px;
-      text-align: center;
-      max-width: 80px;
-    }
-    
-    .stage-number-input:focus {
-      outline: none;
-      border-color: var(--primary);
-      background: var(--card-hover);
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-    
-    /* Кнопки действий для этапов */
-    .stage-actions {
-      display: flex;
-      gap: var(--spacing-xs);
-      justify-content: center;
-    }
-    
-    .delete-stage-btn {
-      padding: 6px 10px;
-      background: var(--danger);
-      border: none;
-      border-radius: var(--radius-sm);
-      color: white;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all var(--transition-fast);
-      white-space: nowrap;
-    }
-    
-    .delete-stage-btn:hover {
-      background: var(--danger-hover);
-      transform: translateY(-1px);
-    }
-    
     /* Таблица кэшфлоу */
     .cashflow-table {
       width: 100%;
@@ -692,11 +573,10 @@
       animation:fadeInScale 0.3s ease-out;
     }
     
-    .modal-content{
+    .modal{
       background:var(--card);
       border:1px solid var(--line);
       border-radius:var(--radius-lg);
-      padding:0;
       max-width:90vw;
       max-height:90vh;
       overflow:hidden;
@@ -705,7 +585,7 @@
       position:relative;
     }
     
-    .modal-content::before{
+    .modal::before{
       content:'';
       position:absolute;
       top:0;
@@ -730,10 +610,19 @@
       color:var(--ink);
     }
     
-    .modal-body{
+    .modal-content{
       padding:24px;
       overflow-y:auto;
       max-height:60vh;
+    }
+    
+    .modal-actions{
+      display:flex;
+      gap:12px;
+      justify-content:flex-end;
+      padding-top:20px;
+      border-top:1px solid var(--line);
+      margin-top:24px;
     }
 
     /* Современные формы */
@@ -771,24 +660,15 @@
       gap:6px;
     }
     
-    .form-actions{
-      display:flex;
-      gap:12px;
-      justify-content:flex-end;
-      padding-top:20px;
-      border-top:1px solid var(--line);
-      margin-top:24px;
-    }
-    
     /* Современные KPI блоки */
-    .kpis{
+    .kpi-block{
       display:grid;
       grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
       gap:16px;
       margin:20px 0;
     }
     
-    .kpi{
+    .kpi-item{
       background:var(--card);
       border:1px solid var(--line);
       border-radius:var(--radius-sm);
@@ -799,7 +679,7 @@
       overflow:hidden;
     }
     
-    .kpi::before{
+    .kpi-item::before{
       content:'';
       position:absolute;
       top:0;
@@ -811,25 +691,25 @@
       transition:transform var(--transition-normal);
     }
     
-    .kpi:hover{
+    .kpi-item:hover{
       background:var(--card-hover);
       border-color:var(--line-hover);
       transform:translateY(-2px);
       box-shadow:var(--shadow-md);
     }
     
-    .kpi:hover::before{
+    .kpi-item:hover::before{
       transform:scaleX(1);
     }
     
-    .kpi .muted{
+    .kpi-label{
       font-size:12px;
       color:var(--muted);
       margin-bottom:8px;
       display:block;
     }
     
-    .kpi .v{
+    .kpi-value{
       font-size:1.5rem;
       font-weight:700;
       color:var(--ink);
@@ -837,62 +717,6 @@
       -webkit-background-clip:text;
       -webkit-text-fill-color:transparent;
       background-clip:text;
-    }
-    
-    /* Современные вкладки */
-    .tabs{
-      display:flex;
-      gap:4px;
-      margin-bottom:20px;
-      background:var(--card);
-      border-radius:var(--radius-sm);
-      padding:4px;
-      border:1px solid var(--line);
-    }
-    
-    .tab{
-      flex:1;
-      padding:12px 16px;
-      border-radius:var(--radius-sm);
-      border:none;
-      background:transparent;
-      color:var(--muted);
-      font-size:14px;
-      font-weight:500;
-      cursor:pointer;
-      transition:all var(--transition-fast);
-      position:relative;
-      overflow:hidden;
-    }
-    
-    .tab::before{
-      content:'';
-      position:absolute;
-      top:0;
-      left:0;
-      right:0;
-      bottom:0;
-      background:var(--primary);
-      border-radius:var(--radius-sm);
-      transform:scale(0);
-      transition:transform var(--transition-bounce);
-    }
-    
-    .tab span{
-      position:relative;
-      z-index:1;
-    }
-    
-    .tab:hover{
-      color:var(--ink);
-    }
-    
-    .tab.active{
-      color:white;
-    }
-    
-    .tab.active::before{
-      transform:scale(1);
     }
     
     /* Дополнительные элементы */
@@ -923,53 +747,6 @@
       margin:var(--spacing-lg) 0;
     }
     
-    .scroll{
-      overflow:auto;
-      max-height:50vh;
-    }
-    
-    /* Адаптивность */
-    @media (max-width: 767px) {
-      .form-row {
-        grid-template-columns: 1fr;
-      }
-      
-      .kpis {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      
-      .tabs {
-        flex-direction: column;
-      }
-      
-      .modal-content {
-        margin: 20px;
-        max-width: calc(100vw - 40px);
-      }
-      
-      .stages-table .col-stage {
-        min-width: 120px;
-      }
-      
-      .stages-table .col-percent,
-      .stages-table .col-month {
-        min-width: 60px;
-        max-width: 70px;
-      }
-    }
-    
-    @media (min-width: 1200px) {
-      .settings-row {
-        gap: var(--spacing-2xl);
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .field.compact {
-        min-width: 100px;
-      }
-    }
-
     /* Новые стили для исправлений */
     .calculation-header {
       margin-bottom: var(--spacing-lg);
@@ -990,7 +767,100 @@
       overflow: visible;
     }
     
-    .catalog-card {
+    .stages-section h4 {
+      margin: 0 0 var(--spacing-md);
+      color: var(--ink);
+    }
+    
+    .stage-item {
+      display: flex;
+      gap: var(--spacing-sm);
+      align-items: center;
+      margin-bottom: var(--spacing-sm);
+      padding: var(--spacing-sm);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+    }
+    
+    .stage-item input {
+      flex: 1;
+      padding: 8px 12px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      color: var(--ink);
+      font-size: 13px;
+    }
+    
+    .stage-item input[type="number"] {
+      max-width: 80px;
+      text-align: center;
+    }
+    
+    .stages-info {
+      display: flex;
+      gap: var(--spacing-sm);
+      align-items: center;
+      padding: var(--spacing-sm);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+    }
+    
+    .stages-info.success {
+      border-color: var(--success);
+      background: rgba(16, 185, 129, 0.1);
+    }
+    
+    .stages-info.warning {
+      border-color: var(--warning);
+      background: rgba(245, 158, 11, 0.1);
+    }
+    
+    .success-text {
+      color: var(--success);
+      font-weight: 500;
+    }
+    
+    .warning-text {
+      color: var(--warning);
+      font-weight: 500;
+    }
+    
+    .share-buttons {
+      margin-top: var(--spacing-lg);
+    }
+    
+    .calculation-section h3 {
+      margin: 0;
+      color: var(--ink);
+    }
+    
+    .cashflow-section h4 {
+      margin: 0 0 var(--spacing-md);
+      color: var(--ink);
+    }
+    
+    .catalog-section h4 {
+      margin: 0 0 var(--spacing-lg);
+      color: var(--ink);
+    }
+    
+    .projects-section h5 {
+      margin: 0 0 var(--spacing-md);
+      color: var(--ink);
+    }
+    
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .project-item {
       background: var(--card);
       border: 1px solid var(--line);
       border-radius: var(--radius-sm);
@@ -998,41 +868,38 @@
       margin-bottom: var(--spacing-md);
     }
     
-    .catalog-header {
+    .project-header {
       display: flex;
-      justify-content: space-between;
+      gap: var(--spacing-md);
       align-items: center;
       margin-bottom: var(--spacing-md);
     }
     
-    .catalog-actions {
-      display: flex;
-      gap: var(--spacing-sm);
+    .villas-section h6 {
+      margin: 0 0 var(--spacing-sm);
+      color: var(--ink);
     }
     
-    .catalog-table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
+    .villas-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .villa-item {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr auto;
+      gap: var(--spacing-sm);
+      align-items: center;
+      padding: var(--spacing-sm);
+      background: var(--card);
       border: 1px solid var(--line);
       border-radius: var(--radius-sm);
-      overflow: hidden;
+      margin-bottom: var(--spacing-sm);
     }
     
-    .catalog-table th,
-    .catalog-table td {
-      padding: var(--spacing-sm);
-      text-align: center;
-      border-bottom: 1px solid var(--line);
-    }
-    
-    .catalog-table th {
-      background: var(--card-hover);
-      font-weight: 600;
-    }
-    
-    .catalog-table input {
-      width: 100%;
+    .villa-item input {
       padding: 6px 8px;
       background: var(--card);
       border: 1px solid var(--line);
@@ -1041,21 +908,12 @@
       font-size: 12px;
     }
     
-    .catalog-selection-project {
-      margin-bottom: var(--spacing-lg);
-    }
-    
-    .catalog-selection-project h4 {
+    .catalog-project h4 {
       margin: 0 0 var(--spacing-md);
       color: var(--ink);
     }
     
-    .villas-selection {
-      display: grid;
-      gap: var(--spacing-sm);
-    }
-    
-    .villa-selection-item {
+    .catalog-villa {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -1063,6 +921,7 @@
       background: var(--card);
       border: 1px solid var(--line);
       border-radius: var(--radius-sm);
+      margin-bottom: var(--spacing-sm);
     }
     
     .villa-info {
@@ -1070,57 +929,14 @@
     }
     
     .villa-name {
+      display: block;
       font-weight: 600;
       margin-bottom: 4px;
     }
     
     .villa-details {
-      display: flex;
-      gap: var(--spacing-md);
       font-size: 12px;
       color: var(--muted);
-    }
-    
-    .search-filters {
-      margin-bottom: var(--spacing-lg);
-    }
-    
-    .search-input {
-      width: 100%;
-      padding: var(--spacing-sm);
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--radius-sm);
-      color: var(--ink);
-      margin-bottom: var(--spacing-md);
-    }
-    
-    .filter-row {
-      display: flex;
-      gap: var(--spacing-md);
-      margin-bottom: var(--spacing-sm);
-    }
-    
-    .filter-group {
-      flex: 1;
-    }
-    
-    .filter-group label {
-      display: block;
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 4px;
-    }
-    
-    .filter-group input,
-    .filter-group select {
-      width: 100%;
-      padding: 6px 8px;
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--radius-sm);
-      color: var(--ink);
-      font-size: 12px;
     }
     
     /* Очень компактная кнопка для добавления из каталога */
@@ -1171,13 +987,83 @@
       transform: translateY(-1px);
     }
     
-    /* Цвета для сообщений о соответствии этапов */
-    .hint.warn {
-      color: var(--danger);
+    /* Заголовок и навигация */
+    .header {
+      background: var(--card);
+      border-bottom: 1px solid var(--line);
+      margin-bottom: var(--spacing-lg);
     }
     
-    .hint.success {
-      color: var(--success);
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: var(--spacing-lg) var(--spacing-md);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin: 0;
+    }
+    
+    .header-controls {
+      display: flex;
+      gap: var(--spacing-sm);
+    }
+    
+    .main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 var(--spacing-md);
+    }
+    
+    .container {
+      width: 100%;
+    }
+    
+    /* Адаптивность */
+    @media (max-width: 767px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+      
+      .kpi-block {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .villa-item {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-xs);
+      }
+      
+      .project-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .modal-content {
+        margin: 20px;
+        max-width: calc(100vw - 40px);
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .field.compact {
+        min-width: 100px;
+      }
+      
+      .row {
+        flex-direction: column;
+      }
+      
+      .header-content {
+        flex-direction: column;
+        gap: var(--spacing-md);
+      }
     }
 
       </style>
@@ -1697,7 +1583,7 @@
                   </div>
                 </div>
 
-                {/* Правая колонка - Расчеты */}
+                                {/* Правая колонка - Расчеты */}
                 <div className="card">
                   <div className="row" style={{justifyContent:'space-between',alignItems:'baseline'}}>
                     <div className="row">
@@ -1815,10 +1701,10 @@
                                 />
                               </td>
                               <td>
+                                {/* Кнопка удаления - теперь доступна в обоих режимах */}
                                 <button 
                                   className="btn danger compact" 
                                   onClick={() => setLines(prev => prev.filter(l => l.id !== line.id))}
-                                  disabled={isClient}
                                 >
                                   {t.remove}
                                 </button>
@@ -1996,7 +1882,7 @@
             </div>
           </main>
 
-          {/* Модальное окно выбора из каталога */}
+                    {/* Модальное окно выбора из каталога */}
           {modalOpen && (
             <div className="modal-overlay" onClick={() => setModalOpen(false)}>
               <div className="modal" onClick={e => e.stopPropagation()}>
@@ -2170,833 +2056,3 @@
 </body>
 </html>
 
-      // Функции для работы с проектами
-      const addProject = () => {
-        setNewProjectForm({
-          projectId: '',
-          projectName: '',
-          villas: []
-        });
-        setShowAddProjectModal(true);
-      };
-
-      const saveProject = () => {
-        if (!newProjectForm.projectId || !newProjectForm.projectName) {
-          alert('Заполните ID и название проекта');
-          return;
-        }
-        
-        const projectExists = catalog.find(p => p.projectId === newProjectForm.projectId);
-        if (projectExists) {
-          alert('Проект с таким ID уже существует');
-          return;
-        }
-
-        const newProject = {
-          projectId: newProjectForm.projectId,
-          projectName: newProjectForm.projectName,
-          villas: []
-        };
-
-        setCatalog(prev => [...prev, newProject]);
-        setShowAddProjectModal(false);
-        setNewProjectForm({projectId: '', projectName: '', villas: []});
-      };
-
-      const addVilla = () => {
-        if (!selectedProject) {
-          alert('Сначала выберите проект');
-          return;
-        }
-        setNewVillaForm({
-          villaId: '',
-          name: '',
-          area: '',
-          ppsm: '',
-          baseUSD: ''
-        });
-        setShowAddVillaModal(true);
-      };
-
-      const saveVilla = () => {
-        if (!newVillaForm.villaId || !newVillaForm.name || !newVillaForm.area || !newVillaForm.ppsm || !newVillaForm.baseUSD) {
-          alert('Заполните все поля');
-          return;
-        }
-
-        const project = catalog.find(p => p.projectId === selectedProject);
-        if (!project) return;
-
-        const villaExists = project.villas.find(v => v.villaId === newVillaForm.villaId);
-        if (villaExists) {
-          alert('Вилла с таким ID уже существует в проекте');
-          return;
-        }
-
-        const newVilla = {
-          villaId: newVillaForm.villaId,
-          name: newVillaForm.name,
-          area: parseFloat(newVillaForm.area),
-          ppsm: parseFloat(newVillaForm.ppsm),
-          baseUSD: parseFloat(newVillaForm.baseUSD)
-        };
-
-        setCatalog(prev => prev.map(p => 
-          p.projectId === selectedProject 
-            ? {...p, villas: [...p.villas, newVilla]}
-            : p
-        ));
-
-        setShowAddVillaModal(false);
-        setNewVillaForm({villaId: '', name: '', area: '', ppsm: '', baseUSD: ''});
-      };
-
-      // Расчеты
-      const stagesSumPct = useMemo(() => stages.reduce((sum,s) => sum + s.pct, 0), [stages]);
-      const months = useMemo(() => handoverMonth + globalTerm, [handoverMonth, globalTerm]);
-
-      const project = useMemo(() => {
-        if(lines.length === 0) return {totals:{totalUSD:0,totalLocal:0}};
-        
-        const cashflow = [];
-        for(let month = 0; month <= months; month++) {
-          let monthTotal = 0;
-          lines.forEach(line => {
-            if(line.ownTerms) {
-              // Свои условия
-              if(month < line.months) {
-                monthTotal += (line.snapshot.baseUSD * (100 - line.prePct) / 100) / line.months;
-              }
-            } else {
-              // Глобальные условия
-              if(month < handoverMonth) {
-                // До ключей - по этапам
-                const stageMonth = Math.floor(month / handoverMonth * stages.length);
-                if(stageMonth < stages.length) {
-                  monthTotal += line.snapshot.baseUSD * stages[stageMonth].pct / 100;
-                }
-              } else {
-                // После ключей - рассрочка
-                const postHandoverMonth = month - handoverMonth;
-                if(postHandoverMonth < globalTerm) {
-                  monthTotal += (line.snapshot.baseUSD * (100 - line.prePct) / 100) / globalTerm;
-                }
-              }
-            }
-          });
-          cashflow.push({month, total: monthTotal});
-        }
-        
-        const totalUSD = lines.reduce((sum, line) => sum + line.snapshot.baseUSD, 0);
-        const totalLocal = totalUSD * toCurrency;
-        
-        return {cashflow, totals: {totalUSD, totalLocal}};
-      }, [lines, stages, handoverMonth, globalTerm, months, toCurrency]);
-
-      // Экспорт
-      const exportCSV = () => {
-        if(project.cashflow) {
-          const csv = [
-            ['Месяц', 'Сумма'],
-            ...project.cashflow.map(c => [formatMonth(c.month), c.total.toFixed(2)])
-          ].map(row => row.join(',')).join('\n');
-          
-          const blob = new Blob([csv], {type: 'text/csv'});
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'cashflow.csv';
-          a.click();
-          URL.revokeObjectURL(url);
-        }
-      };
-
-      const exportExcel = () => {
-        if(project.cashflow) {
-          const ws = XLSX.utils.aoa_to_sheet([
-            ['Месяц', 'Сумма'],
-            ...project.cashflow.map(c => [formatMonth(c.month), c.total.toFixed(2)])
-          ]);
-          const wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, 'Cashflow');
-          XLSX.writeFile(wb, 'cashflow.xlsx');
-        }
-      };
-
-      const savePDF = () => {
-        if(project.cashflow) {
-          const doc = new jsPDF();
-          doc.setFontSize(16);
-          doc.text('Сводный кэшфлоу по месяцам', 20, 20);
-          doc.setFontSize(12);
-          project.cashflow.forEach((c, i) => {
-            doc.text(`${formatMonth(c.month)}: ${c.total.toFixed(2)}`, 20, 40 + i * 10);
-          });
-          doc.save('cashflow.pdf');
-        }
-      };
-
-      // PIN для редактора
-      const checkPin = () => {
-        const pin = prompt('Введите PIN для входа в редактор:');
-        if(pin === '334346') {
-          setIsClient(false);
-          localStorage.setItem('arconique_v76_editor', 'true');
-        } else {
-          alert('Неверный PIN');
-        }
-      };
-
-      useEffect(() => {
-        const savedEditor = localStorage.getItem('arconique_v76_editor');
-        if(savedEditor === 'true') {
-          setIsClient(false);
-        }
-      }, []);
-
-      const t = T[lang];
-
-      return (
-        <div className="app">
-          <header className="header">
-            <div className="header-content">
-              <h1 className="logo">Arconique</h1>
-              <div className="header-controls">
-                <button className="btn compact" onClick={() => setLang(lang === 'ru' ? 'en' : 'ru')}>
-                  {lang === 'ru' ? 'EN' : 'RU'}
-                </button>
-                {isClient ? (
-                  <button className="btn primary" onClick={checkPin}>
-                    {t.editor}
-                  </button>
-                ) : (
-                  <button className="btn" onClick={() => {
-                    setIsClient(true);
-                    localStorage.removeItem('arconique_v76_editor');
-                  }}>
-                    {t.client}
-                  </button>
-                )}
-              </div>
-            </div>
-          </header>
-
-          <main className="main">
-            <div className="container">
-              <div className="grid">
-                {/* Левая колонка - Настройки */}
-                <div className="card">
-                  <h3>{t.settings}</h3>
-                  
-                  {/* Первая строка: Месяц получения ключей + Глобальная ставка */}
-                  <div className="row">
-                    <div className="field compact">
-                      <label>{t.handoverMonth}</label>
-                      <input 
-                        type="number" 
-                        min="1" 
-                        step="1" 
-                        value={handoverMonth} 
-                        onChange={(e) => setHandoverMonth(parseInt(e.target.value))}
-                        disabled={isClient}
-                      />
-                    </div>
-                    <div className="field compact">
-                      <label>{t.globalRate}</label>
-                      <input 
-                        type="number" 
-                        min="0.1" 
-                        step="0.01" 
-                        value={globalRate} 
-                        onChange={(e) => setGlobalRate(parseFloat(e.target.value))}
-                        disabled={isClient}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Вторая строка: Глобальный срок + Начальный месяц */}
-                  <div className="row">
-                    <div className="field compact">
-                      <label>{t.globalTerm}</label>
-                      <input 
-                        type="number" 
-                        min="6" 
-                        max="24" 
-                        step="1" 
-                        value={globalTerm} 
-                        onChange={(e) => setGlobalTerm(parseInt(e.target.value))}
-                        disabled={isClient}
-                      />
-                    </div>
-                    <div className="field compact">
-                      <label>{t.startMonth}</label>
-                      <div className="info-display">
-                        {startMonth.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { 
-                          month: 'long', 
-                          year: 'numeric' 
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Этапы ДО ключей */}
-                  <div className="stages-section">
-                    <h4>{t.stagesTitle}</h4>
-                    <div className="stages-scroll">
-                      {stages.map(stage => (
-                        <div key={stage.id} className="stage-item">
-                          <input 
-                            type="text" 
-                            value={stage.name} 
-                            onChange={(e) => setStages(prev => prev.map(s => 
-                              s.id === stage.id ? {...s, name: e.target.value} : s
-                            ))}
-                            disabled={isClient}
-                            placeholder="Название этапа"
-                          />
-                          <input 
-                            type="number" 
-                            min="0" 
-                            max="100" 
-                            step="0.01" 
-                            value={stage.pct} 
-                            onChange={(e) => setStages(prev => prev.map(s => 
-                              s.id === stage.id ? {...s, pct: parseFloat(e.target.value)} : s
-                            ))}
-                            disabled={isClient}
-                            placeholder="%"
-                          />
-                          <input 
-                            type="number" 
-                            min="1" 
-                            step="1" 
-                            value={stage.month} 
-                            onChange={(e) => setStages(prev => prev.map(s => 
-                              s.id === stage.id ? {...s, month: parseInt(e.target.value)} : s
-                            ))}
-                            disabled={isClient}
-                            placeholder="Месяц"
-                          />
-                          <button 
-                            className="btn danger compact" 
-                            onClick={() => setStages(prev => prev.filter(s => s.id !== stage.id))}
-                            disabled={isClient}
-                          >
-                            {t.remove}
-                          </button>
-                        </div>
-                      ))}
-                      {!isClient && (
-                        <button 
-                          className="btn success compact" 
-                          onClick={() => setStages(prev => [...prev, {
-                            id: Date.now(),
-                            name: '',
-                            pct: 0,
-                            month: 0
-                          }]}
-                        >
-                          + Этап
-                        </button>
-                      )}
-                    </div>
-                    
-                    {/* Информация о суммах этапов */}
-                    <div className={`stages-info ${stagesSumPct === 89 ? 'success' : 'warning'}`}>
-                      <span>{t.stagesSum}: {stagesSumPct.toFixed(2)}%</span>
-                      <span>·</span>
-                      <span>{t.targetPct}: 89%</span>
-                      {stagesSumPct === 89 ? (
-                        <span className="success-text">{t.matchesTarget}</span>
-                      ) : (
-                        <span className="warning-text">{t.needsChanges}</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Кнопки поделиться */}
-                  <div className="share-buttons">
-                    <button className="btn compact" onClick={() => {
-                      const url = new URL(window.location);
-                      url.searchParams.set('data', btoa(JSON.stringify({stages,lines,handoverMonth,globalRate,globalTerm})));
-                      navigator.clipboard.writeText(url.toString());
-                      alert('Ссылка скопирована в буфер обмена');
-                    }}>
-                      Поделиться
-                    </button>
-                  </div>
-                </div>
-
-                {/* Правая колонка - Расчеты */}
-                <div className="card">
-                  <div className="row" style={{justifyContent:'space-between',alignItems:'baseline'}}>
-                    <div className="row">
-                      <span className="badge">{t.lines}: {lines.length}</span>
-                      <span className="badge">{t.keys} {handoverMonth} мес.</span>
-                      {!isClient && <span className="badge">{t.months}: {months}</span>}
-                    </div>
-                    <div className="muted">{isClient ? t.client : t.editor}</div>
-                  </div>
-
-                  {/* Расчет (позиции) */}
-                  <div className="calculation-section">
-                    <div className="calculation-header" style={{marginBottom: 'var(--spacing-lg)'}}>
-                      <h3 style={{margin:'6px 0'}}>{t.villasTitle}</h3>
-                      <button className="btn success" onClick={()=>setModalOpen(true)}>{t.addFromCatalog}</button>
-                    </div>
-                    
-                    <div className="calc-scroll">
-                      <table className="calc-table">
-                        <thead>
-                          <tr>
-                            <th>{t.project}</th>
-                            <th>{t.villa}</th>
-                            <th>{t.area}</th>
-                            <th>{t.ppsm}</th>
-                            <th>{t.baseUSD}</th>
-                            <th>{t.totalLine}</th>
-                            <th>{t.prePct}</th>
-                            <th>{t.ownTerms}</th>
-                            <th>{t.stagesSumPct}</th>
-                            <th>{t.monthlyRatePct}</th>
-                            <th>{t.discountPct}</th>
-                            <th></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {lines.map(line => (
-                            <tr key={line.id}>
-                              <td>{catalog.find(p => p.projectId === line.projectId)?.projectName || line.projectId}</td>
-                              <td>{line.snapshot.name}</td>
-                              <td>{line.snapshot.area} м²</td>
-                              <td>${line.snapshot.ppsm.toLocaleString()}</td>
-                              <td>${line.snapshot.baseUSD.toLocaleString()}</td>
-                              <td>${(line.snapshot.baseUSD * (1 - line.discountPct / 100)).toLocaleString()}</td>
-                              <td>
-                                <input 
-                                  type="range" 
-                                  min="50" 
-                                  max="100" 
-                                  step="1" 
-                                  value={line.prePct} 
-                                  onChange={(e) => setLines(prev => prev.map(l => 
-                                    l.id === line.id ? {...l, prePct: parseInt(e.target.value)} : l
-                                  ))}
-                                  disabled={isClient}
-                                />
-                                {line.prePct}%
-                              </td>
-                              <td>
-                                <input 
-                                  type="checkbox" 
-                                  checked={line.ownTerms} 
-                                  onChange={(e) => setLines(prev => prev.map(l => 
-                                    l.id === line.id ? {...l, ownTerms: e.target.checked} : l
-                                  ))}
-                                  disabled={isClient}
-                                />
-                              </td>
-                              <td>
-                                {line.ownTerms ? (
-                                  <input 
-                                    type="number" 
-                                    min="1" 
-                                    step="1" 
-                                    value={line.months || ''} 
-                                    onChange={(e) => setLines(prev => prev.map(l => 
-                                      l.id === line.id ? {...l, months: parseInt(e.target.value)} : l
-                                    ))}
-                                    disabled={isClient}
-                                    placeholder="мес"
-                                  />
-                                ) : (
-                                  <span>{stagesSumPct}%</span>
-                                )}
-                              </td>
-                              <td>
-                                {line.ownTerms ? (
-                                  <input 
-                                    type="number" 
-                                    min="0.1" 
-                                    step="0.01" 
-                                    value={line.monthlyRatePct || ''} 
-                                    onChange={(e) => setLines(prev => prev.map(l => 
-                                      l.id === line.id ? {...l, monthlyRatePct: parseFloat(e.target.value)} : l
-                                    ))}
-                                    disabled={isClient}
-                                    placeholder="%/мес"
-                                  />
-                                ) : (
-                                  <span>{globalRate}%</span>
-                                )}
-                              </td>
-                              <td>
-                                <input 
-                                  type="number" 
-                                  min="0" 
-                                  max="50" 
-                                  step="0.01" 
-                                  value={line.discountPct} 
-                                  onChange={(e) => setLines(prev => prev.map(l => 
-                                    l.id === line.id ? {...l, discountPct: parseFloat(e.target.value)} : l
-                                  ))}
-                                  disabled={isClient}
-                                  placeholder="%"
-                                />
-                              </td>
-                              <td>
-                                <button 
-                                  className="btn danger compact" 
-                                  onClick={() => setLines(prev => prev.filter(l => l.id !== line.id))}
-                                  disabled={isClient}
-                                >
-                                  {t.remove}
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* Сводный кэшфлоу по месяцам */}
-                  <div className="cashflow-section">
-                    <h4>{t.cashflowTitle}</h4>
-                    <div className="cashflow-scroll">
-                      <table className="cashflow-table">
-                        <thead>
-                          <tr>
-                            <th>{t.month}</th>
-                            <th>{t.total}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {project.cashflow?.map(c => (
-                            <tr key={c.month}>
-                              <td>{formatMonth(c.month)}</td>
-                              <td>${c.total.toFixed(2)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    
-                    {/* Кнопки экспорта */}
-                    <div className="export-buttons">
-                      <button className="btn compact" onClick={exportCSV}>{t.exportCSV}</button>
-                      <button className="btn compact" onClick={exportExcel}>{t.exportExcel}</button>
-                      <button className="btn compact" onClick={savePDF}>{t.savePDF}</button>
-                    </div>
-                  </div>
-
-                  {/* График */}
-                  {project.cashflow && (
-                    <div className="chart-section">
-                      <canvas id="cashflowChart" width="400" height="200"></canvas>
-                    </div>
-                  )}
-
-                  {/* Каталог проектов и вилл (редактор) */}
-                  {!isClient && (
-                    <div className="catalog-section">
-                      <h4>{t.catalogTitle}</h4>
-                      
-                      {/* Проекты */}
-                      <div className="projects-section">
-                        <div className="section-header">
-                          <h5>Проекты</h5>
-                          <button className="btn success compact" onClick={addProject}>
-                            {t.addProject}
-                          </button>
-                        </div>
-                        
-                        <div className="projects-list">
-                          {catalog.map(project => (
-                            <div key={project.projectId} className="project-item">
-                              <div className="project-header">
-                                <input 
-                                  type="text" 
-                                  value={project.projectName} 
-                                  onChange={(e) => setCatalog(prev => prev.map(p => 
-                                    p.projectId === project.projectId ? {...p, projectName: e.target.value} : p
-                                  ))}
-                                  className="project-name-input"
-                                  placeholder="Название проекта"
-                                />
-                                <button 
-                                  className="btn danger compact" 
-                                  onClick={() => setCatalog(prev => prev.filter(p => p.projectId !== project.projectId))}
-                                >
-                                  {t.remove}
-                                </button>
-                              </div>
-                              
-                              {/* Виллы в проекте */}
-                              <div className="villas-section">
-                                <div className="villas-header">
-                                  <h6>Виллы</h6>
-                                  <button className="btn success compact" onClick={() => {
-                                    setSelectedProject(project.projectId);
-                                    addVilla();
-                                  }}>
-                                    {t.addVilla}
-                                  </button>
-                                </div>
-                                
-                                <div className="villas-list">
-                                  {project.villas.map(villa => (
-                                    <div key={villa.villaId} className="villa-item">
-                                      <input 
-                                        type="text" 
-                                        value={villa.name} 
-                                        onChange={(e) => setCatalog(prev => prev.map(p => 
-                                          p.projectId === project.projectId ? {
-                                            ...p, 
-                                            villas: p.villas.map(v => 
-                                              v.villaId === villa.villaId ? {...v, name: e.target.value} : v
-                                            )
-                                          } : p
-                                        ))}
-                                        className="villa-name-input"
-                                        placeholder="Название виллы"
-                                      />
-                                      <input 
-                                        type="number" 
-                                        value={villa.area} 
-                                        onChange={(e) => setCatalog(prev => prev.map(p => 
-                                          p.projectId === project.projectId ? {
-                                            ...p, 
-                                            villas: p.villas.map(v => 
-                                              v.villaId === villa.villaId ? {...v, area: parseFloat(e.target.value)} : v
-                                            )
-                                          } : p
-                                        ))}
-                                        placeholder="Площадь"
-                                      />
-                                      <input 
-                                        type="number" 
-                                        value={villa.ppsm} 
-                                        onChange={(e) => setCatalog(prev => prev.map(p => 
-                                          p.projectId === project.projectId ? {
-                                            ...p, 
-                                            villas: p.villas.map(v => 
-                                              v.villaId === villa.villaId ? {...v, ppsm: parseFloat(e.target.value)} : v
-                                            )
-                                          } : p
-                                        ))}
-                                        placeholder="Цена за м²"
-                                      />
-                                      <input 
-                                        type="number" 
-                                        value={villa.baseUSD} 
-                                        onChange={(e) => setCatalog(prev => prev.map(p => 
-                                          p.projectId === project.projectId ? {
-                                            ...p, 
-                                            villas: p.villas.map(v => 
-                                              v.villaId === villa.villaId ? {...v, baseUSD: parseFloat(e.target.value)} : v
-                                            )
-                                          } : p
-                                        ))}
-                                        placeholder="Базовая стоимость"
-                                      />
-                                      <button 
-                                        className="btn danger compact" 
-                                        onClick={() => setCatalog(prev => prev.map(p => 
-                                          p.projectId === project.projectId ? {
-                                            ...p, 
-                                            villas: p.villas.filter(v => v.villaId !== villa.villaId)
-                                          } : p
-                                        ))}
-                                      >
-                                        {t.remove}
-                                      </button>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </main>
-
-          {/* Модальное окно выбора из каталога */}
-          {modalOpen && (
-            <div className="modal-overlay" onClick={() => setModalOpen(false)}>
-              <div className="modal" onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
-                  <h3>Выберите из каталога</h3>
-                  <button className="btn compact" onClick={() => setModalOpen(false)}>✕</button>
-                </div>
-                <div className="modal-content">
-                  {catalog.map(p => (
-                    <div key={p.projectId} className="catalog-project">
-                      <h4>{p.projectName}</h4>
-                      {p.villas.map(v => (
-                        <div key={v.villaId} className="catalog-villa">
-                          <div className="villa-info">
-                            <span className="villa-name">{v.name}</span>
-                            <span className="villa-details">
-                              {v.area} м² • ${v.ppsm.toLocaleString()}/м² • ${v.baseUSD.toLocaleString()}
-                            </span>
-                          </div>
-                          <button 
-                            className="btn success add-selected-btn" 
-                            onClick={()=>{
-                              const newLine={
-                                id:Date.now()+Math.random(),
-                                projectId:p.projectId,
-                                villaId:v.villaId,
-                                qty:1,
-                                prePct:stagesSumPct,
-                                ownTerms:false,
-                                months:null,
-                                monthlyRatePct:null,
-                                discountPct:0,
-                                snapshot:{name:v.name,area:v.area,ppsm:v.ppsm,baseUSD:v.baseUSD}
-                              };
-                              setLines(prev=>[...prev,newLine]);
-                              setModalOpen(false);
-                            }}
-                          >
-                            {t.addSelected}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Модальное окно добавления проекта */}
-          {showAddProjectModal && (
-            <div className="modal-overlay" onClick={() => setShowAddProjectModal(false)}>
-              <div className="modal" onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
-                  <h3>{t.addProject}</h3>
-                  <button className="btn compact" onClick={() => setShowAddProjectModal(false)}>✕</button>
-                </div>
-                <div className="modal-content">
-                  <div className="field">
-                    <label>ID проекта</label>
-                    <input 
-                      type="text" 
-                      value={newProjectForm.projectId} 
-                      onChange={(e) => setNewProjectForm(prev => ({...prev, projectId: e.target.value}))}
-                      placeholder="Введите ID проекта"
-                    />
-                  </div>
-                  <div className="field">
-                    <label>{t.projectName}</label>
-                    <input 
-                      type="text" 
-                      value={newProjectForm.projectName} 
-                      onChange={(e) => setNewProjectForm(prev => ({...prev, projectName: e.target.value}))}
-                      placeholder="Введите название проекта"
-                    />
-                  </div>
-                  <div className="modal-actions">
-                    <button className="btn" onClick={() => setShowAddProjectModal(false)}>{t.cancel}</button>
-                    <button className="btn success" onClick={saveProject}>{t.save}</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Модальное окно добавления виллы */}
-          {showAddVillaModal && (
-            <div className="modal-overlay" onClick={() => setShowAddVillaModal(false)}>
-              <div className="modal" onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
-                  <h3>{t.addVilla}</h3>
-                  <button className="btn compact" onClick={() => setShowAddVillaModal(false)}>✕</button>
-                </div>
-                <div className="modal-content">
-                  <div className="field">
-                    <label>ID виллы</label>
-                    <input 
-                      type="text" 
-                      value={newVillaForm.villaId} 
-                      onChange={(e) => setNewVillaForm(prev => ({...prev, villaId: e.target.value}))}
-                      placeholder="Введите ID виллы"
-                    />
-                  </div>
-                  <div className="field">
-                    <label>{t.villaName}</label>
-                    <input 
-                      type="text" 
-                      value={newVillaForm.name} 
-                      onChange={(e) => setNewVillaForm(prev => ({...prev, name: e.target.value}))}
-                      placeholder="Введите название виллы"
-                    />
-                  </div>
-                  <div className="field">
-                    <label>{t.area}</label>
-                    <input 
-                      type="number" 
-                      value={newVillaForm.area} 
-                      onChange={(e) => setNewVillaForm(prev => ({...prev, area: e.target.value}))}
-                      placeholder="Площадь в м²"
-                    />
-                  </div>
-                  <div className="field">
-                    <label>{t.ppsm}</label>
-                    <input 
-                      type="number" 
-                      value={newVillaForm.ppsm} 
-                      onChange={(e) => setNewVillaForm(prev => ({...prev, ppsm: e.target.value}))}
-                      placeholder="Цена за м²"
-                    />
-                  </div>
-                  <div className="field">
-                    <label>{t.baseUSD}</label>
-                    <input 
-                      type="number" 
-                      value={newVillaForm.baseUSD} 
-                      onChange={(e) => setNewVillaForm(prev => ({...prev, baseUSD: e.target.value}))}
-                      placeholder="Базовая стоимость в USD"
-                    />
-                  </div>
-                  <div className="modal-actions">
-                    <button className="btn" onClick={() => setShowAddVillaModal(false)}>{t.cancel}</button>
-                    <button className="btn success" onClick={saveVilla}>{t.save}</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // Компонент KPI блока
-    function KPIBlock({isClient, t, totals, currency, toCurrency}){
-      return (
-        <div className="kpi-block">
-          <div className="kpi-item">
-            <span className="kpi-label">Общая стоимость</span>
-            <span className="kpi-value">${totals.totalUSD.toLocaleString()}</span>
-          </div>
-          <div className="kpi-item">
-            <span className="kpi-label">В {currency}</span>
-            <span className="kpi-value">{(totals.totalUSD * toCurrency).toLocaleString()}</span>
-          </div>
-        </div>
-      );
-    }
-
-    // Рендер приложения
-    ReactDOM.render(<App />, document.getElementById('root'));
-  </script>
-</body>
-</html>
-                 
