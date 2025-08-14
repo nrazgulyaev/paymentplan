@@ -852,13 +852,10 @@ function App() {
                       {fmtMoney(ld.lineTotal, currency)}
                     </td>
                     <td className="col-actions">
-                      <div className="row" style={{gap: 4}}>
-                        <button className="btn icon" onClick={() => dupLine(ld.line.id)}>📋</button>
-                        {!isClient && (
-                          <button className="btn danger icon" onClick={() => delLine(ld.line.id)}>🗑️</button>
-                        )}
-                      </div>
-                    </td>
+  <div className="row" style={{gap: 4}}>
+    <button className="btn danger icon" onClick={() => delLine(ld.line.id)}>🗑️</button>
+  </div>
+</td>
                   </tr>
                 ))}
               </tbody>
