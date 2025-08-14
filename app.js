@@ -738,22 +738,24 @@ function App() {
           </table>
         </div>
       </div>
-                   {/* РЕДАКТОРСКИЙ РЕЖИМ - ВСТАВЬТЕ ЗДЕСЬ */}
-      {!isClient && (
-        <div className="editor-mode">
-          <h2>Редакторский режим</h2>
-          
-          {/* Каталог проектов и вилл */}
-          <CatalogManager 
-            catalog={catalog} 
-            setCatalog={setCatalog} 
-            t={t} 
-            lang={lang} 
-          />
-        </div>
-      )}
     </div>
-  );
+    
+    {/* РЕДАКТОРСКИЙ РЕЖИМ - ОТДЕЛЬНЫЙ БЛОК */}
+    {!isClient && (
+      <div className="editor-mode">
+        <h2>Редакторский режим</h2>
+        
+        {/* Каталог проектов и вилл */}
+        <CatalogManager 
+          catalog={catalog} 
+          setCatalog={setCatalog} 
+          t={t} 
+          lang={lang} 
+        />
+      </div>
+    )}
+  </>
+);
 }
 
 // ===== КОМПОНЕНТ КАТАЛОГА =====
