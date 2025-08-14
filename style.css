@@ -181,10 +181,30 @@ h1 {
   animation: fadeInScale 0.6s ease-out 0.2s both;
 }
 
+/* Добавляем стили для редакторского режима */
+.editor-mode {
+  grid-column: 1 / -1; /* Растягиваем на всю ширину */
+  margin-top: var(--spacing-xl);
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.editor-mode h2 {
+  margin: 0 0 var(--spacing-xl) 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
+}
+
+/* Адаптивность */
 @media (max-width: 1023px) {
   .grid { 
     grid-template-columns: 1fr; 
     gap: 16px;
+  }
+  
+  .editor-mode {
+    grid-column: 1; /* На мобильных тоже на всю ширину */
   }
 }
 
