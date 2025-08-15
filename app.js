@@ -1,4 +1,4 @@
-// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (СТАРЫЙ ДИЗАЙН + АРЕНДНЫЙ ДОХОД) =====
+// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (СТАРЫЙ ДИЗАЙН + АРЕНДНЫЙ ДОХОД) - ИСПРАВЛЕННАЯ ВЕРСИЯ =====
 
 const { useState, useEffect, useMemo, useRef } = React;
 
@@ -310,7 +310,7 @@ function App() {
     document.title = t.title;
   }, [t.title]);
 
-  // Утилиты (ВОССТАНОВЛЕНЫ СТАРЫЕ)
+  // ИСПРАВЛЕНИЕ: Добавить недостающие функции и переменные
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
   const fmtMoney = (n, c = 'USD') => new Intl.NumberFormat('en-US', {style: 'currency', currency: c, maximumFractionDigits: 2}).format(n || 0);
   const stagesSumPct = stages.reduce((s, x) => s + (+x.pct || 0), 0);
@@ -331,6 +331,9 @@ function App() {
     date.setMonth(date.getMonth() + monthOffset);
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   };
+
+// ... existing code ...
+// ... existing code ...
 
   // Функции для работы с проектами (ВОССТАНОВЛЕНЫ СТАРЫЕ)
   const addProject = () => {
@@ -566,6 +569,9 @@ function App() {
     setModalOpen(false);
   };
 
+// ... existing code ...
+// ... existing code ...
+
   // Функции экспорта (ВОССТАНОВЛЕНЫ СТАРЫЕ + ДОБАВЛЕНЫ НОВЫЕ КОЛОНКИ)
   const exportCSV = () => {
     const rows = [
@@ -728,7 +734,8 @@ function App() {
   const delStage = (id) => setStages(prev => prev.filter(s => s.id !== id));
 
   const updStage = (id, patch) => setStages(prev => prev.map(s => s.id === id ? {...s, ...patch} : s));
-    return (
+
+  return (
     <>
       {/* Внизу по порядку: */}
       
@@ -1534,3 +1541,4 @@ function CatalogManager({
 // ===== ЗАПУСК ПРИЛОЖЕНИЯ =====
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
+            
