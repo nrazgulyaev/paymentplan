@@ -1038,14 +1038,15 @@ const addStage = () => {
           </div>
           
           <div className="cashflow-scroll">
-            <table className="cashflow-table">
-              <thead>
-                <th>{t.month}</th>
-<th style={{textAlign: 'left'}}>{t.description}</th>
-<th>{t.amountDue}</th>
-<th>{t.remainingBalance}</th>
-                </tr>
-              </thead>
+         <table className="cashflow-table">
+  <thead>
+    <tr>
+      <th>{t.month}</th>
+      <th style={{textAlign: 'left'}}>{t.description}</th>
+      <th>{t.amountDue}</th>
+      <th>{t.remainingBalance}</th>
+    </tr>
+  </thead>
               <tbody>
                 {project.cashflow.map(c => (
                   <tr key={c.month}>
