@@ -288,10 +288,14 @@ function App() {
   const t = T[lang] || T.ru; // fallback на русский
 
   // Обновление заголовка страницы
-  useEffect(() => {
-    document.getElementById('app-title').textContent = t.title;
-    document.title = t.title;
-  }, [t.title]);
+useEffect(() => {
+  // Проверяем, существует ли элемент перед изменением
+  const appTitleElement = document.getElementById('app-title');
+  if (appTitleElement) {
+    appTitleElement.textContent = t.title;
+  }
+  document.title = t.title;
+}, [t.title]);
 
   // Утилиты
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
