@@ -332,23 +332,11 @@ const saveProject = () => {
     projectName: newProjectForm.projectName,
     villas: newProjectForm.villas
   };
-  
-  const projectExists = catalog.find(p => p.projectId === newProjectForm.projectId);
-  if (projectExists) {
-    alert(t.projectExists);
-    return;
-  }
 
-    const newProject = {
-      projectId: newProjectForm.projectId,
-      projectName: newProjectForm.projectName,
-      villas: newProjectForm.villas
-    };
-
-    setCatalog(prev => [...prev, newProject]);
-    setShowAddProjectModal(false);
-    setNewProjectForm({ projectId: '', projectName: '', villas: [] });
-  };
+  setCatalog(prev => [...prev, newProject]);
+  setShowAddProjectModal(false);
+  setNewProjectForm({ projectId: '', projectName: '', villas: [] });
+};
 
   // Функции для работы с виллами
   const addVilla = (projectId) => {
@@ -389,33 +377,16 @@ const saveVilla = () => {
     baseUSD: newVillaForm.baseUSD
   };
 
-    const project = catalog.find(p => p.projectId === editingProject);
-    if (!project) return;
+  setCatalog(prev => prev.map(p => 
+    p.projectId === editingProject 
+      ? { ...p, villas: [...p.villas, newVilla] }
+      : p
+  ));
 
-    const villaExists = project.villas.find(v => v.villaId === newVillaForm.villaId);
-    if (villaExists) {
-    alert(t.villaExists);
-    return;
-  }
-
-    const newVilla = {
-      villaId: newVillaForm.villaId,
-      name: newVillaForm.name,
-      area: newVillaForm.area,
-      ppsm: newVillaForm.ppsm,
-      baseUSD: newVillaForm.baseUSD
-    };
-
-    setCatalog(prev => prev.map(p => 
-      p.projectId === editingProject 
-        ? { ...p, villas: [...p.villas, newVilla] }
-        : p
-    ));
-
-    setShowAddVillaModal(false);
-    setEditingProject(null);
-    setNewVillaForm({ villaId: '', name: '', area: 100, ppsm: 2500, baseUSD: 250000 });
-  };
+  setShowAddVillaModal(false);
+  setEditingProject(null);
+  setNewVillaForm({ villaId: '', name: '', area: 100, ppsm: 2500, baseUSD: 250000 });
+};
 
   // Расчет данных по строкам
   const linesData = useMemo(() => lines.map(line => {
@@ -1142,10 +1113,10 @@ const addStage = () => {
           className="input"
         />
       </div>
-      <div className="modal-actions">
-        <button onClick={saveProject} className="btn primary">{t.save}</button>
-        <button onClick={() => setShowAddProjectModal(false)} className="btn">{t.cancel}</button>
-      </div>
+    <div className="modal-actions">
+  <button onClick={saveVilla} className="btn primary">{t.save}</button>
+  <button onClick={() => setShowAddVillaModal(false)} className="btn">{t.cancel}</button>
+</div>
     </div>
   </div>
 )}
@@ -1345,7 +1316,7 @@ const deleteVilla = (projectId, villaId) => {
       <div className="catalog-header">
         <div className="catalog-controls">
           <button onClick={addProject} className="btn primary">{t.addProject}</button>
-          <button onClick={() => setShowAddVillaModal(true)} className="btn primary">{t.addVilla}</button>
+          <button onClick={() => addVilla(project.projectId)} className="btn primary">{t.addVilla}</button>
           <button onClick={exportCatalog} className="btn">{t.exportJSON}</button>
           <label className="btn">
             {t.importJSON}
