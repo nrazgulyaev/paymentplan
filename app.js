@@ -140,6 +140,10 @@ function App() {
       save: 'Сохранить',
       edit: 'Редактировать',
       remove: 'Удалить',
+       stageDescription: 'Название этапа оплаты (например: Договор, 50% готовности)',
+    percentDescription: 'Процент от общей стоимости к оплате на данном этапе',
+    monthDescription: 'Месяц от начала проекта, когда наступает данный этап',
+    actions: 'Действия',
       projectName: 'Название проекта',
       villaName: 'Название виллы',
       villaArea: 'Площадь (м²)',
@@ -181,6 +185,7 @@ function App() {
       remainingBalance: 'Остаток долга',
       after: 'После ключей',
       firstPayment: 'Первый платёж'
+      
     },
     en: {
       title: 'Arconique / Installments Calculator',
@@ -240,6 +245,10 @@ function App() {
       save: 'Save',
       edit: 'Edit',
       remove: 'Remove',
+      stageDescription: 'Payment stage name (e.g.: Contract, 50% completion)',
+    percentDescription: 'Percentage of total cost to be paid at this stage',
+    monthDescription: 'Month from project start when this stage occurs',
+    actions: 'Actions',
       projectName: 'Project Name',
       villaName: 'Villa Name',
       villaArea: 'Area (sqm)',
@@ -967,51 +976,71 @@ function App() {
       </div>
 
       {/* 2. Базовая рассрочка */}
-      <div className="card">
-        <div className="stages-section">
-          <h3>{t.stagesTitle}</h3>
-          {stages.map(stage => (
-            <div key={stage.id} className="stage-row">
-              <input 
-                type="text" 
-                value={stage.label} 
-                onChange={e => updStage(stage.id, {label: e.target.value})}
-                placeholder="Название этапа"
-                className="stage-input"
-              />
-              <input 
-                type="number" 
-                value={stage.pct} 
-                onChange={e => updStage(stage.id, {pct: +e.target.value})}
-                placeholder="%"
-                className="stage-input-small"
-              />
-              <input 
-                type="number" 
-                value={stage.month} 
-                onChange={e => updStage(stage.id, {month: +e.target.value})}
-                placeholder="Месяц"
-                className="stage-input-small"
-              />
-              <button onClick={() => delStage(stage.id)} className="btn danger small">
-                {t.delete}
-              </button>
-            </div>
-          ))}
-          
-          <div className="row" style={{marginTop: 8, alignItems: 'center', justifyContent: 'space-between'}}>
-            <button className="btn primary" onClick={addStage}>{t.addStage}</button>
-            <div className="pill">
-              {t.stagesSum} {Math.round(stagesSumPct * 100) / 100}%
-              {stagesSumPct !== 100 && (
-                <span className="warning">
-                  {stagesSumPct < 100 ? t.notEnough : t.exceeds} 100%
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
+<div className="card">
+  <div className="stages-section">
+    <h3>{t.stagesTitle}</h3>
+    
+    {/* ПОЯСНЕНИЯ ДЛЯ КОЛОНОК */}
+    <div className="stages-header">
+      <div className="stage-col-header">
+        <span className="col-label">{t.stage}</span>
+        <span className="col-description">{t.stageDescription}</span>
       </div>
+      <div className="stage-col-header">
+        <span className="col-label">{t.percent}</span>
+        <span className="col-description">{t.percentDescription}</span>
+      </div>
+      <div className="stage-col-header">
+        <span className="col-label">{t.month}</span>
+        <span className="col-description">{t.monthDescription}</span>
+      </div>
+      <div className="stage-col-header">
+        <span className="col-label">{t.actions}</span>
+      </div>
+    </div>
+    
+    {stages.map(stage => (
+      <div key={stage.id} className="stage-row">
+        <input 
+          type="text" 
+          value={stage.label} 
+          onChange={e => updStage(stage.id, {label: e.target.value})}
+          placeholder="Название этапа"
+          className="stage-input"
+        />
+        <input 
+          type="number" 
+          value={stage.pct} 
+          onChange={e => updStage(stage.id, {pct: +e.target.value})}
+          placeholder="%"
+          className="stage-input-small"
+        />
+        <input 
+          type="number" 
+          value={stage.month} 
+          onChange={e => updStage(stage.id, {month: +e.target.value})}
+          placeholder="Месяц"
+          className="stage-input-small"
+        />
+        <button onClick={() => delStage(stage.id)} className="btn danger small">
+          {t.delete}
+        </button>
+      </div>
+    ))}
+    
+    <div className="row" style={{marginTop: 8, alignItems: 'center', justifyContent: 'space-between'}}>
+      <button className="btn primary" onClick={addStage}>{t.addStage}</button>
+      <div className="pill">
+        {t.stagesSum} {Math.round(stagesSumPct * 100) / 100}%
+        {stagesSumPct !== 100 && (
+          <span className="warning">
+            {stagesSumPct < 100 ? t.notEnough : t.exceeds} 100%
+          </span>
+        )}
+      </div>
+    </div>
+  </div>
+</div>
 
       {/* 3. Сводный кэшфлоу по месяцам */}
       <div className="cashflow-block">
