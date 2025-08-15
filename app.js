@@ -1,4 +1,4 @@
-// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (ПЕРЕСТРОЕННАЯ ВЕРСИЯ) =====
+// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (ПЕРЕСТРОЕННАЯ ВЕРСИЯ С ЗАГОЛОВКАМИ) =====
 
 const { useState, useEffect, useMemo, useRef } = React;
 
@@ -140,10 +140,6 @@ function App() {
       save: 'Сохранить',
       edit: 'Редактировать',
       remove: 'Удалить',
-       stageDescription: 'Название этапа оплаты (например: Договор, 50% готовности)',
-    percentDescription: 'Процент от общей стоимости к оплате на данном этапе',
-    monthDescription: 'Месяц от начала проекта, когда наступает данный этап',
-    actions: 'Действия',
       projectName: 'Название проекта',
       villaName: 'Название виллы',
       villaArea: 'Площадь (м²)',
@@ -184,8 +180,12 @@ function App() {
       amountDue: 'Сумма к оплате',
       remainingBalance: 'Остаток долга',
       after: 'После ключей',
-      firstPayment: 'Первый платёж'
-      
+      firstPayment: 'Первый платёж',
+      // Новые переводы для заголовков колонок
+      stageDescription: 'Название этапа оплаты (например: Договор, 50% готовности)',
+      percentDescription: 'Процент от общей стоимости к оплате на данном этапе',
+      monthDescription: 'Месяц от начала проекта, когда наступает данный этап',
+      actions: 'Действия'
     },
     en: {
       title: 'Arconique / Installments Calculator',
@@ -245,10 +245,6 @@ function App() {
       save: 'Save',
       edit: 'Edit',
       remove: 'Remove',
-      stageDescription: 'Payment stage name (e.g.: Contract, 50% completion)',
-    percentDescription: 'Percentage of total cost to be paid at this stage',
-    monthDescription: 'Month from project start when this stage occurs',
-    actions: 'Actions',
       projectName: 'Project Name',
       villaName: 'Villa Name',
       villaArea: 'Area (sqm)',
@@ -289,7 +285,12 @@ function App() {
       amountDue: 'Amount due',
       remainingBalance: 'Remaining balance',
       after: 'After keys',
-      firstPayment: 'First payment'
+      firstPayment: 'First payment',
+      // New translations for column headers
+      stageDescription: 'Payment stage name (e.g.: Contract, 50% completion)',
+      percentDescription: 'Percentage of total cost to be paid at this stage',
+      monthDescription: 'Month from project start when this stage occurs',
+      actions: 'Actions'
     }
   };
 
@@ -678,171 +679,129 @@ function App() {
 
   return (
     <>
-      <div className="grid">
-        {/* Левая панель - только настройки */}
-        <div className="card">
-          <div className="row">
-            <div className="field compact">
-              <label>{t.lang}</label>
-              <select value={lang} onChange={e => setLang(e.target.value)}>
-                <option value="ru">Русский</option>
-                <option value="en">English</option>
-              </select>
-            </div>
-            
-            <div className="field compact">
-              <label>{t.currencyDisplay}</label>
-              <select value={currency} onChange={e => setCurrency(e.target.value)}>
-                <option>USD</option>
-                <option>IDR</option>
-                <option>EUR</option>
-              </select>
-            </div>
+      {/* Внизу по порядку: */}
+      
+      {/* 1. Настройки */}
+      <div className="card">
+        <div className="row">
+          <div className="field compact">
+            <label>{t.lang}</label>
+            <select value={lang} onChange={e => setLang(e.target.value)}>
+              <option value="ru">Русский</option>
+              <option value="en">English</option>
+            </select>
           </div>
-
-          {/* Курсы валют (только для редактора) */}
-          {!isClient && (
-            <div className="row">
-              <div className="field compact">
-                <label>{t.idrRate}</label>
-                <input 
-                  type="number" 
-                  min="1" 
-                  step="1" 
-                  value={idrPerUsd} 
-                  onChange={e => setIdrPerUsd(clamp(parseFloat(e.target.value || 0), 1, 1e9))}
-                />
-              </div>
-              <div className="field compact">
-                <label>{t.eurRate}</label>
-                <input 
-                  type="number" 
-                  min="0.01" 
-                  step="0.01" 
-                  value={eurPerUsd} 
-                  onChange={e => setEurPerUsd(clamp(parseFloat(e.target.value || 0), 0.01, 100))}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Начальный месяц */}
-          <div className="row">
-            <div className="field compact">
-              <label>{t.startMonth}</label>
-              <div className="info-display">
-                {startMonth.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { 
-                  month: 'long', 
-                  year: 'numeric' 
-                })}
-              </div>
-            </div>
+          
+          <div className="field compact">
+            <label>{t.currencyDisplay}</label>
+            <select value={currency} onChange={e => setCurrency(e.target.value)}>
+              <option>USD</option>
+              <option>IDR</option>
+              <option>EUR</option>
+            </select>
           </div>
+        </div>
 
+        {/* Курсы валют (только для редактора) */}
+        {!isClient && (
           <div className="row">
             <div className="field compact">
-              <label>{t.handoverMonth}</label>
+              <label>{t.idrRate}</label>
               <input 
                 type="number" 
                 min="1" 
                 step="1" 
-                value={handoverMonth} 
-                onChange={e => setHandoverMonth(clamp(parseInt(e.target.value || 0, 10), 1, 120))}
+                value={idrPerUsd} 
+                onChange={e => setIdrPerUsd(clamp(parseFloat(e.target.value || 0), 1, 1e9))}
               />
             </div>
-            {!isClient ? (
-              <>
-                <div className="field compact">
-                  <label>{t.globalRate}</label>
-                  <input 
-                    type="number" 
-                    min="0" 
-                    step="0.01" 
-                    value={monthlyRatePct} 
-                    onChange={e => setMonthlyRatePct(clamp(parseFloat(e.target.value || 0), 0, 1000))}
-                  />
-                </div>
-                <div className="field compact">
-                  <label>{t.globalTerm}</label>
-                  <input 
-                    type="range" 
-                    min="6" 
-                    max="24" 
-                    step="1" 
-                    value={months} 
-                    onChange={e => setMonths(parseInt(e.target.value, 10))}
-                  />
-                  <div className="pill">{t.months}: {months}</div>
-                </div>
-              </>
-            ) : (
+            <div className="field compact">
+              <label>{t.eurRate}</label>
+              <input 
+                type="number" 
+                min="0.01" 
+                step="0.01" 
+                value={eurPerUsd} 
+                onChange={e => setEurPerUsd(clamp(parseFloat(e.target.value || 0), 0.01, 100))}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Начальный месяц */}
+        <div className="row">
+          <div className="field compact">
+            <label>{t.startMonth}</label>
+            <div className="info-display">
+              {startMonth.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { 
+                month: 'long', 
+                year: 'numeric' 
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="row">
+          <div className="field compact">
+            <label>{t.handoverMonth}</label>
+            <input 
+              type="number" 
+              min="1" 
+              step="1" 
+              value={handoverMonth} 
+              onChange={e => setHandoverMonth(clamp(parseInt(e.target.value || 0, 10), 1, 120))}
+            />
+          </div>
+          {!isClient ? (
+            <>
               <div className="field compact">
-                <label>{t.clientTerm}</label>
+                <label>{t.globalRate}</label>
                 <input 
                   type="number" 
-                  min="6" 
-                  step="1" 
-                  value={months} 
-                  onChange={e => setMonths(clamp(parseInt(e.target.value || 0, 10), 6, 120))}
+                  min="0" 
+                  step="0.01" 
+                  value={monthlyRatePct} 
+                  onChange={e => setMonthlyRatePct(clamp(parseFloat(e.target.value || 0), 0, 1000))}
                 />
               </div>
-            )}
-          </div>
-
-          <div className="hr"></div>
-
-          {/* Кнопка переключения режима */}
-          <div className="row">
-            <button className="btn" onClick={toggleMode}>
-              {isClient ? t.toggleToEditor : t.toggleToClient}
-            </button>
-          </div>
+              <div className="field compact">
+                <label>{t.globalTerm}</label>
+                <input 
+                  type="range" 
+                  min="6" 
+                  max="24" 
+                  step="1" 
+                  value={months} 
+                  onChange={e => setMonths(parseInt(e.target.value, 10))}
+                />
+                <div className="pill">{t.months}: {months}</div>
+              </div>
+            </>
+          ) : (
+            <div className="field compact">
+              <label>{t.clientTerm}</label>
+              <input 
+                type="number" 
+                min="6" 
+                step="1" 
+                value={months} 
+                onChange={e => setMonths(clamp(parseInt(e.target.value || 0, 10), 6, 120))}
+              />
+            </div>
+          )}
         </div>
 
-        {/* Правая панель - только KPI показатели */}
-        <div className="card">
-          <div className="row" style={{justifyContent: 'space-between', alignItems: 'baseline'}}>
-            <div className="row">
-              <span className="badge">{t.lines}: {lines.length}</span>
-              <span className="badge">{t.keys} {handoverMonth} {lang === 'ru' ? 'мес.' : 'mo.'}</span>
-              <span className="badge">{lang === 'ru' ? 'Срок:' : 'Term:'} {months} {lang === 'ru' ? 'мес.' : 'mo.'}</span>
-            </div>
-            <div className="muted">{isClient ? t.client : t.editor}</div>
-          </div>
+        <div className="hr"></div>
 
-          {/* KPI блок */}
-          <div className="kpis">
-            {!isClient && (
-              <div className="kpi">
-                <div className="muted">{t.totalAmount}</div>
-                <div className="v">{fmtMoney(project.totals.baseUSD, currency)}</div>
-              </div>
-            )}
-            <div className="kpi">
-              <div className="muted">{t.amountDue}</div>
-              <div className="v">{fmtMoney(project.totals.preUSD, currency)}</div>
-            </div>
-            <div className="kpi">
-              <div className="muted">{t.after}</div>
-              <div className="v">{fmtMoney(project.totals.afterUSD, currency)}</div>
-            </div>
-            {!isClient && (
-              <div className="kpi">
-                <div className="muted">{t.interest}</div>
-                <div className="v">{fmtMoney(project.totals.interestUSD, currency)}</div>
-              </div>
-            )}
-            <div className="kpi">
-              <div className="muted">{t.finalPrice}</div>
-              <div className="v">{fmtMoney(project.totals.finalUSD, currency)}</div>
-            </div>
-          </div>
+        {/* Кнопка переключения режима */}
+        <div className="row">
+          <button className="btn" onClick={toggleMode}>
+            {isClient ? t.toggleToEditor : t.toggleToClient}
+          </button>
         </div>
       </div>
-      
-      {/* Внизу по порядку: */}
-      
-      {/* 1. Расчёт (позиции) */}
+
+      {/* 2. Расчёт (позиции) */}
       <div className="card">
         <div className="calculation-header">
           <h3 style={{margin: '6px 0'}}>{t.villasTitle}</h3>
@@ -975,74 +934,135 @@ function App() {
         </div>
       </div>
 
-      {/* 2. Базовая рассрочка */}
-<div className="card">
-  <div className="stages-section">
-    <h3>{t.stagesTitle}</h3>
-    
-    {/* ПОЯСНЕНИЯ ДЛЯ КОЛОНОК */}
-    <div className="stages-header">
-      <div className="stage-col-header">
-        <span className="col-label">{t.stage}</span>
-        <span className="col-description">{t.stageDescription}</span>
-      </div>
-      <div className="stage-col-header">
-        <span className="col-label">{t.percent}</span>
-        <span className="col-description">{t.percentDescription}</span>
-      </div>
-      <div className="stage-col-header">
-        <span className="col-label">{t.month}</span>
-        <span className="col-description">{t.monthDescription}</span>
-      </div>
-      <div className="stage-col-header">
-        <span className="col-label">{t.actions}</span>
-      </div>
-    </div>
-    
-    {stages.map(stage => (
-      <div key={stage.id} className="stage-row">
-        <input 
-          type="text" 
-          value={stage.label} 
-          onChange={e => updStage(stage.id, {label: e.target.value})}
-          placeholder="Название этапа"
-          className="stage-input"
-        />
-        <input 
-          type="number" 
-          value={stage.pct} 
-          onChange={e => updStage(stage.id, {pct: +e.target.value})}
-          placeholder="%"
-          className="stage-input-small"
-        />
-        <input 
-          type="number" 
-          value={stage.month} 
-          onChange={e => updStage(stage.id, {month: +e.target.value})}
-          placeholder="Месяц"
-          className="stage-input-small"
-        />
-        <button onClick={() => delStage(stage.id)} className="btn danger small">
-          {t.delete}
-        </button>
-      </div>
-    ))}
-    
-    <div className="row" style={{marginTop: 8, alignItems: 'center', justifyContent: 'space-between'}}>
-      <button className="btn primary" onClick={addStage}>{t.addStage}</button>
-      <div className="pill">
-        {t.stagesSum} {Math.round(stagesSumPct * 100) / 100}%
-        {stagesSumPct !== 100 && (
-          <span className="warning">
-            {stagesSumPct < 100 ? t.notEnough : t.exceeds} 100%
-          </span>
-        )}
-      </div>
-    </div>
-  </div>
-</div>
+      {/* 3. KPI показатели */}
+      <div className="card">
+        <div className="row" style={{justifyContent: 'space-between', alignItems: 'baseline'}}>
+          <div className="row">
+            <span className="badge">{t.lines}: {lines.length}</span>
+            <span className="badge">{t.keys} {handoverMonth} {lang === 'ru' ? 'мес.' : 'mo.'}</span>
+            <span className="badge">{lang === 'ru' ? 'Срок:' : 'Term:'} {months} {lang === 'ru' ? 'мес.' : 'mo.'}</span>
+          </div>
+          <div className="muted">{isClient ? t.client : t.editor}</div>
+        </div>
 
-      {/* 3. Сводный кэшфлоу по месяцам */}
+        {/* KPI блок */}
+        <div className="kpis">
+          {!isClient && (
+            <div className="kpi">
+              <div className="muted">{t.totalAmount}</div>
+              <div className="v">{fmtMoney(project.totals.baseUSD, currency)}</div>
+            </div>
+          )}
+          <div className="kpi">
+            <div className="muted">{t.amountDue}</div>
+            <div className="v">{fmtMoney(project.totals.preUSD, currency)}</div>
+          </div>
+          <div className="kpi">
+            <div className="muted">{t.after}</div>
+            <div className="v">{fmtMoney(project.totals.afterUSD, currency)}</div>
+          </div>
+          {!isClient && (
+            <div className="kpi">
+              <div className="muted">{t.interest}</div>
+              <div className="v">{fmtMoney(project.totals.interestUSD, currency)}</div>
+            </div>
+          )}
+          <div className="kpi">
+            <div className="muted">{t.finalPrice}</div>
+            <div className="v">{fmtMoney(project.totals.finalUSD, currency)}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Базовая рассрочка */}
+      <div className="card">
+        <div className="stages-section">
+          <h3>{t.stagesTitle}</h3>
+          
+          {/* ТАБЛИЦА С ЗАГОЛОВКАМИ КОЛОНОК */}
+          <table className="stages-table">
+            <thead>
+              <tr>
+                <th className="col-stage">
+                  <div className="col-header">
+                    <div className="col-title">{t.stage}</div>
+                    <div className="col-description">{t.stageDescription}</div>
+                  </div>
+                </th>
+                <th className="col-percent">
+                  <div className="col-header">
+                    <div className="col-title">{t.percent}</div>
+                    <div className="col-description">{t.percentDescription}</div>
+                  </div>
+                </th>
+                <th className="col-month">
+                  <div className="col-header">
+                    <div className="col-title">{t.month}</div>
+                    <div className="col-description">{t.monthDescription}</div>
+                  </div>
+                </th>
+                <th className="col-actions">
+                  <div className="col-header">
+                    <div className="col-title">{t.actions}</div>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {stages.map(stage => (
+                <tr key={stage.id}>
+                  <td className="col-stage">
+                    <input 
+                      type="text" 
+                      value={stage.label} 
+                      onChange={e => updStage(stage.id, {label: e.target.value})}
+                      placeholder="Название этапа"
+                      className="stage-input"
+                    />
+                  </td>
+                  <td className="col-percent">
+                    <input 
+                      type="number" 
+                      value={stage.pct} 
+                      onChange={e => updStage(stage.id, {pct: +e.target.value})}
+                      placeholder="%"
+                      className="stage-input-small"
+                    />
+                  </td>
+                  <td className="col-month">
+                    <input 
+                      type="number" 
+                      value={stage.month} 
+                      onChange={e => updStage(stage.id, {month: +e.target.value})}
+                      placeholder="Месяц"
+                      className="stage-input-small"
+                    />
+                  </td>
+                  <td className="col-actions">
+                    <button onClick={() => delStage(stage.id)} className="btn danger small">
+                      {t.delete}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          
+          <div className="row" style={{marginTop: 8, alignItems: 'center', justifyContent: 'space-between'}}>
+            <button className="btn primary" onClick={addStage}>{t.addStage}</button>
+            <div className="pill">
+              {t.stagesSum} {Math.round(stagesSumPct * 100) / 100}%
+              {stagesSumPct !== 100 && (
+                <span className="warning">
+                  {stagesSumPct < 100 ? t.notEnough : t.exceeds} 100%
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 5. Сводный кэшфлоу по месяцам */}
       <div className="cashflow-block">
         <div className="card">
           <div className="card-header">
@@ -1079,7 +1099,7 @@ function App() {
         </div>
       </div>
 
-      {/* 4. Каталог проектов и вилл (только для редактора) */}
+      {/* 6. Каталог проектов и вилл (только для редактора) */}
       {!isClient && (
         <div className="editor-mode">
           <h2>{t.catalogTitle}</h2>
