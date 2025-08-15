@@ -1113,9 +1113,9 @@ const addStage = () => {
           className="input"
         />
       </div>
-    <div className="modal-actions">
-  <button onClick={saveVilla} className="btn primary">{t.save}</button>
-  <button onClick={() => setShowAddVillaModal(false)} className="btn">{t.cancel}</button>
+  <div className="modal-actions">
+  <button onClick={saveProject} className="btn primary">{t.save}</button>
+  <button onClick={() => setShowAddProjectModal(false)} className="btn">{t.cancel}</button>
 </div>
     </div>
   </div>
@@ -1167,9 +1167,9 @@ const addStage = () => {
         />
       </div>
       <div className="modal-actions">
-        <button onClick={saveVilla} className="btn primary">{t.save}</button>
-        <button onClick={() => addVilla(project.projectId)} className="btn primary">{t.addVilla}</button>
-      </div>
+  <button onClick={saveVilla} className="btn primary">{t.save}</button>
+  <button onClick={() => setShowAddVillaModal(false)} className="btn">{t.cancel}</button>
+</div>
     </div>
   </div>
 )}
@@ -1381,7 +1381,7 @@ const deleteVilla = (projectId, villaId) => {
             <div className="project-header">
               <h3>{project.projectName}</h3>
               <div className="project-actions">
-                <button onClick={() => addVilla(project.projectId)} className="btn small">{t.addVilla}</button>
+               <button onClick={() => addVilla(project.projectId)} className="btn primary">{t.addVilla}</button>
                 <button onClick={() => deleteProject(project.projectId)} className="btn danger small">{t.remove}</button>
               </div>
             </div>
