@@ -343,7 +343,7 @@ const t = T[lang] || T.ru; // fallback на русский
     setShowAddVillaModal(true);
   };
 
-  const saveVilla = () => {
+  
   const saveVilla = () => {
   if (!newVillaForm.villaId || !newVillaForm.name) {
     alert(t.fillVillaId); // ← ИСПРАВИТЬ
@@ -828,8 +828,8 @@ const addStage = () => {
           <div className="row" style={{justifyContent: 'space-between', alignItems: 'baseline'}}>
             <div className="row">
               <span className="badge">{t.lines}: {lines.length}</span>
-              <span className="badge">{t.keys} {handoverMonth} мес.</span>
-              <span className="badge">Срок: {months} мес.</span>
+              <span className="badge">{t.keys} {handoverMonth} {lang === 'ru' ? 'мес.' : 'mo.'}</span>
+<span className="badge">{lang === 'ru' ? 'Срок:' : 'Term:'} {months} {lang === 'ru' ? 'мес.' : 'mo.'}</span>
             </div>
             <div className="muted">{isClient ? t.client : t.editor}</div>
           </div>
@@ -838,26 +838,26 @@ const addStage = () => {
 <div className="kpis">
   {!isClient && (
     <div className="kpi">
-      <div className="muted">{t.totalAmount}</div> // ← ИСПРАВИТЬ
+      <div className="muted">{t.totalAmount}</div>
       <div className="v">{fmtMoney(project.totals.baseUSD, currency)}</div>
     </div>
   )}
   <div className="kpi">
-    <div className="muted">{t.amountDue}</div> // ← ИСПРАВИТЬ
+    <div className="muted">{t.amountDue}</div>
     <div className="v">{fmtMoney(project.totals.preUSD, currency)}</div>
   </div>
   <div className="kpi">
-    <div className="muted">Остаток после ключей</div>
+    <div className="muted">{t.remainingBalance}</div>
     <div className="v">{fmtMoney(project.totals.afterUSD, currency)}</div>
   </div>
   {!isClient && (
     <div className="kpi">
-      <div className="muted">Проценты</div>
+      <div className="muted">{t.interest}</div>
       <div className="v">{fmtMoney(project.totals.interestUSD, currency)}</div>
     </div>
   )}
   <div className="kpi">
-    <div className="muted">Итоговая цена</div>
+    <div className="muted">{t.finalPrice}</div>
     <div className="v">{fmtMoney(project.totals.finalUSD, currency)}</div>
   </div>
 </div>
@@ -1040,11 +1040,10 @@ const addStage = () => {
           <div className="cashflow-scroll">
             <table className="cashflow-table">
               <thead>
-                <tr>
-                  <th>Месяц</th>
-                  <th style={{textAlign: 'left'}}>Описание</th>
-                  <th>Сумма к оплате</th>
-                  <th>Остаток долга</th>
+                <th>{t.month}</th>
+<th style={{textAlign: 'left'}}>{t.description}</th>
+<th>{t.amountDue}</th>
+<th>{t.remainingBalance}</th>
                 </tr>
               </thead>
               <tbody>
