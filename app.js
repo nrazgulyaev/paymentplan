@@ -521,11 +521,11 @@ const t = T[lang] || T.ru; // fallback на русский
     URL.revokeObjectURL(a.href);
   };
 
-  const exportXLSX = () => {
-    if (typeof XLSX === 'undefined') {
-      alert('Библиотека XLSX не загружена');
-      return;
-    }
+const exportXLSX = () => {
+  if (typeof XLSX === 'undefined') {
+    alert(t.xlsxNotLoaded);
+    return;
+  }
     
     const ws1 = XLSX.utils.json_to_sheet(project.cashflow.map(c => ({
       'Месяц': formatMonth(c.month),
@@ -553,11 +553,11 @@ const t = T[lang] || T.ru; // fallback на русский
     XLSX.writeFile(wb, `arconique_installments_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
-  const exportPDF = () => {
-    if (typeof html2pdf === 'undefined') {
-      alert('Библиотека html2pdf не загружена');
-      return;
-    }
+const exportPDF = () => {
+  if (typeof html2pdf === 'undefined') {
+    alert(t.html2pdfNotLoaded);
+    return;
+  }
     
     const pdfContent = `
       <!DOCTYPE html>
@@ -645,10 +645,10 @@ const t = T[lang] || T.ru; // fallback на русский
 };
 
   // Функции для работы с этапами
-  const addStage = () => {
-    const newId = stages.length + 1;
-    setStages(prev => [...prev, {id: newId, label: 'Новый этап', pct: 5, month: 0}]);
-  };
+const addStage = () => {
+  const newId = stages.length + 1;
+  setStages(prev => [...prev, {id: newId, label: lang === 'ru' ? 'Новый этап' : 'New stage', pct: 5, month: 0}]);
+};
 
   const delStage = (id) => setStages(prev => prev.filter(s => s.id !== id));
 
@@ -801,14 +801,14 @@ const t = T[lang] || T.ru; // fallback на русский
             
             <div className="row" style={{marginTop: 8, alignItems: 'center', justifyContent: 'space-between'}}>
               <button className="btn primary" onClick={addStage}>{t.addStage}</button>
-              <div className="pill">
-                Сумма этапов: {Math.round(stagesSumPct * 100) / 100}%
-                {stagesSumPct !== 100 && (
-                  <span className="warning">
-                    — {stagesSumPct < 100 ? 'не хватает' : 'превышает'} 100%
-                  </span>
-                )}
-              </div>
+           <div className="pill">
+  {t.stagesSum} {Math.round(stagesSumPct * 100) / 100}%
+  {stagesSumPct !== 100 && (
+    <span className="warning">
+      {stagesSumPct < 100 ? t.notEnough : t.exceeds} 100%
+    </span>
+  )}
+</div>
             </div>
           </div>
 
