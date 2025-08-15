@@ -1,4 +1,4 @@
-// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С АРЕНДНЫМ ДОХОДОМ) - ИСПРАВЛЕННАЯ ВЕРСИЯ =====
+// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С АРЕНДНЫМ ДОХОДОМ) - ОЧИЩЕННАЯ ВЕРСИЯ =====
 
 const { useState, useEffect, useMemo, useRef } = React;
 
@@ -17,7 +17,7 @@ function App() {
   const [monthlyRatePct, setMonthlyRatePct] = useState(8.33);
   const [startMonth, setStartMonth] = useState(new Date());
   
-  // ИСПРАВЛЕНИЕ: Правильная структура каталога с проектами и виллами
+  // Правильная структура каталога с проектами и виллами
   const [catalog, setCatalog] = useState([
     {
       projectId: 'ahao',
@@ -37,7 +37,7 @@ function App() {
     }
   ]);
   
-  // ИСПРАВЛЕНИЕ: Правильная структура этапов рассрочки
+  // Правильная структура этапов рассрочки
   const [stages, setStages] = useState([
     {id: 1, label: 'Договор', pct: 30, month: 0},
     {id: 2, label: '50% готовности', pct: 30, month: 6},
@@ -156,7 +156,6 @@ function App() {
       invalidPin: 'Неверный PIN код',
       selectedVillas: 'Выбрано вилл',
       cancel: 'Отмена',
-      // ... остальные переводы ...
     },
     en: {
       title: 'Arconique / Installment Calculator for Beloved Clients',
@@ -229,7 +228,6 @@ function App() {
       invalidPin: 'Invalid PIN code',
       selectedVillas: 'Selected villas',
       cancel: 'Cancel',
-      // ... остальные переводы ...
     }
   };
 
@@ -369,10 +367,10 @@ function App() {
     setStages(stages.filter(s => s.id !== id));
   };
 
-  // ИСПРАВЛЕНИЕ: Функция для обновления этапа
+  // Функция для обновления этапа
   const updateStage = (id, field, value) => {
     setStages(stages.map(s => 
-      s.id === id ? { ...s, [field]: value } : s  // ← ИСПРАВЛЕНО: 's' вместо 'line'
+      s.id === id ? { ...s, [field]: value } : s
     ));
   };
 
@@ -390,7 +388,25 @@ function App() {
     }
   };
 
-  // Функции экспорта
+  // Вспомогательные функции
+  const fmtMoney = (amount, curr) => {
+    if (curr === 'USD') return `$${amount.toLocaleString()}`;
+    if (curr === 'IDR') return `Rp${(amount * idrPerUsd).toLocaleString()}`;
+    if (curr === 'EUR') return `€${(amount * eurPerUsd).toLocaleString()}`;
+    return amount.toLocaleString();
+  };
+
+  const formatMonth = (month) => {
+    const date = new Date(startMonth);
+    date.setMonth(date.getMonth() + month);
+    return date.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { 
+      month: 'long', 
+      year: 'numeric' 
+    });
+  };
+
+  const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+    // Функции экспорта
   const exportCSV = () => {
     const rows = [
       [t.month, t.description, t.amountDue, t.remainingBalance, t.rentalIncome, t.netPayment],
@@ -538,25 +554,7 @@ function App() {
     };
   }, [lines, stages, months, handoverMonth, startMonth]);
 
-  // Вспомогательные функции
-  const formatMonth = (month) => {
-    const date = new Date(startMonth);
-    date.setMonth(date.getMonth() + month);
-    return date.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { 
-      month: 'long', 
-      year: 'numeric' 
-    });
-  };
-
-  const fmtMoney = (amount, curr) => {
-    if (curr === 'USD') return `$${amount.toLocaleString()}`;
-    if (curr === 'IDR') return `Rp${(amount * idrPerUsd).toLocaleString()}`;
-    if (curr === 'EUR') return `€${(amount * eurPerUsd).toLocaleString()}`;
-    return amount.toLocaleString();
-  };
-
-  const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
-    // Компонент для управления каталогом
+  // Компонент для управления каталогом
   const CatalogManager = () => {
     if (isClient) return null;
 
@@ -566,7 +564,6 @@ function App() {
           <h3>{t.catalogTitle}</h3>
           <div className="catalog-actions">
             <button onClick={addProject} className="btn primary">{t.addProject}</button>
-            {/* ИСПРАВЛЕНИЕ: Кнопка addVilla в заголовке */}
             <button onClick={() => {
               setShowAddVillaModal(true);
             }} className="btn primary">{t.addVilla}</button>
@@ -929,7 +926,7 @@ function App() {
                 <td>{fmtMoney(c.balanceUSD, currency)}</td>
                 {/* НОВЫЕ КОЛОНКИ ДЛЯ АРЕНДЫ: */}
                 <td>{fmtMoney(c.rentalIncome || 0, currency)}</td>
-                {/* ИСПРАВЛЕНИЕ: CSS классы для цветового оформления */}
+                {/* CSS классы для цветового оформления */}
                 <td className={c.netPayment >= 0 ? 'positive' : 'negative'}>
                   {fmtMoney(c.netPayment || 0, currency)}
                 </td>
