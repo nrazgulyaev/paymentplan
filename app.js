@@ -1,4 +1,4 @@
-// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (ИСПРАВЛЕННАЯ ВЕРСИЯ) =====
+// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (ПЕРЕСТРОЕННАЯ ВЕРСИЯ) =====
 
 const { useState, useEffect, useMemo, useRef } = React;
 
@@ -288,14 +288,14 @@ function App() {
   const t = T[lang] || T.ru; // fallback на русский
 
   // Обновление заголовка страницы
-useEffect(() => {
-  // Проверяем, существует ли элемент перед изменением
-  const appTitleElement = document.getElementById('app-title');
-  if (appTitleElement) {
-    appTitleElement.textContent = t.title;
-  }
-  document.title = t.title;
-}, [t.title]);
+  useEffect(() => {
+    // Проверяем, существует ли элемент перед изменением
+    const appTitleElement = document.getElementById('app-title');
+    if (appTitleElement) {
+      appTitleElement.textContent = t.title;
+    }
+    document.title = t.title;
+  }, [t.title]);
 
   // Утилиты
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -493,12 +493,6 @@ useEffect(() => {
   // Функции для работы с линиями
   const updLine = (id, patch) => setLines(prev => prev.map(l => l.id === id ? {...l, ...patch} : l));
   const delLine = (id) => setLines(prev => prev.filter(l => l.id !== id));
-  const dupLine = (id) => setLines(prev => {
-    const src = prev.find(x => x.id === id);
-    if (!src) return prev;
-    const nid = (prev[prev.length - 1]?.id || 0) + 1;
-    return [...prev, {...src, id: nid, qty: 1}];
-  });
 
   const addFromCatalog = () => setModalOpen(true);
   const addFromCatalogLine = (villa, projectId) => {
@@ -676,7 +670,7 @@ useEffect(() => {
   return (
     <>
       <div className="grid">
-        {/* Левая панель - настройки */}
+        {/* Левая панель - только настройки */}
         <div className="card">
           <div className="row">
             <div className="field compact">
@@ -786,51 +780,6 @@ useEffect(() => {
             )}
           </div>
 
-          {/* ИСПРАВЛЕНИЕ: Правильный блок этапов рассрочки */}
-          <div className="stages-section">
-            <h3>{t.stagesTitle}</h3>
-            {stages.map(stage => (
-              <div key={stage.id} className="stage-row">
-                <input 
-                  type="text" 
-                  value={stage.label} 
-                  onChange={e => updStage(stage.id, {label: e.target.value})}
-                  placeholder="Название этапа"
-                  className="stage-input"
-                />
-                <input 
-                  type="number" 
-                  value={stage.pct} 
-                  onChange={e => updStage(stage.id, {pct: +e.target.value})}
-                  placeholder="%"
-                  className="stage-input-small"
-                />
-                <input 
-                  type="number" 
-                  value={stage.month} 
-                  onChange={e => updStage(stage.id, {month: +e.target.value})}
-                  placeholder="Месяц"
-                  className="stage-input-small"
-                />
-                <button onClick={() => delStage(stage.id)} className="btn danger small">
-                  {t.delete}
-                </button>
-              </div>
-            ))}
-            
-            <div className="row" style={{marginTop: 8, alignItems: 'center', justifyContent: 'space-between'}}>
-              <button className="btn primary" onClick={addStage}>{t.addStage}</button>
-              <div className="pill">
-                {t.stagesSum} {Math.round(stagesSumPct * 100) / 100}%
-                {stagesSumPct !== 100 && (
-                  <span className="warning">
-                    {stagesSumPct < 100 ? t.notEnough : t.exceeds} 100%
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-
           <div className="hr"></div>
 
           {/* Кнопка переключения режима */}
@@ -841,7 +790,7 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Правая панель - расчеты */}
+        {/* Правая панель - только KPI показатели */}
         <div className="card">
           <div className="row" style={{justifyContent: 'space-between', alignItems: 'baseline'}}>
             <div className="row">
@@ -879,171 +828,192 @@ useEffect(() => {
               <div className="v">{fmtMoney(project.totals.finalUSD, currency)}</div>
             </div>
           </div>
-
-          <div className="hr"></div>
-
-          <div className="calculation-header">
-            <h3 style={{margin: '6px 0'}}>{t.villasTitle}</h3>
-            <button className="btn success" onClick={addFromCatalog}>
-              {t.addFromCatalog}
-            </button>
-          </div>
-
-          <div className="calc-scroll">
-            <table className="calc-table">
-              <thead>
-                <tr>
-                  <th className="col-project">{t.project}</th>
-                  <th className="col-villa">{t.villa}</th>
-                  <th className="col-qty">{t.qty}</th>
-                  <th className="col-area">{t.area}</th>
-                  <th className="col-ppsm">{t.ppsm}</th>
-                  <th className="col-base">{t.price}</th>
-                  {!isClient && <th className="col-disc">{t.discount}</th>}
-                  <th className="col-pre">{t.prePct}</th>
-                  {!isClient && <th className="col-months">{t.months}</th>}
-                  {!isClient && <th className="col-rate">{t.rate}</th>}
-                  <th className="col-lineTotal">{t.lineTotal}</th>
-                  <th className="col-actions"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {linesData.map(ld => (
-                  <tr key={ld.line.id}>
-                    <td className="col-project" style={{textAlign: 'left'}}>
-                      <div className="project-name-display">
-                        {catalog.find(p => p.projectId === ld.line.projectId)?.projectName || ld.line.projectId}
-                      </div>
-                    </td>
-                    <td className="col-villa" style={{textAlign: 'left'}}>
-                      <div className="villa-name-display">{ld.line.snapshot?.name}</div>
-                    </td>
-                    <td className="col-qty">
-                      <input 
-                        type="number" 
-                        min="1" 
-                        step="1" 
-                        value={ld.line.qty} 
-                        onChange={e => updLine(ld.line.id, {qty: clamp(parseInt(e.target.value || 0, 10), 1, 9999)})}
-                        style={{width: '100%', minWidth: '50px'}}
-                      />
-                    </td>
-                    <td className="col-area">
-                      <div className="area-display">{ld.line.snapshot?.area || 0}</div>
-                    </td>
-                    <td className="col-ppsm">
-                      <div className="ppsm-display">{ld.line.snapshot?.ppsm || 0}</div>
-                    </td>
-                    <td className="col-base base-strong">
-                      {fmtMoney(ld.base, currency)}
-                    </td>
-                    {!isClient && (
-                      <td className="col-disc">
-                        <input 
-                          type="number" 
-                          min="0" 
-                          max="20" 
-                          step="0.1" 
-                          value={ld.line.discountPct || 0} 
-                          onChange={e => updLine(ld.line.id, {discountPct: clamp(parseFloat(e.target.value || 0), 0, 20)})}
-                          style={{width: '100%', minWidth: '50px'}}
-                        />
-                      </td>
-                    )}
-                    <td className="col-pre">
-                      <input 
-                        type="range" 
-                        min="50" 
-                        max="100" 
-                        step="1" 
-                        value={Math.max(50, Math.min(100, ld.prePct || 0))} 
-                        onChange={e => {
-                          const value = parseInt(e.target.value, 10);
-                          const clampedValue = Math.max(50, Math.min(100, value));
-                          updLine(ld.line.id, { prePct: clampedValue });
-                        }}
-                        style={{width: '100%', minWidth: '80px'}}
-                      />
-                      <div className="pill">{Math.max(50, Math.min(100, ld.prePct || 0))}%</div>
-                    </td>
-                    {!isClient && (
-                      <td className="col-months">
-                        <input 
-                          type="checkbox" 
-                          checked={ld.line.ownTerms || false} 
-                          onChange={e => updLine(ld.line.id, {ownTerms: e.target.checked})}
-                        />
-                        <input 
-                          type="number" 
-                          min="6" 
-                          step="1" 
-                          value={ld.line.months || months} 
-                          onChange={e => updLine(ld.line.id, {months: clamp(parseInt(e.target.value || 0, 10), 6, 120)})}
-                          disabled={!ld.line.ownTerms}
-                          style={{width: '100%', minWidth: '50px'}}
-                        />
-                      </td>
-                    )}
-                    {!isClient && (
-                      <td className="col-rate">
-                        <input 
-                          type="number" 
-                          min="0" 
-                          step="0.01" 
-                          value={ld.line.monthlyRatePct || monthlyRatePct} 
-                          onChange={e => updLine(ld.line.id, {monthlyRatePct: clamp(parseFloat(e.target.value || 0), 0, 1000)})}
-                          disabled={!ld.line.ownTerms}
-                          style={{width: '100%', minWidth: '60px'}}
-                        />
-                      </td>
-                    )}
-                    
-                    <td className="col-lineTotal line-total">
-                      {fmtMoney(ld.lineTotal, currency)}
-                    </td>
-                    <td className="col-actions">
-                      <div className="row" style={{gap: 4}}>
-                        <button className="btn danger icon" onClick={() => delLine(ld.line.id)}>🗑️</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </div>
       </div>
       
-      {/* РЕДАКТОРСКИЙ РЕЖИМ - ОТДЕЛЬНЫЙ БЛОК */}
-      {!isClient && (
-        <div className="editor-mode">
-          <h2>{t.catalogTitle}</h2>
-          {/* Каталог проектов и вилл */}
-          <CatalogManager 
-            catalog={catalog} 
-            setCatalog={setCatalog} 
-            t={t} 
-            lang={lang} 
-            fmtMoney={fmtMoney}
-            showAddProjectModal={showAddProjectModal}
-            setShowAddProjectModal={setShowAddProjectModal}
-            showAddVillaModal={showAddVillaModal}
-            setShowAddVillaModal={setShowAddVillaModal}
-            editingProject={editingProject}
-            setEditingProject={setEditingProject}
-            newProjectForm={newProjectForm}
-            setNewProjectForm={setNewProjectForm}
-            newVillaForm={newVillaForm}
-            setNewVillaForm={setNewVillaForm}
-            addProject={addProject}
-            saveProject={saveProject}
-            addVilla={addVilla}
-            saveVilla={saveVilla}
-          />
+      {/* Внизу по порядку: */}
+      
+      {/* 1. Расчёт (позиции) */}
+      <div className="card">
+        <div className="calculation-header">
+          <h3 style={{margin: '6px 0'}}>{t.villasTitle}</h3>
+          <button className="btn success" onClick={addFromCatalog}>
+            {t.addFromCatalog}
+          </button>
         </div>
-      )}
 
-      {/* ИСПРАВЛЕНИЕ: Сводный кэшфлоу по месяцам - отдельный блок внизу */}
+        <div className="calc-scroll">
+          <table className="calc-table">
+            <thead>
+              <tr>
+                <th className="col-project">{t.project}</th>
+                <th className="col-villa">{t.villa}</th>
+                <th className="col-qty">{t.qty}</th>
+                <th className="col-area">{t.area}</th>
+                <th className="col-ppsm">{t.ppsm}</th>
+                <th className="col-base">{t.price}</th>
+                {!isClient && <th className="col-disc">{t.discount}</th>}
+                <th className="col-pre">{t.prePct}</th>
+                {!isClient && <th className="col-months">{t.months}</th>}
+                {!isClient && <th className="col-rate">{t.rate}</th>}
+                <th className="col-lineTotal">{t.lineTotal}</th>
+                <th className="col-actions"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {linesData.map(ld => (
+                <tr key={ld.line.id}>
+                  <td className="col-project" style={{textAlign: 'left'}}>
+                    <div className="project-name-display">
+                      {catalog.find(p => p.projectId === ld.line.projectId)?.projectName || ld.line.projectId}
+                    </div>
+                  </td>
+                  <td className="col-villa" style={{textAlign: 'left'}}>
+                    <div className="villa-name-display">{ld.line.snapshot?.name}</div>
+                  </td>
+                  <td className="col-qty">
+                    <input 
+                      type="number" 
+                      min="1" 
+                      step="1" 
+                      value={ld.line.qty} 
+                      onChange={e => updLine(ld.line.id, {qty: clamp(parseInt(e.target.value || 0, 10), 1, 9999)})}
+                      style={{width: '100%', minWidth: '50px'}}
+                    />
+                  </td>
+                  <td className="col-area">
+                    <div className="area-display">{ld.line.snapshot?.area || 0}</div>
+                  </td>
+                  <td className="col-ppsm">
+                    <div className="ppsm-display">{ld.line.snapshot?.ppsm || 0}</div>
+                  </td>
+                  <td className="col-base base-strong">
+                    {fmtMoney(ld.base, currency)}
+                  </td>
+                  {!isClient && (
+                    <td className="col-disc">
+                      <input 
+                        type="number" 
+                        min="0" 
+                        max="20" 
+                        step="0.1" 
+                        value={ld.line.discountPct || 0} 
+                        onChange={e => updLine(ld.line.id, {discountPct: clamp(parseFloat(e.target.value || 0), 0, 20)})}
+                        style={{width: '100%', minWidth: '50px'}}
+                      />
+                    </td>
+                  )}
+                  <td className="col-pre">
+                    <input 
+                      type="range" 
+                      min="50" 
+                      max="100" 
+                      step="1" 
+                      value={Math.max(50, Math.min(100, ld.prePct || 0))} 
+                      onChange={e => {
+                        const value = parseInt(e.target.value, 10);
+                        const clampedValue = Math.max(50, Math.min(100, value));
+                        updLine(ld.line.id, { prePct: clampedValue });
+                      }}
+                      style={{width: '100%', minWidth: '80px'}}
+                    />
+                    <div className="pill">{Math.max(50, Math.min(100, ld.prePct || 0))}%</div>
+                  </td>
+                  {!isClient && (
+                    <td className="col-months">
+                      <input 
+                        type="checkbox" 
+                        checked={ld.line.ownTerms || false} 
+                        onChange={e => updLine(ld.line.id, {ownTerms: e.target.checked})}
+                      />
+                      <input 
+                        type="number" 
+                        min="6" 
+                        step="1" 
+                        value={ld.line.months || months} 
+                        onChange={e => updLine(ld.line.id, {months: clamp(parseInt(e.target.value || 0, 10), 6, 120)})}
+                        disabled={!ld.line.ownTerms}
+                        style={{width: '100%', minWidth: '50px'}}
+                      />
+                    </td>
+                  )}
+                  {!isClient && (
+                    <td className="col-rate">
+                      <input 
+                        type="number" 
+                        min="0" 
+                        step="0.01" 
+                        value={ld.line.monthlyRatePct || monthlyRatePct} 
+                        onChange={e => updLine(ld.line.id, {monthlyRatePct: clamp(parseFloat(e.target.value || 0), 0, 1000)})}
+                        disabled={!ld.line.ownTerms}
+                        style={{width: '100%', minWidth: '60px'}}
+                      />
+                    </td>
+                  )}
+                  
+                  <td className="col-lineTotal line-total">
+                    {fmtMoney(ld.lineTotal, currency)}
+                  </td>
+                  <td className="col-actions">
+                    <div className="row" style={{gap: 4}}>
+                      <button className="btn danger icon" onClick={() => delLine(ld.line.id)}>🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 2. Базовая рассрочка */}
+      <div className="card">
+        <div className="stages-section">
+          <h3>{t.stagesTitle}</h3>
+          {stages.map(stage => (
+            <div key={stage.id} className="stage-row">
+              <input 
+                type="text" 
+                value={stage.label} 
+                onChange={e => updStage(stage.id, {label: e.target.value})}
+                placeholder="Название этапа"
+                className="stage-input"
+              />
+              <input 
+                type="number" 
+                value={stage.pct} 
+                onChange={e => updStage(stage.id, {pct: +e.target.value})}
+                placeholder="%"
+                className="stage-input-small"
+              />
+              <input 
+                type="number" 
+                value={stage.month} 
+                onChange={e => updStage(stage.id, {month: +e.target.value})}
+                placeholder="Месяц"
+                className="stage-input-small"
+              />
+              <button onClick={() => delStage(stage.id)} className="btn danger small">
+                {t.delete}
+              </button>
+            </div>
+          ))}
+          
+          <div className="row" style={{marginTop: 8, alignItems: 'center', justifyContent: 'space-between'}}>
+            <button className="btn primary" onClick={addStage}>{t.addStage}</button>
+            <div className="pill">
+              {t.stagesSum} {Math.round(stagesSumPct * 100) / 100}%
+              {stagesSumPct !== 100 && (
+                <span className="warning">
+                  {stagesSumPct < 100 ? t.notEnough : t.exceeds} 100%
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Сводный кэшфлоу по месяцам */}
       <div className="cashflow-block">
         <div className="card">
           <div className="card-header">
@@ -1080,7 +1050,35 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ ИЗ КАТАЛОГА */}
+      {/* 4. Каталог проектов и вилл (только для редактора) */}
+      {!isClient && (
+        <div className="editor-mode">
+          <h2>{t.catalogTitle}</h2>
+          <CatalogManager 
+            catalog={catalog} 
+            setCatalog={setCatalog} 
+            t={t} 
+            lang={lang} 
+            fmtMoney={fmtMoney}
+            showAddProjectModal={showAddProjectModal}
+            setShowAddProjectModal={setShowAddProjectModal}
+            showAddVillaModal={showAddVillaModal}
+            setShowAddVillaModal={setShowAddVillaModal}
+            editingProject={editingProject}
+            setEditingProject={setEditingProject}
+            newProjectForm={newProjectForm}
+            setNewProjectForm={setNewProjectForm}
+            newVillaForm={newVillaForm}
+            setNewVillaForm={setNewVillaForm}
+            addProject={addProject}
+            saveProject={saveProject}
+            addVilla={addVilla}
+            saveVilla={saveVilla}
+          />
+        </div>
+      )}
+
+      {/* Модальные окна */}
       {modalOpen && (
         <div className="modal-overlay" onClick={() => setModalOpen(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -1106,7 +1104,6 @@ useEffect(() => {
         </div>
       )}
 
-      {/* МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ ПРОЕКТА */}
       {showAddProjectModal && (
         <div className="modal-overlay" onClick={() => setShowAddProjectModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -1129,7 +1126,6 @@ useEffect(() => {
         </div>
       )}
 
-      {/* МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ ВИЛЛЫ */}
       {showAddVillaModal && (
         <div className="modal-overlay" onClick={() => setShowAddVillaModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -1185,7 +1181,7 @@ useEffect(() => {
   );
 }
 
-// ===== КОМПОНЕНТ КАТАЛОГА (ИСПРАВЛЕННАЯ ВЕРСИЯ) =====
+// ===== КОМПОНЕНТ КАТАЛОГА =====
 function CatalogManager({ 
   catalog, 
   setCatalog, 
@@ -1215,7 +1211,6 @@ function CatalogManager({
   const filteredCatalog = useMemo(() => {
     let filtered = [...catalog];
     
-    // Фильтрация по поиску
     if (searchTerm) {
       filtered = filtered.filter(project => 
         project.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -1225,7 +1220,6 @@ function CatalogManager({
       );
     }
     
-    // Фильтрация по площади
     if (areaFilter.from || areaFilter.to) {
       filtered = filtered.map(project => ({
         ...project,
@@ -1238,7 +1232,6 @@ function CatalogManager({
       })).filter(project => project.villas.length > 0);
     }
     
-    // Фильтрация по цене
     if (priceFilter.from || priceFilter.to) {
       filtered = filtered.map(project => ({
         ...project,
@@ -1251,7 +1244,6 @@ function CatalogManager({
       })).filter(project => project.villas.length > 0);
     }
     
-    // Сортировка
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'price':
@@ -1324,7 +1316,7 @@ function CatalogManager({
       <div className="catalog-header">
         <div className="catalog-controls">
           <button onClick={addProject} className="btn primary">{t.addProject}</button>
-          <button onClick={() => addVilla()} className="btn primary">{t.addVilla}</button>
+          <button onClick={() => addVilla(null)} className="btn primary">{t.addVilla}</button>
           <button onClick={exportCatalog} className="btn">{t.exportJSON}</button>
           <label className="btn">
             {t.importJSON}
@@ -1428,6 +1420,6 @@ function CatalogManager({
   );
 }
 
-// ===== ЗАПУСК ПРИЛОЖЕНИЯ (ИСПРАВЛЕННЫЙ React 18) =====
+// ===== ЗАПУСК ПРИЛОЖЕНИЯ =====
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
