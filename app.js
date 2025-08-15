@@ -81,7 +81,8 @@ function App() {
   });
 
   // Переводы
-  const t = {
+const t = {
+  ru: {
     title: 'Arconique / Калькулятор рассрочки для любимых клиентов',
     lang: 'Язык интерфейса',
     currencyDisplay: 'Валюта отображения',
@@ -109,7 +110,6 @@ function App() {
     prePct: 'До ключей, %',
     months: 'Срок рассрочки, мес',
     rate: 'Ставка, %/мес',
-    firstPost: 'Первый платёж',
     lineTotal: 'Итоговая стоимость',
     addFromCatalog: 'Добавить из каталога',
     cashflowTitle: 'Сводный кэшфлоу по месяцам',
@@ -140,16 +140,145 @@ function App() {
     save: 'Сохранить',
     edit: 'Редактировать',
     remove: 'Удалить',
-    projectId: 'ID проекта',
     projectName: 'Название проекта',
-    villaId: 'ID виллы',
     villaName: 'Название виллы',
     villaArea: 'Площадь (м²)',
     villaPpsm: 'Цена за м² ($)',
     villaBasePrice: 'Базовая цена ($)',
     projectNameRequired: 'Введите название проекта',
-    villaNameRequired: 'Введите название виллы'
-  };
+    villaNameRequired: 'Введите название виллы',
+    // Дополнительные переводы
+    toggleToEditor: 'Переключиться в редактор',
+    toggleToClient: 'Переключиться в клиент',
+    enterPin: 'Введите PIN для входа в редакторский режим:',
+    editorActivated: 'Режим редактора активирован',
+    wrongPin: 'Неверный PIN',
+    switchedToClient: 'Переключено в клиентский режим',
+    stagesSum: 'Сумма этапов:',
+    notEnough: '— не хватает',
+    exceeds: '— превышает',
+    projectExists: 'Проект с таким ID уже существует',
+    villaExists: 'Вилла с таким ID уже существует в этом проекте',
+    fillProjectId: 'Заполните ID и название проекта',
+    fillVillaId: 'Заполните ID и название виллы',
+    deleteProjectConfirm: 'Удалить проект и все его виллы?',
+    deleteVillaConfirm: 'Удалить виллу?',
+    catalogImported: 'Каталог успешно импортирован',
+    wrongFileFormat: 'Неверный формат файла',
+    importError: 'Ошибка при импорте файла',
+    xlsxNotLoaded: 'Библиотека XLSX не загружена',
+    html2pdfNotLoaded: 'Библиотека html2pdf не загружена',
+    reportTitle: 'Arconique - Отчет по рассрочке',
+    reportCreated: 'Отчет создан:',
+    projectSummary: 'Сводка проекта',
+    totalAmount: 'Общая сумма:',
+    finalPrice: 'Итоговая цена:',
+    interest: 'Проценты:',
+    monthlyCashflow: 'Денежный поток по месяцам',
+    month: 'Месяц',
+    description: 'Описание',
+    amountDue: 'Сумма к оплате',
+    remainingBalance: 'Остаток долга'
+  },
+  en: {
+    title: 'Arconique / Installments Calculator',
+    lang: 'Language',
+    currencyDisplay: 'Display currency',
+    idrRate: 'IDR per 1 USD',
+    eurRate: 'EUR per 1 USD',
+    handoverMonth: 'Handover month',
+    globalTerm: 'Global post‑handover term (6–24 mo)',
+    globalRate: 'Global rate, %/month',
+    clientTerm: 'Post‑handover term (months)',
+    startMonth: 'Start month',
+    stagesTitle: 'Basic installments',
+    stage: 'Stage',
+    percent: '%',
+    month: 'Month',
+    addStage: 'Add stage',
+    delete: 'Delete',
+    villasTitle: 'Calculation (lines)',
+    project: 'Project',
+    villa: 'Villa',
+    qty: 'Qty',
+    area: 'sqm',
+    ppsm: '$ / sqm',
+    price: 'Base Price (USD)',
+    discount: 'Discount, %',
+    prePct: 'Pre‑handover, %',
+    months: 'Installment term, mo',
+    rate: 'Rate, %/mo',
+    lineTotal: 'Final price',
+    addFromCatalog: 'Add from catalog',
+    cashflowTitle: 'Monthly consolidated cashflow',
+    exportCSV: 'Export CSV',
+    exportXLSX: 'Export Excel',
+    exportPDF: 'Save to PDF',
+    lines: 'Selected villas',
+    keys: 'Keys in',
+    client: 'Client',
+    editor: 'Editor',
+    catalogTitle: 'Projects & Villas Catalog (editor)',
+    addProject: 'Add project',
+    addVilla: 'Add villa',
+    importJSON: 'Import JSON',
+    exportJSON: 'Export JSON',
+    selectFromCatalog: 'Select from catalog',
+    search: 'Search',
+    areaFrom: 'sqm from',
+    areaTo: 'sqm to',
+    priceFrom: 'Price from',
+    priceTo: 'Price to',
+    sort: 'Sort',
+    byPrice: 'by price',
+    byArea: 'by area',
+    byName: 'by name',
+    addSelected: 'Add selected',
+    cancel: 'Cancel',
+    save: 'Save',
+    edit: 'Edit',
+    remove: 'Remove',
+    projectName: 'Project Name',
+    villaName: 'Villa Name',
+    villaArea: 'Area (sqm)',
+    villaPpsm: 'Price per sqm ($)',
+    villaBasePrice: 'Base Price ($)',
+    projectNameRequired: 'Enter project name',
+    villaNameRequired: 'Enter villa name',
+    // Additional translations
+    toggleToEditor: 'Switch to Editor',
+    toggleToClient: 'Switch to Client',
+    enterPin: 'Enter PIN to access editor mode:',
+    editorActivated: 'Editor mode activated',
+    wrongPin: 'Wrong PIN',
+    switchedToClient: 'Switched to client mode',
+    stagesSum: 'Stages sum:',
+    notEnough: '— not enough',
+    exceeds: '— exceeds',
+    projectExists: 'Project with this ID already exists',
+    villaExists: 'Villa with this ID already exists in this project',
+    fillProjectId: 'Fill in project ID and name',
+    fillVillaId: 'Fill in villa ID and name',
+    deleteProjectConfirm: 'Delete project and all its villas?',
+    deleteVillaConfirm: 'Delete villa?',
+    catalogImported: 'Catalog successfully imported',
+    wrongFileFormat: 'Wrong file format',
+    importError: 'Error importing file',
+    xlsxNotLoaded: 'XLSX library not loaded',
+    html2pdfNotLoaded: 'html2pdf library not loaded',
+    reportTitle: 'Arconique - Installment Report',
+    reportCreated: 'Report created:',
+    projectSummary: 'Project Summary',
+    totalAmount: 'Total amount:',
+    finalPrice: 'Final price:',
+    interest: 'Interest:',
+    monthlyCashflow: 'Monthly cashflow',
+    month: 'Month',
+    description: 'Description',
+    amountDue: 'Amount due',
+    remainingBalance: 'Remaining balance'
+  }
+};
 
   // Утилиты
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -499,19 +628,19 @@ function App() {
 
   // Функция переключения режима
   const toggleMode = () => {
-    if (isClient) {
-      const pin = prompt('Введите PIN для входа в редакторский режим:');
-      if (pin === PIN_CODE) {
-        setIsClient(false);
-        alert('Режим редактора активирован');
-      } else if (pin !== null) {
-        alert('Неверный PIN');
-      }
-    } else {
-      setIsClient(true);
-      alert('Переключено в клиентский режим');
+  if (isClient) {
+    const pin = prompt(t.enterPin);
+    if (pin === PIN_CODE) {
+      setIsClient(false);
+      alert(t.editorActivated);
+    } else if (pin !== null) {
+      alert(t.wrongPin);
     }
-  };
+  } else {
+    setIsClient(true);
+    alert(t.switchedToClient);
+  }
+};
 
   // Функции для работы с этапами
   const addStage = () => {
@@ -685,9 +814,9 @@ function App() {
 
           {/* Кнопка переключения режима */}
           <div className="row">
-            <button className="btn" onClick={toggleMode}>
-              {isClient ? 'Переключиться в редактор' : 'Переключиться в клиент'}
-            </button>
+           <button className="btn" onClick={toggleMode}>
+  {isClient ? t.toggleToEditor : t.toggleToClient}
+</button>
           </div>
         </div>
 
