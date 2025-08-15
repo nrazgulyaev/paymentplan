@@ -81,7 +81,7 @@ function App() {
   });
 
   // Переводы
-const t = {
+const T = {
   ru: {
     title: 'Arconique / Калькулятор рассрочки для любимых клиентов',
     lang: 'Язык интерфейса',
@@ -344,19 +344,20 @@ const t = T[lang] || T.ru; // fallback на русский
   };
 
   const saveVilla = () => {
-    if (!newVillaForm.villaId || !newVillaForm.name) {
-      alert('Заполните ID и название виллы');
-      return;
-    }
+  const saveVilla = () => {
+  if (!newVillaForm.villaId || !newVillaForm.name) {
+    alert(t.fillVillaId); // ← ИСПРАВИТЬ
+    return;
+  }
 
     const project = catalog.find(p => p.projectId === editingProject);
     if (!project) return;
 
     const villaExists = project.villas.find(v => v.villaId === newVillaForm.villaId);
-    if (villaExists) {
-      alert('Вилла с таким ID уже существует в этом проекте');
-      return;
-    }
+  if (villaExists) {
+    alert(t.villaExists); // ← ИСПРАВИТЬ
+    return;
+  }
 
     const newVilla = {
       villaId: newVillaForm.villaId,
@@ -837,12 +838,12 @@ const addStage = () => {
 <div className="kpis">
   {!isClient && (
     <div className="kpi">
-      <div className="muted">Базовая стоимость</div>
+      <div className="muted">{t.totalAmount}</div> // ← ИСПРАВИТЬ
       <div className="v">{fmtMoney(project.totals.baseUSD, currency)}</div>
     </div>
   )}
   <div className="kpi">
-    <div className="muted">Оплата до ключей</div>
+    <div className="muted">{t.amountDue}</div> // ← ИСПРАВИТЬ
     <div className="v">{fmtMoney(project.totals.preUSD, currency)}</div>
   </div>
   <div className="kpi">
