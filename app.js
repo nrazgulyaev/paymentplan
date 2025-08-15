@@ -683,6 +683,7 @@ function App() {
       
       {/* 1. Настройки */}
       <div className="card">
+        {/* Ряд 1: Все настройки в один ряд */}
         <div className="row">
           <div className="field compact">
             <label>{t.lang}</label>
@@ -700,36 +701,33 @@ function App() {
               <option>EUR</option>
             </select>
           </div>
-        </div>
 
-        {/* Курсы валют (только для редактора) */}
-        {!isClient && (
-          <div className="row">
-            <div className="field compact">
-              <label>{t.idrRate}</label>
-              <input 
-                type="number" 
-                min="1" 
-                step="1" 
-                value={idrPerUsd} 
-                onChange={e => setIdrPerUsd(clamp(parseFloat(e.target.value || 0), 1, 1e9))}
-              />
-            </div>
-            <div className="field compact">
-              <label>{t.eurRate}</label>
-              <input 
-                type="number" 
-                min="0.01" 
-                step="0.01" 
-                value={eurPerUsd} 
-                onChange={e => setEurPerUsd(clamp(parseFloat(e.target.value || 0), 0.01, 100))}
-              />
-            </div>
-          </div>
-        )}
+          {/* Курсы валют (только для редактора) */}
+          {!isClient && (
+            <>
+              <div className="field compact">
+                <label>{t.idrRate}</label>
+                <input 
+                  type="number" 
+                  min="1" 
+                  step="1" 
+                  value={idrPerUsd} 
+                  onChange={e => setIdrPerUsd(clamp(parseFloat(e.target.value || 0), 1, 1e9))}
+                />
+              </div>
+              <div className="field compact">
+                <label>{t.eurRate}</label>
+                <input 
+                  type="number" 
+                  min="0.01" 
+                  step="0.01" 
+                  value={eurPerUsd} 
+                  onChange={e => setEurPerUsd(clamp(parseFloat(e.target.value || 0), 0.01, 100))}
+                />
+              </div>
+            </>
+          )}
 
-        {/* Начальный месяц */}
-        <div className="row">
           <div className="field compact">
             <label>{t.startMonth}</label>
             <div className="info-display">
@@ -739,9 +737,7 @@ function App() {
               })}
             </div>
           </div>
-        </div>
 
-        <div className="row">
           <div className="field compact">
             <label>{t.handoverMonth}</label>
             <input 
@@ -752,6 +748,7 @@ function App() {
               onChange={e => setHandoverMonth(clamp(parseInt(e.target.value || 0, 10), 1, 120))}
             />
           </div>
+
           {!isClient ? (
             <>
               <div className="field compact">
@@ -791,9 +788,7 @@ function App() {
           )}
         </div>
 
-        <div className="hr"></div>
-
-        {/* Кнопка переключения режима */}
+        {/* Ряд 2: Кнопка переключения режима */}
         <div className="row">
           <button className="btn" onClick={toggleMode}>
             {isClient ? t.toggleToEditor : t.toggleToClient}
@@ -1472,3 +1467,4 @@ function CatalogManager({
 // ===== ЗАПУСК ПРИЛОЖЕНИЯ =====
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
+            
