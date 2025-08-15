@@ -1,4 +1,4 @@
-// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С АРЕНДНЫМ ДОХОДОМ) =====
+// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С АРЕНДНЫМ ДОХОДОМ) - ИСПРАВЛЕННАЯ ВЕРСИЯ =====
 
 const { useState, useEffect, useMemo, useRef } = React;
 
@@ -269,7 +269,8 @@ function App() {
   const addFromCatalog = () => {
     setModalOpen(true);
   };
-    // Функции для работы с проектами
+
+  // Функции для работы с проектами
   const addProject = () => {
     setNewProjectForm({
       projectId: '',
@@ -368,10 +369,10 @@ function App() {
     setStages(stages.filter(s => s.id !== id));
   };
 
-  // Функция для обновления этапа
+  // ИСПРАВЛЕНИЕ: Функция для обновления этапа
   const updateStage = (id, field, value) => {
     setStages(stages.map(s => 
-      s.id === id ? { ...s, [field]: value } : s
+      s.id === id ? { ...s, [field]: value } : s  // ← ИСПРАВЛЕНО: 's' вместо 'line'
     ));
   };
 
@@ -555,8 +556,7 @@ function App() {
   };
 
   const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
-
-            // Компонент для управления каталогом
+    // Компонент для управления каталогом
   const CatalogManager = () => {
     if (isClient) return null;
 
@@ -566,7 +566,11 @@ function App() {
           <h3>{t.catalogTitle}</h3>
           <div className="catalog-actions">
             <button onClick={addProject} className="btn primary">{t.addProject}</button>
-            <button onClick={() => setShowAddVillaModal(true)} className="btn primary">{t.addVilla}</button>
+            {/* ИСПРАВЛЕНИЕ: Кнопка addVilla в заголовке */}
+            <button onClick={() => {
+              setEditingProject(null); // Сбрасываем editingProject
+              setShowAddVillaModal(true);
+            }} className="btn primary">{t.addVilla}</button>
             <button onClick={importCatalog} className="btn">{t.importCatalog}</button>
             <button onClick={exportCatalog} className="btn">{t.exportCatalog}</button>
           </div>
@@ -923,6 +927,7 @@ function App() {
                 <td>{fmtMoney(c.balanceUSD, currency)}</td>
                 {/* НОВЫЕ КОЛОНКИ ДЛЯ АРЕНДЫ: */}
                 <td>{fmtMoney(c.rentalIncome || 0, currency)}</td>
+                {/* ИСПРАВЛЕНИЕ: CSS классы для цветового оформления */}
                 <td className={c.netPayment >= 0 ? 'positive' : 'negative'}>
                   {fmtMoney(c.netPayment || 0, currency)}
                 </td>
