@@ -279,8 +279,14 @@ const T = {
     remainingBalance: 'Remaining balance'
   }
 };
-  / Получаем переводы для текущего языка
+  // Получаем переводы для текущего языка
 const t = T[lang] || T.ru; // fallback на русский
+
+// Обновление заголовка страницы
+useEffect(() => {
+  document.getElementById('app-title').textContent = t.title;
+  document.title = t.title;
+}, [t.title]);
 
   // Утилиты
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -307,11 +313,25 @@ const t = T[lang] || T.ru; // fallback на русский
     setShowAddProjectModal(true);
   };
 
-  const saveProject = () => {
-  if (!newProjectForm.projectId || !newProjectForm.projectName) {
-    alert(t.fillProjectId);
+const saveProject = () => {
+  if (!newProjectForm.projectName) {
+    alert(t.projectNameRequired);
     return;
   }
+  
+  // Auto-generate projectId
+  const newProjectId = newProjectForm.projectName.toLowerCase().replace(/\s/g, '-').replace(/[^a-z0-9-]/g, '');
+  const projectExists = catalog.find(p => p.projectId === newProjectId);
+  if (projectExists) {
+    alert(t.projectExists);
+    return;
+  }
+
+  const newProject = {
+    projectId: newProjectId, // Auto-generated
+    projectName: newProjectForm.projectName,
+    villas: newProjectForm.villas
+  };
   
   const projectExists = catalog.find(p => p.projectId === newProjectForm.projectId);
   if (projectExists) {
@@ -345,10 +365,29 @@ const t = T[lang] || T.ru; // fallback на русский
 
   
 const saveVilla = () => {
-  if (!newVillaForm.villaId || !newVillaForm.name) {
-    alert(t.fillVillaId);
+  if (!newVillaForm.name) {
+    alert(t.villaNameRequired);
     return;
   }
+
+  const project = catalog.find(p => p.projectId === editingProject);
+  if (!project) return;
+
+  // Auto-generate villaId
+  const newVillaId = `${editingProject}-${newVillaForm.name.toLowerCase().replace(/\s/g, '-').replace(/[^a-z0-9-]/g, '')}`;
+  const villaExists = project.villas.find(v => v.villaId === newVillaId);
+  if (villaExists) {
+    alert(t.villaExists);
+    return;
+  }
+
+  const newVilla = {
+    villaId: newVillaId, // Auto-generated
+    name: newVillaForm.name,
+    area: newVillaForm.area,
+    ppsm: newVillaForm.ppsm,
+    baseUSD: newVillaForm.baseUSD
+  };
 
     const project = catalog.find(p => p.projectId === editingProject);
     if (!project) return;
@@ -1158,7 +1197,7 @@ const addStage = () => {
       </div>
       <div className="modal-actions">
         <button onClick={saveVilla} className="btn primary">{t.save}</button>
-        <button onClick={() => setShowAddVillaModal(false)} className="btn">{t.cancel}</button>
+        <button onClick={() => addVilla(project.projectId)} className="btn primary">{t.addVilla}</button>
       </div>
     </div>
   </div>
