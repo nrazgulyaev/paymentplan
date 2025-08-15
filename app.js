@@ -344,9 +344,9 @@ const t = T[lang] || T.ru; // fallback на русский
   };
 
   
-  const saveVilla = () => {
+const saveVilla = () => {
   if (!newVillaForm.villaId || !newVillaForm.name) {
-    alert(t.fillVillaId); // ← ИСПРАВИТЬ
+    alert(t.fillVillaId);
     return;
   }
 
@@ -354,8 +354,8 @@ const t = T[lang] || T.ru; // fallback на русский
     if (!project) return;
 
     const villaExists = project.villas.find(v => v.villaId === newVillaForm.villaId);
-  if (villaExists) {
-    alert(t.villaExists); // ← ИСПРАВИТЬ
+    if (villaExists) {
+    alert(t.villaExists);
     return;
   }
 
