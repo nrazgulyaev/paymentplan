@@ -2292,3 +2292,35 @@ h1 {
   font-size: 0.9rem;
   opacity: 0.8;
 }
+
+/* Стили для заголовков колонок в блоке "Базовая рассрочка" */
+.stages-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.stage-col-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.col-label {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 2px;
+}
+
+.col-description {
+  color: #6c757d;
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: center;
+}
