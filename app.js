@@ -279,6 +279,8 @@ const t = {
     remainingBalance: 'Remaining balance'
   }
 };
+  / Получаем переводы для текущего языка
+const t = T[lang] || T.ru; // fallback на русский
 
   // Утилиты
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -306,16 +308,16 @@ const t = {
   };
 
   const saveProject = () => {
-    if (!newProjectForm.projectId || !newProjectForm.projectName) {
-      alert('Заполните ID и название проекта');
-      return;
-    }
-    
-    const projectExists = catalog.find(p => p.projectId === newProjectForm.projectId);
-    if (projectExists) {
-      alert('Проект с таким ID уже существует');
-      return;
-    }
+  if (!newProjectForm.projectId || !newProjectForm.projectName) {
+    alert(t.fillProjectId);
+    return;
+  }
+  
+  const projectExists = catalog.find(p => p.projectId === newProjectForm.projectId);
+  if (projectExists) {
+    alert(t.projectExists);
+    return;
+  }
 
     const newProject = {
       projectId: newProjectForm.projectId,
@@ -1250,21 +1252,21 @@ function CatalogManager({
     return filtered;
   }, [catalog, searchTerm, sortBy, areaFilter, priceFilter]);
 
-  const deleteProject = (projectId) => {
-    if (confirm('Удалить проект и все его виллы?')) {
-      setCatalog(prev => prev.filter(p => p.projectId !== projectId));
-    }
-  };
+const deleteProject = (projectId) => {
+  if (confirm(t.deleteProjectConfirm)) {
+    setCatalog(prev => prev.filter(p => p.projectId !== projectId));
+  }
+};
 
-  const deleteVilla = (projectId, villaId) => {
-    if (confirm('Удалить виллу?')) {
-      setCatalog(prev => prev.map(p => 
-        p.projectId === projectId 
-          ? { ...p, villas: p.villas.filter(v => v.villaId !== villaId) }
-          : p
-      ));
-    }
-  };
+const deleteVilla = (projectId, villaId) => {
+  if (confirm(t.deleteVillaConfirm)) {
+    setCatalog(prev => prev.map(p => 
+      p.projectId === projectId 
+        ? { ...p, villas: p.villas.filter(v => v.villaId !== villaId) }
+        : p
+    ));
+  }
+};
 
   const exportCatalog = () => {
     const dataStr = JSON.stringify(catalog, null, 2);
@@ -1281,19 +1283,19 @@ function CatalogManager({
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const imported = JSON.parse(e.target.result);
-          if (Array.isArray(imported)) {
-            setCatalog(imported);
-            alert('Каталог успешно импортирован');
-          } else {
-            alert('Неверный формат файла');
-          }
-        } catch (error) {
-          alert('Ошибка при импорте файла');
-        }
-      };
+  reader.onload = (e) => {
+  try {
+    const imported = JSON.parse(e.target.result);
+    if (Array.isArray(imported)) {
+      setCatalog(imported);
+      alert(t.catalogImported);
+    } else {
+      alert(t.wrongFileFormat);
+    }
+  } catch (error) {
+    alert(t.importError);
+  }
+};
       reader.readAsText(file);
     }
   };
