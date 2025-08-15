@@ -568,7 +568,6 @@ function App() {
             <button onClick={addProject} className="btn primary">{t.addProject}</button>
             {/* ИСПРАВЛЕНИЕ: Кнопка addVilla в заголовке */}
             <button onClick={() => {
-              setEditingProject(null); // Сбрасываем editingProject
               setShowAddVillaModal(true);
             }} className="btn primary">{t.addVilla}</button>
             <button onClick={importCatalog} className="btn">{t.importCatalog}</button>
@@ -750,13 +749,16 @@ function App() {
                     </td>
                     <td>
                       {line.ownTerms ? (
-                        <input 
-                          type="number" 
-                          value={line.monthlyRatePct || ''} 
-                          onChange={e => updateLine(line.id, 'monthlyRatePct', parseFloat(e.target.value) || null)}
-                          min="0"
-                          step="0.01"
-                        />%/мес
+                        <>
+                          <input 
+                            type="number" 
+                            value={line.monthlyRatePct || ''} 
+                            onChange={e => updateLine(line.id, 'monthlyRatePct', parseFloat(e.target.value) || null)}
+                            min="0"
+                            step="0.01"
+                          />
+                          %/мес
+                        </>
                       ) : '-'}
                     </td>
                   </>
@@ -1065,3 +1067,4 @@ function App() {
 // Рендеринг приложения
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
+            
