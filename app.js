@@ -1423,3 +1423,7 @@ function App() {
 }
 
 export default App;
+// ===== РЕНДЕРИНГ ПРИЛОЖЕНИЯ =====
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+
