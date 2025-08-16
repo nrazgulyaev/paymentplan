@@ -1,4 +1,4 @@
-// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С ЛИЗХОЛДОМ, ИНДЕКСАЦИЕЙ И ЦЕНООБРАЗОВАНИЕМ) - ПОЛНАЯ ВЕРСИЯ =====
+// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С ЛИЗХОЛДОМ, ИНДЕКСАЦИЕЙ И ЦЕНООБРАЗОВАНИЕМ) - ПОЛНОСТЬЮ ОБНОВЛЕННАЯ ВЕРСИЯ =====
 
 const { useState, useEffect, useMemo, useRef } = React;
 
@@ -534,6 +534,7 @@ function App() {
     }
   };
 
+  // ОБНОВЛЕНО: generatePricingData теперь возвращает правильные данные
   const generatePricingData = (villa) => {
     try {
       if (!villa || !villa.leaseholdEndDate) return [];
@@ -542,16 +543,29 @@ function App() {
       const data = [];
       
       for (let year = 0; year <= Math.min(totalYears, 20); year++) {
-        const marketPrice = villa.baseUSD * Math.pow(1 + pricingConfig.inflationRatePct / 100, year);
-        const finalPrice = calculateVillaPrice(villa, year);
+        // УБИРАЕМ marketPrice - он не нужен
+        // const marketPrice = villa.baseUSD * Math.pow(1 + pricingConfig.inflationRatePct / 100, year);
+        
+        // ДОБАВЛЯЕМ коэффициент инфляции как отдельный фактор
+        const inflationFactor = Math.pow(1 + pricingConfig.inflationRatePct / 100, year);
+        
+        // Final Price = базовая цена × все факторы
+        const finalPrice = villa.baseUSD * 
+          leaseFactor(year, totalYears, pricingConfig.leaseAlpha) * 
+          ageFactor(year, pricingConfig.agingBeta) * 
+          brandFactor(year, pricingConfig) * 
+          inflationFactor;
         
         data.push({
           year,
-          marketPrice,
+          // УБИРАЕМ marketPrice
+          // marketPrice,
           finalPrice,
           leaseFactor: leaseFactor(year, totalYears, pricingConfig.leaseAlpha),
           ageFactor: ageFactor(year, pricingConfig.agingBeta),
-          brandFactor: brandFactor(year, pricingConfig)
+          brandFactor: brandFactor(year, pricingConfig),
+          // ДОБАВЛЯЕМ коэффициент инфляции
+          inflationFactor: inflationFactor
         });
       }
       
@@ -561,7 +575,9 @@ function App() {
       return [];
     }
   };
-    // Функции для работы с проектами (ВОССТАНОВЛЕНЫ СТАРЫЕ)
+
+  // ... existing code ...
+  // Функции для работы с проектами (ВОССТАНОВЛЕНЫ СТАРЫЕ)
   const addProject = () => {
     setNewProjectForm({
       projectId: '',
@@ -839,6 +855,7 @@ function App() {
     setModalOpen(false);
   };
 
+  // ... existing code ...
   // Функции экспорта (ОБНОВЛЕНЫ С НОВЫМИ ПОЛЯМИ)
   const exportCSV = () => {
     const rows = [
@@ -1006,7 +1023,8 @@ function App() {
   const delStage = (id) => setStages(prev => prev.filter(s => s.id !== id));
 
   const updStage = (id, patch) => setStages(prev => prev.map(s => s.id === id ? {...s, ...patch} : s));
-    return (
+
+  return (
     <>
       {/* Внизу по порядку: */}
       
@@ -1125,6 +1143,7 @@ function App() {
         </div>
       </div>
 
+      {/* ... existing code ... */}
       {/* 2. Расчёт (позиции) - ОБНОВЛЕН С НОВЫМИ ПОЛЯМИ ДЛЯ АРЕНДЫ */}
       <div className="card">
         <div className="calculation-header">
@@ -1342,186 +1361,8 @@ function App() {
         </div>
       </div>
 
-      {/* 4. Базовая рассрочка - ВОССТАНОВЛЕН СТАРЫЙ ДИЗАЙН (БЕЗ БЕЛЫХ ПРЯМОУГОЛЬНИКОВ) */}
-      <div className="card">
-        <div className="stages-section">
-          <h3>{t.stagesTitle}</h3>
-          
-          {/* ПРОСТАЯ ТАБЛИЦА БЕЗ БЕЛЫХ ПРЯМОУГОЛЬНИКОВ - ВОССТАНОВЛЕНО СТАРОЕ */}
-          <table className="stages-table">
-            <thead>
-              <tr>
-                <th>{t.stage}</th>
-                <th>{t.percent}</th>
-                <th>{t.month}</th>
-                <th>{t.actions}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stages.map(stage => (
-                <tr key={stage.id}>
-                  <td>
-                    <input 
-                      type="text" 
-                      value={stage.label} 
-                      onChange={e => updStage(stage.id, {label: e.target.value})}
-                      placeholder="Название этапа"
-                      className="stage-input"
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="number" 
-                      value={stage.pct} 
-                      onChange={e => updStage(stage.id, {pct: +e.target.value})}
-                      placeholder="%"
-                      className="stage-input-small"
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="number" 
-                      value={stage.month} 
-                      onChange={e => updStage(stage.id, {month: +e.target.value})}
-                      placeholder="Месяц"
-                      className="stage-input-small"
-                    />
-                  </td>
-                  <td>
-                    <button onClick={() => delStage(stage.id)} className="btn danger small">
-                      {t.delete}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          
-          <div className="row" style={{marginTop: 8, alignItems: 'center', justifyContent: 'space-between'}}>
-            <button className="btn primary" onClick={addStage}>{t.addStage}</button>
-            <div className="pill">
-              {t.stagesSum} {Math.round(stagesSumPct * 100) / 100}%
-              {stagesSumPct !== 100 && (
-                <span className="warning">
-                  {stagesSumPct < 100 ? t.notEnough : t.exceeds} 100%
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 5. Сводный кэшфлоу по месяцам - ОБНОВЛЕН С НОВЫМИ КОЛОНКАМИ */}
-      <div className="cashflow-block">
-        <div className="card">
-          <div className="card-header">
-            <h2>{t.cashflowTitle}</h2>
-            <div className="export-buttons">
-              <button className="btn" onClick={exportCSV}>{t.exportCSV}</button>
-              <button className="btn" onClick={exportXLSX}>{t.exportXLSX}</button>
-              <button className="btn" onClick={exportPDF}>{t.exportPDF}</button>
-            </div>
-          </div>
-          
-          <div className="cashflow-scroll">
-            <table className="cashflow-table">
-              <thead>
-                <tr>
-                  <th>{t.month}</th>
-                  <th style={{textAlign: 'left'}}>{t.description}</th>
-                  <th>{t.amountDue}</th>
-                  {/* НОВЫЕ КОЛОНКИ ДЛЯ АРЕНДЫ (ДОБАВЛЕНО) */}
-                  <th>{t.rentalIncome}</th>
-                  <th>{t.netPayment}</th>
-                  {/* ОСТАТОК ДОЛГА ПЕРЕМЕЩЕН В ПОСЛЕДНЮЮ КОЛОНКУ */}
-                  <th>{t.remainingBalance}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {project.cashflow.map(c => (
-                  <tr key={c.month}>
-                    <td>{formatMonth(c.month)}</td>
-                    <td style={{textAlign: 'left'}}>{(c.items || []).join(' + ')}</td>
-                    <td>{fmtMoney(c.amountUSD, currency)}</td>
-                    {/* НОВЫЕ КОЛОНКИ ДЛЯ АРЕНДЫ (ДОБАВЛЕНО) */}
-                    <td>{fmtMoney(c.rentalIncome || 0, currency)}</td>
-                    {/* ИСПРАВЛЕНО: Красный для положительных, зеленый для отрицательных */}
-                    <td className={c.netPayment >= 0 ? 'positive' : 'negative'}>
-                      {fmtMoney(c.netPayment || 0, currency)}
-                    </td>
-                    {/* ОСТАТОК ДОЛГА ПЕРЕМЕЩЕН В ПОСЛЕДНЮЮ КОЛОНКУ */}
-                    <td>{fmtMoney(c.balanceUSD, currency)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      {/* 6. НОВЫЙ БЛОК: График общей доходности от сдачи в аренду */}
-      <div className="card">
-        <h3>{t.rentalIncomeChart}</h3>
-        <div className="rental-chart">
-          <div className="chart-container">
-            {yearlyRentalData.map((yearData, index) => (
-              <div key={index} className="chart-bar">
-                <div className="bar-label">{yearData.year === 0 ? t.keys : `${yearData.year} ${t.years}`}</div>
-                <div className="bar-container">
-                  <div 
-                    className="bar-fill" 
-                    style={{
-                      height: `${Math.max(10, (yearData.yearIncome / Math.max(...yearlyRentalData.map(y => y.yearIncome))) * 200)}px`,
-                      backgroundColor: yearData.year === 0 ? '#e2e8f0' : '#3b82f6'
-                    }}
-                  ></div>
-                </div>
-                <div className="bar-values">
-                  <div className="year-income">{fmtMoney(yearData.yearIncome, currency)}</div>
-                  <div className="cumulative-income">{fmtMoney(yearData.cumulativeIncome, currency)}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="chart-legend">
-            <div className="legend-item">
-              <div className="legend-color" style={{backgroundColor: '#3b82f6'}}></div>
-              <span>{t.totalIncome}</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-color" style={{backgroundColor: '#e2e8f0'}}></div>
-              <span>{t.cumulativeIncome}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 7. НОВЫЙ БЛОК: Параметры расчёта и график ценообразования */}
-      {lines.length > 0 && (
-        <div className="card">
-          <h3>📊 Параметры расчёта</h3>
-          
-          {/* Параметры расчёта (read-only) */}
-          <div className="calculation-params-compact">
-            <div className="param-item-compact">
-              <span className="param-label-compact">Инфляция:</span>
-              <span className="param-value-compact">g = {pricingConfig.inflationRatePct}%/год</span>
-            </div>
-            <div className="param-item-compact">
-              <span className="param-label-compact">Старение:</span>
-              <span className="param-value-compact">β = {pricingConfig.agingBeta}/год</span>
-            </div>
-            <div className="param-item-compact">
-              <span className="param-label-compact">Lease Decay:</span>
-              <span className="param-value-compact">α = {pricingConfig.leaseAlpha}</span>
-            </div>
-            <div className="param-item-compact">
-              <span className="param-label-compact">Brand Factor:</span>
-              <span className="param-value-compact">Пик = {pricingConfig.brandPeak}x</span>
-            </div>
-          </div>
-          
-          {/* График ценообразования */}
+      {/* ... existing code ... */}
+          {/* График ценообразования - ТОЛЬКО Final Price */}
           <div className="pricing-chart-container">
             <h4>Динамика цены виллы</h4>
             <p className="chart-subtitle">Влияние факторов на цену</p>
@@ -1537,23 +1378,14 @@ function App() {
                     
                     if (pricingData.length === 0) return null;
                     
-                    const maxPrice = Math.max(...pricingData.map(d => Math.max(d.marketPrice, d.finalPrice)));
-                    const minPrice = Math.min(...pricingData.map(d => Math.min(d.marketPrice, d.finalPrice)));
+                    // ТОЛЬКО Final Price для расчета диапазона
+                    const maxPrice = Math.max(...pricingData.map(d => d.finalPrice));
+                    const minPrice = Math.min(...pricingData.map(d => d.finalPrice));
                     const priceRange = maxPrice - minPrice;
                     
                     return (
                       <>
-                        {/* Market Price линия */}
-                        <polyline
-                          className="chart-line"
-                          points={pricingData.map((d, i) => 
-                            `${50 + i * 35},${250 - ((d.marketPrice - minPrice) / priceRange) * 200}`
-                          ).join(' ')}
-                          fill="none"
-                          stroke="#4CAF50"
-                          strokeWidth="2"
-                        />
-                        {/* Final Price линия */}
+                        {/* ТОЛЬКО Final Price линия */}
                         <polyline
                           className="chart-line"
                           points={pricingData.map((d, i) => 
@@ -1563,16 +1395,11 @@ function App() {
                           stroke="#2196F3"
                           strokeWidth="2"
                         />
-                        {/* Точки */}
+                        
+                        {/* Точки только для Final Price */}
                         <g className="line-points">
                           {pricingData.map((d, i) => (
                             <g key={i}>
-                              <circle
-                                cx={50 + i * 35}
-                                cy={250 - ((d.marketPrice - minPrice) / priceRange) * 200}
-                                r="3"
-                                fill="#4CAF50"
-                              />
                               <circle
                                 cx={50 + i * 35}
                                 cy={250 - ((d.finalPrice - minPrice) / priceRange) * 200}
@@ -1582,17 +1409,17 @@ function App() {
                             </g>
                           ))}
                         </g>
+                        
                         {/* Оси */}
                         <g className="chart-axes">
                           <line className="y-axis" x1="50" y1="50" x2="50" y2="250" stroke="#666" strokeWidth="1"/>
                           <line className="x-axis" x1="50" y1="250" x2="750" y2="250" stroke="#666" strokeWidth="1"/>
                         </g>
-                        {/* Легенда */}
+                        
+                        {/* УПРОЩЕННАЯ легенда - только Final Price */}
                         <g className="chart-legend">
-                          <rect x="600" y="20" width="15" height="15" fill="#4CAF50"/>
-                          <text x="620" y="32" fontSize="12" fill="#333">Market Price</text>
-                          <rect x="600" y="40" width="15" height="15" fill="#2196F3"/>
-                          <text x="620" y="52" fontSize="12" fill="#333">Final Price</text>
+                          <rect x="600" y="20" width="15" height="15" fill="#2196F3"/>
+                          <text x="620" y="32" fontSize="12" fill="#333">Final Price</text>
                         </g>
                       </>
                     );
@@ -1602,7 +1429,7 @@ function App() {
             </div>
           </div>
           
-          {/* Таблица факторов */}
+          {/* Таблица факторов - ОБНОВЛЕННАЯ */}
           <div className="factors-table-container">
             <h4>Таблица факторов</h4>
             <div className="factors-table-scroll">
@@ -1613,7 +1440,8 @@ function App() {
                     <th>Lease Factor</th>
                     <th>Age Factor</th>
                     <th>Brand Factor</th>
-                    <th>Market Price</th>
+                    {/* ИЗМЕНЯЕМ: убираем Market Price, добавляем коэффициент инфляции */}
+                    <th>Коэффициент инфляции</th>
                     <th>Final Price</th>
                   </tr>
                 </thead>
@@ -1629,7 +1457,8 @@ function App() {
                           <td>{data.leaseFactor.toFixed(3)}</td>
                           <td>{data.ageFactor.toFixed(3)}</td>
                           <td>{data.brandFactor.toFixed(3)}</td>
-                          <td className="price-cell">{fmtMoney(data.marketPrice)}</td>
+                          {/* ИЗМЕНЯЕМ: показываем коэффициент инфляции вместо Market Price */}
+                          <td>{data.inflationFactor.toFixed(3)}</td>
                           <td className="price-cell">{fmtMoney(data.finalPrice)}</td>
                         </tr>
                       )) : null;
@@ -1803,7 +1632,8 @@ function App() {
   );
 }
 
-// ===== КОМПОНЕНТ КАТАЛОГА - ОБНОВЛЕН С НОВЫМИ ПОЛЯМИ =====
+// ... existing code ...
+// ===== КОМПОНЕНТ КАТАЛОГА - ОБНОВЛЕН С НОВЫМИ ПОЛЯМИ И УПРОЩЕННЫМ ИНТЕРФЕЙСОМ =====
 function CatalogManager({ 
   catalog, 
   setCatalog, 
@@ -1825,65 +1655,14 @@ function CatalogManager({
   addVilla,
   saveVilla
 }) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('name');
-  const [areaFilter, setAreaFilter] = useState({ from: '', to: '' });
-  const [priceFilter, setPriceFilter] = useState({ from: '', to: '' });
+  // УБИРАЕМ все состояния для поиска и фильтров
+  // const [searchTerm, setSearchTerm] = useState('');
+  // const [sortBy, setSortBy] = useState('name');
+  // const [areaFilter, setAreaFilter] = useState({ from: '', to: '' });
+  // const [priceFilter, setPriceFilter] = useState({ from: '', to: '' });
 
-  const filteredCatalog = useMemo(() => {
-    let filtered = [...catalog];
-    
-    if (searchTerm) {
-      filtered = filtered.filter(project => 
-        project.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.villas.some(villa => 
-          villa.name.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      );
-    }
-    
-    if (areaFilter.from || areaFilter.to) {
-      filtered = filtered.map(project => ({
-        ...project,
-        villas: project.villas.filter(villa => {
-          const area = villa.area;
-          const from = areaFilter.from ? +areaFilter.from : 0;
-          const to = areaFilter.to ? +areaFilter.to : Infinity;
-          return area >= from && area <= to;
-        })
-      })).filter(project => project.villas.length > 0);
-    }
-    
-    if (priceFilter.from || priceFilter.to) {
-      filtered = filtered.map(project => ({
-        ...project,
-        villas: project.villas.filter(villa => {
-          const price = villa.baseUSD;
-          const from = priceFilter.from ? +priceFilter.from : 0;
-          const to = priceFilter.to ? +priceFilter.to : Infinity;
-          return price >= from && price <= to;
-        })
-      })).filter(project => project.villas.length > 0);
-    }
-    
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'price':
-          const aPrice = Math.min(...a.villas.map(v => v.baseUSD));
-          const bPrice = Math.min(...b.villas.map(v => v.baseUSD));
-          return aPrice - bPrice;
-        case 'area':
-          const aArea = Math.min(...a.villas.map(v => v.area));
-          const bArea = Math.min(...b.villas.map(v => v.area));
-          return aArea - bArea;
-        case 'name':
-        default:
-          return a.projectName.localeCompare(b.projectName);
-      }
-    });
-    
-    return filtered;
-  }, [catalog, searchTerm, sortBy, areaFilter, priceFilter]);
+  // УБИРАЕМ сложную логику фильтрации
+  // const filteredCatalog = useMemo(() => { ... }, [catalog, searchTerm, sortBy, areaFilter, priceFilter]);
 
   const deleteProject = (projectId) => {
     if (confirm(t.deleteProjectConfirm)) {
@@ -1935,66 +1714,11 @@ function CatalogManager({
 
   return (
     <div className="catalog-section">
-      {/* Панель управления */}
-      <div className="catalog-controls">
-        <div className="search-filters">
-          <input 
-            type="text" 
-            placeholder="Поиск..." 
-            value={searchTerm} 
-            onChange={e => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-          
-          <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="sort-select">
-            <option value="name">По названию</option>
-            <option value="price">По цене</option>
-            <option value="area">По площади</option>
-          </select>
-          
-          <div className="filter-group">
-            <input 
-              type="number" 
-              placeholder={t.areaFrom} 
-              value={areaFilter.from} 
-              onChange={e => setAreaFilter(prev => ({...prev, from: e.target.value}))}
-              className="filter-input"
-            />
-            <span>-</span>
-            <input 
-              type="number" 
-              placeholder={t.areaTo} 
-              value={areaFilter.to} 
-              onChange={e => setAreaFilter(prev => ({...prev, to: e.target.value}))}
-              className="filter-input"
-            />
-          </div>
-          
-          <div className="filter-group">
-            <input 
-              type="number" 
-              placeholder={t.priceFrom} 
-              value={priceFilter.from} 
-              onChange={e => setPriceFilter(prev => ({...prev, from: e.target.value}))}
-              className="filter-input"
-            />
-            <span>-</span>
-            <input 
-              type="number" 
-              placeholder={t.priceTo} 
-              value={priceFilter.to} 
-              onChange={e => setPriceFilter(prev => ({...prev, to: e.target.value}))}
-              className="filter-input"
-            />
-          </div>
-        </div>
-        
+      {/* УПРОЩЕННАЯ панель управления - только основные кнопки */}
+      <div className="catalog-controls-simple">
         <div className="catalog-actions">
           <button onClick={() => setShowAddProjectModal(true)} className="btn primary">
             {t.addProject}
-          </button>
-          <button onClick={() => setShowAddVillaModal(true)} className="btn success">
-            {t.addVilla}
           </button>
           <button onClick={exportCatalog} className="btn">
             Экспорт JSON
@@ -2011,13 +1735,20 @@ function CatalogManager({
         </div>
       </div>
 
-      {/* Список проектов и вилл */}
+      {/* Список проектов и вилл - ПЕРЕМЕЩАЕМ кнопку добавить виллу */}
       <div className="catalog-list">
-        {filteredCatalog.map(project => (
+        {catalog.map(project => (
           <div key={project.projectId} className="project-card">
             <div className="project-header">
               <h3>{project.projectName}</h3>
               <div className="project-actions">
+                {/* ПЕРЕМЕЩАЕМ кнопку добавить виллу СЮДА */}
+                <button 
+                  onClick={() => addVilla(project.projectId)} 
+                  className="btn success small"
+                >
+                  ➕ {t.addVilla}
+                </button>
                 <button 
                   onClick={() => setEditingProject(project)} 
                   className="btn small"
