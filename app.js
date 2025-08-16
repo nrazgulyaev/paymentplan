@@ -1599,10 +1599,10 @@ function App() {
             </div>
           </div>
           
-       {/* График ценообразования - С РЕАЛЬНЫМИ ГОДАМИ */}
+      {/* График ценообразования - С ДВУМЯ ЛИНИЯМИ */}
 <div className="pricing-chart-container">
   <h4>Динамика цены виллы</h4>
-  <p className="chart-subtitle">Влияние факторов на цену</p>
+  <p className="chart-subtitle">Влияние факторов на цену и доходность от аренды</p>
   <div className="pricing-chart-svg" id="pricing-chart-svg">
     <svg width="100%" height="300" viewBox="0 0 800 300">
       <g className="chart-lines">
@@ -1615,13 +1615,34 @@ function App() {
           
           if (pricingData.length === 0) return null;
           
+          // Вычисляем данные по аренде для каждого года
+          const rentalData = pricingData.map(data => {
+            const rentalIncome = lines.reduce((total, line) => {
+              if (data.year <= 0) return 0; // До получения ключей аренды нет
+              
+              const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, data.year);
+              const daysInYear = 365;
+              const occupancyDays = daysInYear * (line.occupancyPct / 100);
+              const yearIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
+              
+              return total + yearIncome;
+            }, 0);
+            
+            return { ...data, rentalIncome };
+          });
+          
+          // Находим диапазоны для обеих линий
           const maxPrice = Math.max(...pricingData.map(d => d.finalPrice));
           const minPrice = Math.min(...pricingData.map(d => d.finalPrice));
           const priceRange = maxPrice - minPrice;
           
+          const maxRental = Math.max(...rentalData.map(d => d.rentalIncome));
+          const minRental = Math.min(...rentalData.map(d => d.rentalIncome));
+          const rentalRange = maxRental - minRental;
+          
           return (
             <>
-              {/* Final Price линия */}
+              {/* Линия Final Price (синяя) */}
               <polyline
                 className="chart-line"
                 points={pricingData.map((d, i) => 
@@ -1632,15 +1653,39 @@ function App() {
                 strokeWidth="2"
               />
               
-              {/* Точки */}
+              {/* Линия доходности от аренды (зеленая) */}
+              <polyline
+                className="chart-line"
+                points={rentalData.map((d, i) => 
+                  `${50 + i * 35},${250 - ((d.rentalIncome - minRental) / rentalRange) * 200}`
+                ).join(' ')}
+                fill="none"
+                stroke="#4CAF50"
+                strokeWidth="2"
+              />
+              
+              {/* Точки для Final Price */}
               <g className="line-points">
                 {pricingData.map((d, i) => (
                   <circle
-                    key={i}
+                    key={`price-${i}`}
                     cx={50 + i * 35}
                     cy={250 - ((d.finalPrice - minPrice) / priceRange) * 200}
                     r="3"
                     fill="#2196F3"
+                  />
+                ))}
+              </g>
+              
+              {/* Точки для доходности от аренды */}
+              <g className="line-points">
+                {rentalData.map((d, i) => (
+                  <circle
+                    key={`rental-${i}`}
+                    cx={50 + i * 35}
+                    cy={250 - ((d.rentalIncome - minRental) / rentalRange) * 200}
+                    r="3"
+                    fill="#4CAF50"
                   />
                 ))}
               </g>
@@ -1672,10 +1717,12 @@ function App() {
                 })}
               </g>
               
-              {/* Легенда */}
+              {/* Легенда - ОБЕ ЛИНИИ */}
               <g className="chart-legend">
                 <rect x="600" y="20" width="15" height="15" fill="#2196F3"/>
                 <text x="620" y="32" fontSize="12" fill="#333">Final Price</text>
+                <rect x="600" y="40" width="15" height="15" fill="#4CAF50"/>
+                <text x="620" y="52" fontSize="12" fill="#333">Доходность от аренды</text>
               </g>
             </>
           );
@@ -1684,7 +1731,6 @@ function App() {
     </svg>
   </div>
 </div>
-
 {/* Таблица факторов - С ДОХОДНОСТЬЮ ОТ АРЕНДЫ */}
 <div className="factors-table-container">
   <h4>Таблица факторов</h4>
