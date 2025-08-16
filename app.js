@@ -1599,123 +1599,107 @@ function App() {
             </div>
           </div>
           
-          {/* График ценообразования */}
-          <div className="pricing-chart-container">
-            <h4>Динамика цены виллы</h4>
-            <p className="chart-subtitle">Влияние факторов на цену</p>
-            <div className="pricing-chart-svg" id="pricing-chart-svg">
-              <svg width="100%" height="300" viewBox="0 0 800 300">
-                <g className="chart-lines">
-                  {(() => {
-                    const selectedVilla = catalog
-                      .flatMap(p => p.villas)
-                      .find(v => v.villaId === lines[0]?.villaId);
-                    const pricingData = selectedVilla && selectedVilla.leaseholdEndDate ? 
-                      generatePricingData(selectedVilla) : [];
-                    
-                    if (pricingData.length === 0) return null;
-                    
-                    const maxPrice = Math.max(...pricingData.map(d => Math.max(d.marketPrice, d.finalPrice)));
-                    const minPrice = Math.min(...pricingData.map(d => Math.min(d.marketPrice, d.finalPrice)));
-                    const priceRange = maxPrice - minPrice;
-                    
-                    return (
-                      <>
-                        {/* Market Price линия */}
-                        <polyline
-                          className="chart-line"
-                          points={pricingData.map((d, i) => 
-                            `${50 + i * 35},${250 - ((d.marketPrice - minPrice) / priceRange) * 200}`
-                          ).join(' ')}
-                          fill="none"
-                          stroke="#4CAF50"
-                          strokeWidth="2"
-                        />
-                        {/* Final Price линия */}
-                        <polyline
-                          className="chart-line"
-                          points={pricingData.map((d, i) => 
-                            `${50 + i * 35},${250 - ((d.finalPrice - minPrice) / priceRange) * 200}`
-                          ).join(' ')}
-                          fill="none"
-                          stroke="#2196F3"
-                          strokeWidth="2"
-                        />
-                        {/* Точки */}
-                        <g className="line-points">
-                          {pricingData.map((d, i) => (
-                            <g key={i}>
-                              <circle
-                                cx={50 + i * 35}
-                                cy={250 - ((d.marketPrice - minPrice) / priceRange) * 200}
-                                r="3"
-                                fill="#4CAF50"
-                              />
-                              <circle
-                                cx={50 + i * 35}
-                                cy={250 - ((d.finalPrice - minPrice) / priceRange) * 200}
-                                r="3"
-                                fill="#2196F3"
-                              />
-                            </g>
-                          ))}
-                        </g>
-                        {/* Оси */}
-                        <g className="chart-axes">
-                          <line className="y-axis" x1="50" y1="50" x2="50" y2="250" stroke="#666" strokeWidth="1"/>
-                          <line className="x-axis" x1="50" y1="250" x2="750" y2="250" stroke="#666" strokeWidth="1"/>
-                        </g>
-                        {/* Легенда */}
-                        <g className="chart-legend">
-                          <rect x="600" y="20" width="15" height="15" fill="#4CAF50"/>
-                          <text x="620" y="32" fontSize="12" fill="#333">Market Price</text>
-                          <rect x="600" y="40" width="15" height="15" fill="#2196F3"/>
-                          <text x="620" y="52" fontSize="12" fill="#333">Final Price</text>
-                        </g>
-                      </>
-                    );
-                  })()}
-                </g>
-              </svg>
-            </div>
-          </div>
+        {/* График ценообразования */}
+<div className="pricing-chart-container">
+  <h4>Динамика цены виллы</h4>
+  <p className="chart-subtitle">Влияние факторов на цену</p>
+  <div className="pricing-chart-svg" id="pricing-chart-svg">
+    <svg width="100%" height="300" viewBox="0 0 800 300">
+      <g className="chart-lines">
+        {(() => {
+          const selectedVilla = catalog
+            .flatMap(p => p.villas)
+            .find(v => v.villaId === lines[0]?.villaId);
+          const pricingData = selectedVilla && selectedVilla.leaseholdEndDate ? 
+            generatePricingData(selectedVilla) : [];
           
-          {/* Таблица факторов */}
-          <div className="factors-table-container">
-            <h4>Таблица факторов</h4>
-            <div className="factors-table-scroll">
-              <table className="factors-table">
-                <thead>
-                  <tr>
-                    <th>Год</th>
-                    <th>Lease Factor</th>
-                    <th>Age Factor</th>
-                    <th>Brand Factor</th>
-                    <th>Market Price</th>
-                    <th>Final Price</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(() => {
-                    const selectedVilla = catalog
-                      .flatMap(p => p.villas)
-                      .find(v => v.villaId === lines[0]?.villaId);
-                    return selectedVilla && selectedVilla.leaseholdEndDate ? 
-                      generatePricingData(selectedVilla).slice(0, 10).map((data, index) => (
-                        <tr key={index}>
-                          <td>{data.year}</td>
-                          <td>{data.leaseFactor.toFixed(3)}</td>
-                          <td>{data.ageFactor.toFixed(3)}</td>
-                          <td>{data.brandFactor.toFixed(3)}</td>
-                          <td className="price-cell">{fmtMoney(data.marketPrice)}</td>
-                          <td className="price-cell">{fmtMoney(data.finalPrice)}</td>
-                        </tr>
-                      )) : null;
-                  })()}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          if (pricingData.length === 0) return null;
+          
+          const maxPrice = Math.max(...pricingData.map(d => d.finalPrice));
+          const minPrice = Math.min(...pricingData.map(d => d.finalPrice));
+          const priceRange = maxPrice - minPrice;
+          
+          return (
+            <>
+              {/* ТОЛЬКО Final Price линия - Market Price убрана */}
+              <polyline
+                className="chart-line"
+                points={pricingData.map((d, i) => 
+                  `${50 + i * 35},${250 - ((d.finalPrice - minPrice) / priceRange) * 200}`
+                ).join(' ')}
+                fill="none"
+                stroke="#2196F3"
+                strokeWidth="2"
+              />
+              
+              {/* Точки только для Final Price */}
+              <g className="line-points">
+                {pricingData.map((d, i) => (
+                  <circle
+                    key={i}
+                    cx={50 + i * 35}
+                    cy={250 - ((d.finalPrice - minPrice) / priceRange) * 200}
+                    r="3"
+                    fill="#2196F3"
+                  />
+                ))}
+              </g>
+              
+              {/* Оси */}
+              <g className="chart-axes">
+                <line className="y-axis" x1="50" y1="50" x2="50" y2="250" stroke="#666" strokeWidth="1"/>
+                <line className="x-axis" x1="50" y1="250" x2="750" y2="250" stroke="#666" strokeWidth="1"/>
+              </g>
+              
+              {/* Легенда - только Final Price */}
+              <g className="chart-legend">
+                <rect x="600" y="20" width="15" height="15" fill="#2196F3"/>
+                <text x="620" y="32" fontSize="12" fill="#333">Final Price</text>
+              </g>
+            </>
+          );
+        })()}
+      </g>
+    </svg>
+  </div>
+</div>
+
+{/* Таблица факторов - ИСПРАВЛЕНА */}
+<div className="factors-table-container">
+  <h4>Таблица факторов</h4>
+  <div className="factors-table-scroll">
+    <table className="factors-table">
+      <thead>
+        <tr>
+          <th>Год</th>
+          <th>Lease Factor</th>
+          <th>Age Factor</th>
+          <th>Brand Factor</th>
+          <th>Коэффициент инфляции</th>
+          <th>Final Price</th>
+        </tr>
+      </thead>
+      <tbody>
+        {(() => {
+          const selectedVilla = catalog
+            .flatMap(p => p.villas)
+            .find(v => v.villaId === lines[0]?.villaId);
+          return selectedVilla && selectedVilla.leaseholdEndDate ? 
+            generatePricingData(selectedVilla).slice(0, 10).map((data, index) => (
+              <tr key={index}>
+                <td>{data.year}</td>
+                <td>{data.leaseFactor.toFixed(3)}</td>
+                <td>{data.ageFactor.toFixed(3)}</td>
+                <td>{data.brandFactor.toFixed(3)}</td>
+                <td>{Math.pow(1 + pricingConfig.inflationRatePct / 100, data.year).toFixed(3)}</td>
+                <td className="price-cell">{fmtMoney(data.finalPrice)}</td>
+              </tr>
+            )) : null;
+        })()}
+      </tbody>
+    </table>
+  </div>
+</div>
         </div>
       )}
 
