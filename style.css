@@ -2398,4 +2398,20 @@ h1 {
   animation: shimmer 1.5s infinite;
 }
 
+.factors-table-container {
+  /* Убираем ограничение по высоте */
+  max-height: none;
+}
+
+.factors-table-scroll {
+  /* Убираем ограничение по высоте */
+  max-height: none;
+  overflow: visible;
+}
+
+.factors-table {
+  /* Таблица растягивается на всю высоту */
+  height: auto;
+}
+
 /* ===== КОНЕЦ СТИЛЕЙ ===== */
