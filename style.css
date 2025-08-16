@@ -63,6 +63,7 @@
   --z-card: 10;
   --z-modal: 1000;
   --z-tooltip: 1100;
+  --z-notification: 1200;
 }
 
 /* ===== БАЗОВЫЕ СТИЛИ ===== */
@@ -204,7 +205,6 @@ h1 {
     margin-top: var(--spacing-lg);
   }
 }
-
 /* ===== СОВРЕМЕННЫЕ КАРТОЧКИ ===== */
 
 .card {
@@ -688,111 +688,9 @@ h1 {
   background: linear-gradient(90deg, var(--primary), transparent);
 }
 
-/* ===== МОДАЛЬНЫЕ ОКНА ===== */
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.8);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  z-index: var(--z-modal);
-  animation: fadeInScale 0.3s ease-out;
-}
-
-.modal-content {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  padding: 0;
-  max-width: 90vw;
-  max-height: 90vh;
-  overflow: hidden;
-  box-shadow: var(--shadow-xl);
-  animation: fadeInUp 0.4s ease-out 0.1s both;
-  position: relative;
-}
-
-.modal-content::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--primary), var(--accent), var(--success));
-}
-
-.modal-header {
-  padding: 24px 24px 16px;
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.5rem;
+.amount {
   font-weight: 600;
-  color: var(--ink);
-}
-
-.modal-body {
-  padding: 24px;
-  overflow-y: auto;
-  max-height: 60vh;
-}
-
-/* ===== ФОРМЫ ===== */
-
-.form-section {
-  margin-bottom: 24px;
-}
-
-.form-section h4 {
-  margin: 0 0 16px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--ink);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.form-section h4::before {
-  content: '';
-  width: 3px;
-  height: 16px;
-  background: var(--accent);
-  border-radius: 2px;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.form-group {
-  display: grid;
-  gap: 6px;
-}
-
-.form-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  padding-top: 20px;
-  border-top: 1px solid var(--line);
-  margin-top: 24px;
+  color: var(--accent);
 }
 
 /* ===== KPI БЛОКИ ===== */
@@ -1082,854 +980,6 @@ h1 {
   margin-bottom: var(--spacing-lg);
 }
 
-.stage-input {
-  width: 100%;
-  padding: 8px 12px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  color: var(--ink);
-  font-size: 13px;
-  transition: all var(--transition-fast);
-}
-
-.stage-input:focus {
-  outline: none;
-  border-color: var(--primary);
-  background: var(--card-hover);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.stage-number-input {
-  width: 100%;
-  padding: 8px 12px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  color: var(--ink);
-  font-size: 13px;
-  text-align: center;
-  max-width: 80px;
-}
-
-.stage-number-input:focus {
-  outline: none;
-  border-color: var(--primary);
-  background: var(--card-hover);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.stage-actions {
-  display: flex;
-  gap: var(--spacing-xs);
-  justify-content: center;
-}
-
-.delete-stage-btn {
-  padding: 6px 10px;
-  background: var(--danger);
-  border: none;
-  border-radius: var(--radius-sm);
-  color: white;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  white-space: nowrap;
-}
-
-.delete-stage-btn:hover {
-  background: var(--danger-hover);
-  transform: translateY(-1px);
-}
-
-/* ===== СТИЛИ ДЛЯ ТАБЛИЦ ===== */
-
-.calculation-header {
-  margin-bottom: var(--spacing-lg);
-}
-
-.project-name-display,
-.villa-name-display,
-.area-display,
-.ppsm-display {
-  color: var(--ink);
-  font-weight: 500;
-}
-
-.base-strong,
-.line-total {
-  font-weight: 600;
-  color: var(--primary);
-}
-
-/* ===== АДАПТИВНОСТЬ ===== */
-
-@media (max-width: 767px) {
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-  
-  .kpis {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .modal-content {
-    margin: 20px;
-    max-width: calc(100vw - 40px);
-  }
-  
-  .stages-table .col-stage {
-    min-width: 120px;
-  }
-  
-  .stages-table .col-percent,
-  .stages-table .col-month {
-    min-width: 60px;
-    max-width: 70px;
-  }
-  
-  .notification-center {
-    left: 20px;
-    right: 20px;
-    max-width: none;
-  }
-  
-  .scenarios-panel {
-    left: 20px;
-    right: 20px;
-    max-width: none;
-  }
-}
-
-@media (min-width: 1200px) {
-  .settings-row {
-    gap: var(--spacing-2xl);
-  }
-}
-
-@media (max-width: 480px) {
-  .field.compact {
-    min-width: 100px;
-  }
-  
-  .wrap {
-    padding: 0 12px;
-    margin: 16px auto;
-  }
-  
-  .card {
-    padding: 16px;
-  }
-}
-
-/* ===== PWA СТИЛИ ===== */
-
-@media (display-mode: standalone) {
-  .wrap {
-    margin: 0;
-    padding: 16px;
-  }
-  
-  body {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-}
-
-/* ===== ПРОГРЕСС БАРЫ ===== */
-
-.progress-bar {
-  width: 100%;
-  height: 8px;
-  background: var(--card);
-  border-radius: 4px;
-  overflow: hidden;
-  position: relative;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--primary), var(--accent));
-  border-radius: 4px;
-  transition: width var(--transition-normal);
-  position: relative;
-}
-
-.progress-fill::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-  animation: shimmer 2s infinite;
-}
-
-/* ===== ЗАГРУЗЧИКИ ===== */
-
-.loader {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--line);
-  border-radius: 50%;
-  border-top-color: var(--primary);
-  animation: spin 1s ease-in-out infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.loader-dots {
-  display: inline-flex;
-  gap: 4px;
-}
-
-.loader-dots span {
-  width: 6px;
-  height: 6px;
-  background: var(--primary);
-  border-radius: 50%;
-  animation: bounce 1.4s ease-in-out infinite both;
-}
-
-.loader-dots span:nth-child(2) { animation-delay: -0.16s; }
-
-@keyframes bounce {
-  0%, 80%, 100% {
-    transform: scale(0);
-  }
-  40% {
-    transform: scale(1);
-  }
-}
-
-/* ===== ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ДЛЯ КАТАЛОГА ===== */
-
-.catalog-card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  padding: var(--spacing-md);
-  margin-bottom: var(--spacing-md);
-}
-
-.catalog-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-md);
-}
-
-.catalog-actions {
-  display: flex;
-  gap: var(--spacing-sm);
-}
-
-.catalog-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-}
-
-.catalog-table th,
-.catalog-table td {
-  padding: var(--spacing-sm);
-  text-align: center;
-  border-bottom: 1px solid var(--line);
-}
-
-.catalog-table th {
-  background: var(--card-hover);
-  font-weight: 600;
-}
-
-.catalog-table input {
-  width: 100%;
-  padding: 6px 8px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  color: var(--ink);
-  font-size: 12px;
-}
-
-.catalog-selection-project {
-  margin-bottom: var(--spacing-lg);
-}
-
-.catalog-selection-project h4 {
-  margin: 0 0 var(--spacing-md);
-  color: var(--ink);
-}
-
-.villas-selection {
-  display: grid;
-  gap: var(--spacing-sm);
-}
-
-.villa-selection-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--spacing-sm);
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-}
-
-.villa-info {
-  flex: 1;
-}
-
-.villa-name {
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.villa-details {
-  display: flex;
-  gap: var(--spacing-md);
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.search-filters {
-  margin-bottom: var(--spacing-lg);
-}
-
-.search-input {
-  width: 100%;
-  padding: var(--spacing-sm);
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  color: var(--ink);
-  margin-bottom: var(--spacing-md);
-}
-
-.filter-row {
-  display: flex;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-sm);
-}
-
-.filter-group {
-  flex: 1;
-}
-
-.filter-group label {
-  display: block;
-  font-size: 12px;
-  color: var(--muted);
-  margin-bottom: 4px;
-}
-
-.filter-group input,
-.filter-group select {
-  width: 100%;
-  padding: 6px 8px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  color: var(--ink);
-  font-size: 12px;
-}
-
-/* ===== КОМПАКТНЫЕ КНОПКИ ===== */
-
-.add-selected-btn {
-  padding: 6px 12px;
-  font-size: 11px;
-  min-width: auto;
-  height: 28px;
-  line-height: 1;
-}
-
-.export-buttons {
-  display: flex;
-  gap: var(--spacing-sm);
-}
-
-/* ===== ИНФОРМАЦИОННЫЕ БЛОКИ ===== */
-
-.info-display {
-  padding: 10px 12px;
-  background: var(--card-hover);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  color: var(--ink);
-  font-size: 13px;
-  text-align: center;
-  font-weight: 500;
-}
-
-/* ===== ДОПОЛНИТЕЛЬНЫЕ АНИМАЦИИ ===== */
-
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes rotateIn {
-  from {
-    opacity: 0;
-    transform: rotate(-200deg);
-  }
-  to {
-    opacity: 1;
-    transform: rotate(0);
-  }
-}
-
-/* ===== АНИМИРОВАННЫЕ ЭЛЕМЕНТЫ ===== */
-
-.animate-slide-up {
-  animation: slideInUp 0.6s ease-out;
-}
-
-.animate-scale-in {
-  animation: scaleIn 0.4s ease-out;
-}
-
-.animate-rotate-in {
-  animation: rotateIn 0.8s ease-out;
-}
-
-/* ===== HOVER ЭФФЕКТЫ ===== */
-
-.hover-lift {
-  transition: transform var(--transition-normal);
-}
-
-.hover-lift:hover {
-  transform: translateY(-4px);
-}
-
-.hover-glow {
-  transition: box-shadow var(--transition-normal);
-}
-
-.hover-glow:hover {
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
-}
-
-.hover-border {
-  transition: border-color var(--transition-normal);
-}
-
-.hover-border:hover {
-  border-color: var(--accent);
-}
-
-/* ===== ГРАДИЕНТНЫЕ ТЕКСТЫ ===== */
-
-.gradient-text-primary {
-  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.gradient-text-accent {
-  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.gradient-text-success {
-  background: linear-gradient(135deg, var(--success), var(--success-hover));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* ===== СПЕЦИАЛЬНЫЕ ЭЛЕМЕНТЫ ===== */
-
-.floating-element {
-  animation: float 6s ease-in-out infinite;
-}
-
-.pulsing-element {
-  animation: pulse 2s ease-in-out infinite;
-}
-
-.shimmer-element {
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-  background-size: 200px 100%;
-  animation: shimmer 2s infinite;
-}
-
-/* ===== СКРОЛЛБАРЫ ===== */
-
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--card);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--line);
-  border-radius: 4px;
-  transition: background var(--transition-fast);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--line-hover);
-}
-
-::-webkit-scrollbar-corner {
-  background: var(--card);
-}
-
-/* ===== ВЫБОР ТЕКСТА ===== */
-
-::selection {
-  background: var(--primary);
-  color: white;
-}
-
-::-moz-selection {
-  background: var(--primary);
-  color: white;
-}
-
-/* ===== ФОКУС ДЛЯ ДОСТУПНОСТИ ===== */
-
-.btn:focus,
-.field input:focus,
-.field select:focus,
-.field textarea:focus {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
-/* ===== СОСТОЯНИЯ ЗАГРУЗКИ ===== */
-
-.loading {
-  position: relative;
-  overflow: hidden;
-}
-
-.loading::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-  animation: shimmer 1.5s infinite;
-}
-
-/* ===== ТОЛТИПЫ ===== */
-
-.tooltip {
-  position: relative;
-  display: inline-block;
-}
-
-.tooltip .tooltiptext {
-  visibility: hidden;
-  width: 200px;
-  background-color: var(--card);
-  color: var(--ink);
-  text-align: center;
-  border-radius: 6px;
-  padding: 8px;
-  position: absolute;
-  z-index: var(--z-tooltip);
-  bottom: 125%;
-  left: 50%;
-  margin-left: -100px;
-  opacity: 0;
-  transition: opacity var(--transition-fast);
-  border: 1px solid var(--line);
-  backdrop-filter: blur(20px);
-}
-
-.tooltip:hover .tooltiptext {
-  visibility: visible;
-  opacity: 1;
-}
-
-/* ===== СКЕЛЕТОН ЗАГРУЗКИ ===== */
-
-.skeleton {
-  background: linear-gradient(90deg, var(--card) 25%, var(--card-hover) 50%, var(--card) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-.skeleton-text {
-  height: 1em;
-  margin: 0.5em 0;
-  border-radius: 4px;
-}
-
-.skeleton-button {
-  height: 40px;
-  width: 120px;
-  border-radius: var(--radius-sm);
-}
-
-/* ===== АДАПТИВНЫЕ СЕТКИ ===== */
-
-.grid-auto-fit {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: var(--spacing-md);
-}
-
-.grid-auto-fill {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: var(--spacing-md);
-}
-
-.grid-masonry {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  grid-auto-rows: 0;
-  gap: var(--spacing-md);
-}
-
-/* ===== МЕДИА ЗАПРОСЫ ДЛЯ ПЛАНШЕТОВ ===== */
-
-@media (min-width: 768px) and (max-width: 1023px) {
-  .grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-  
-  .card {
-    padding: 20px;
-  }
-  
-  .kpis {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  
-  .stages-table .col-stage {
-    min-width: 140px;
-  }
-}
-
-/* ===== МЕДИА ЗАПРОСЫ ДЛЯ БОЛЬШИХ ЭКРАНОВ ===== */
-
-@media (min-width: 1400px) {
-  .wrap {
-    max-width: 1600px;
-  }
-  
-  .grid {
-    gap: 32px;
-  }
-  
-  .card {
-    padding: 32px;
-  }
-  
-  .kpis {
-    grid-template-columns: repeat(5, 1fr);
-  }
-}
-
-/* ===== ПЕЧАТНЫЕ СТИЛИ ===== */
-
-@media print {
-  .card {
-    background: white !important;
-    color: black !important;
-    border: 1px solid #ccc !important;
-    box-shadow: none !important;
-  }
-  
-  .btn,
-  .modal-overlay,
-  .scenarios-panel {
-    display: none !important;
-  }
-  
-  .grid {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-/* ===== ВЫСОКИЙ КОНТРАСТ ===== */
-
-@media (prefers-contrast: high) {
-  :root {
-    --line: rgba(255,255,255,0.3);
-    --line-hover: rgba(255,255,255,0.5);
-    --card: rgba(255,255,255,0.1);
-    --card-hover: rgba(255,255,255,0.2);
-  }
-}
-
-/* ===== УМЕНЬШЕННОЕ ДВИЖЕНИЕ ===== */
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-  
-  .animated-card,
-  .hover-lift:hover {
-    transform: none !important;
-  }
-}
-
-/* ===== ТЕМНАЯ ТЕМА (ПО УМОЛЧАНИЮ) ===== */
-
-/* Все стили уже настроены для темной темы */
-
-/* ===== ЛОКАЛИЗАЦИЯ ===== */
-
-[lang="en"] .field label::before {
-  content: '•';
-}
-
-[lang="ru"] .field label::before {
-  content: '•';
-}
-
-/* ===== СТИЛИ ДЛЯ ТАБЛИЦЫ КЭШФЛОУ ===== */
-
-.cashflow-table tbody tr {
-  transition: background-color var(--transition-fast);
-  cursor: pointer;
-}
-
-.cashflow-table tbody tr:hover {
-  background-color: rgba(59, 130, 246, 0.1); /* Синяя подсветка */
-  border-left: 3px solid var(--primary);
-}
-
-.cashflow-table tbody tr:hover td {
-  color: var(--ink);
-  font-weight: 500;
-}
-
-/* Альтернативный вариант - более мягкая подсветка */
-.cashflow-table tbody tr:hover {
-  background: linear-gradient(90deg, 
-    rgba(59, 130, 246, 0.08) 0%, 
-    rgba(59, 130, 246, 0.03) 100%);
-  border-left: 2px solid var(--primary);
-}
-
-/* ===== КОНЕЦ СТИЛЕЙ ===== */
-
-/* ===== СТИЛИ ДЛЯ КАТАЛОГА ===== */
-.catalog-section {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-xl);
-  margin-top: var(--spacing-xl);
-}
-
-.catalog-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-lg);
-}
-
-.catalog-header h3 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.catalog-table-wrapper {
-  overflow-x: auto;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-}
-
-.catalog-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  min-width: 600px;
-}
-
-.catalog-table th {
-  background: var(--card);
-  padding: var(--spacing-md);
-  text-align: left;
-  font-weight: 600;
-  color: var(--ink-secondary);
-  border-bottom: 1px solid var(--line);
-}
-
-.catalog-table td {
-  padding: var(--spacing-md);
-  border-bottom: 1px solid var(--line);
-}
-
-/* ===== СТИЛИ ДЛЯ РЕДАКТОРСКОГО РЕЖИМА ===== */
-.editor-mode {
-  margin-top: var(--spacing-xl);
-  animation: fadeInUp 0.6s ease-out;
-}
-
-.editor-mode h2 {
-  margin: 0 0 var(--spacing-xl) 0;
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--primary);
-  text-align: center;
-}
-
-
-/* ... existing code ... */
-
-/* ===== СТИЛИ ДЛЯ БЛОКА ЭТАПОВ РАССРОЧКИ ===== */
-.stages-section {
-  margin-bottom: var(--spacing-lg);
-}
-
-.stages-section h3 {
-  margin: 0 0 var(--spacing-md) 0;
-  color: var(--ink);
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
 .stage-row {
   display: grid;
   grid-template-columns: 1fr auto auto auto;
@@ -1979,7 +1029,78 @@ h1 {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+.stage-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+  justify-content: center;
+}
+
+.delete-stage-btn {
+  padding: 6px 10px;
+  background: var(--danger);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.delete-stage-btn:hover {
+  background: var(--danger-hover);
+  transform: translateY(-1px);
+}
+
+/* ===== СТИЛИ ДЛЯ ТАБЛИЦ ===== */
+
+.calculation-header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.project-name-display,
+.villa-name-display,
+.area-display,
+.ppsm-display {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.base-strong,
+.line-total {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* ===== СТИЛИ ДЛЯ ЛИНИЙ ===== */
+
+.line-row {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  transition: all var(--transition-normal);
+}
+
+.line-row:hover {
+  background: var(--card-hover);
+  border-color: var(--line-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.line-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--line);
+}
+
 /* ===== СТИЛИ ДЛЯ КАТАЛОГА ===== */
+
 .catalog-section {
   background: var(--card);
   border: 1px solid var(--line);
@@ -2022,6 +1143,14 @@ h1 {
   border-radius: var(--radius);
   padding: var(--spacing-md);
   margin-bottom: var(--spacing-md);
+  transition: all var(--transition-normal);
+}
+
+.project-card:hover {
+  background: var(--card-hover);
+  border-color: var(--line-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .project-header {
@@ -2029,17 +1158,39 @@ h1 {
   justify-content: space-between;
   align-items: center;
   margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--line);
 }
 
 .project-header h3 {
   margin: 0;
   color: var(--accent);
   font-size: 1.1rem;
+  font-weight: 600;
 }
 
 .project-actions {
   display: flex;
   gap: var(--spacing-xs);
+}
+
+/* Кнопка добавления виллы внутри проекта */
+.add-villa-btn {
+  background: var(--success);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.add-villa-btn:hover {
+  background: var(--success-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .villas-grid {
@@ -2094,20 +1245,21 @@ h1 {
   color: var(--ink);
 }
 
-/* ===== СТИЛИ ДЛЯ МОДАЛЬНЫХ ОКОН ===== */
+/* ===== СТИЛИ ДЛЯ МОДАЛЬНЫХ ОКНОН ===== */
+
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0,0,0,0.8);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
-  z-index: 1000;
+  z-index: var(--z-modal);
   animation: fadeInScale 0.3s ease-out;
 }
 
@@ -2155,25 +1307,101 @@ h1 {
   max-height: 60vh;
 }
 
+/* ===== СТИЛИ ДЛЯ ФОРМ ===== */
+
+.form-section {
+  margin-bottom: 24px;
+}
+
+.form-section h4 {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-section h4::before {
+  content: '';
+  width: 3px;
+  height: 16px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
 .form-group {
-  margin-bottom: var(--spacing-md);
+  display: grid;
+  gap: 6px;
 }
 
 .form-group label {
-  display: block;
-  margin-bottom: var(--spacing-xs);
-  color: var(--ink);
+  color: var(--muted);
+  font-size: 13px;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.modal-actions {
+.form-group label::before {
+  content: '';
+  width: 3px;
+  height: 3px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  font-size: 14px;
+  transition: all var(--transition-fast);
+  backdrop-filter: blur(10px);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--card-hover);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  transform: translateY(-1px);
+}
+
+.form-group input:hover,
+.form-group select:hover,
+.form-group textarea:hover {
+  border-color: var(--line-hover);
+  background: var(--card-hover);
+}
+
+.form-actions {
   display: flex;
-  gap: var(--spacing-sm);
+  gap: 12px;
   justify-content: flex-end;
-  margin-top: var(--spacing-lg);
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  margin-top: 24px;
 }
 
 /* ===== СТИЛИ ДЛЯ КЭШФЛОУ БЛОКА ===== */
+
 .cashflow-block {
   grid-column: 1 / -1;
   margin-top: var(--spacing-xl);
@@ -2181,6 +1409,7 @@ h1 {
 }
 
 /* ===== СТИЛИ ДЛЯ КНОПОК ===== */
+
 .btn-full {
   width: 100%;
 }
@@ -2191,6 +1420,7 @@ h1 {
 }
 
 /* ===== СТИЛИ ДЛЯ ТАБЛИЦЫ КЭШФЛОУ ===== */
+
 .cashflow-table-container {
   overflow-x: auto;
 }
@@ -2236,12 +1466,8 @@ h1 {
   background: linear-gradient(90deg, var(--primary), transparent);
 }
 
-.amount {
-  font-weight: 600;
-  color: var(--accent);
-}
-
 /* ===== СТИЛИ ДЛЯ КАТАЛОГА В МОДАЛЬНОМ ОКНЕ ===== */
+
 .catalog-grid {
   max-height: 400px;
   overflow-y: auto;
@@ -2291,109 +1517,6 @@ h1 {
 .villa-info span {
   font-size: 0.9rem;
   opacity: 0.8;
-}
-
-/* Стили для заголовков колонок в блоке "Базовая рассрочка" */
-.stages-header {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 12px;
-  padding: 8px;
-  background: #f8f9fa;
-  border-radius: 6px;
-  font-size: 12px;
-}
-
-.stage-col-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.col-label {
-  font-weight: 600;
-  color: #495057;
-  margin-bottom: 2px;
-}
-
-.col-description {
-  color: #6c757d;
-  font-size: 11px;
-  line-height: 1.2;
-  text-align: center;
-}
-
-/* Стили для графика доходности */
-.rental-chart {
-  margin: 20px 0;
-}
-
-.chart-container {
-  display: flex;
-  gap: 20px;
-  align-items: flex-end;
-  min-height: 250px;
-  margin-bottom: 20px;
-}
-
-.chart-bar {
-  flex: 1;
-  text-align: center;
-}
-
-.bar-label {
-  font-size: 12px;
-  margin-bottom: 8px;
-  color: #666;
-}
-
-.bar-container {
-  height: 200px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.bar-fill {
-  width: 40px;
-  border-radius: 4px 4px 0 0;
-  transition: height 0.3s ease;
-}
-
-.bar-values {
-  margin-top: 8px;
-  font-size: 11px;
-}
-
-.year-income {
-  font-weight: bold;
-  color: #3b82f6;
-}
-
-.cumulative-income {
-  color: #666;
-  margin-top: 2px;
-}
-
-.chart-legend {
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-  margin-top: 20px;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.legend-color {
-  width: 16px;
-  height: 16px;
-  border-radius: 2px;
 }
 
 /* ===== СТИЛИ ДЛЯ ЦЕНООБРАЗОВАНИЯ ===== */
@@ -2767,142 +1890,6 @@ h1 {
   border-radius: 4px;
 }
 
-/* Адаптивность для мобильных устройств */
-@media (max-width: 768px) {
-  .pricing-config-modal,
-  .villa-pricing-modal {
-    max-width: 95vw;
-    margin: 20px;
-  }
-  
-  .brand-params {
-    grid-template-columns: 1fr;
-  }
-  
-  .params-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .pricing-chart {
-    height: 250px;
-    padding: 16px;
-  }
-  
-  .chart-legend {
-    flex-direction: column;
-    gap: 12px;
-  }
-}
-
-/* Анимации для графиков */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.pricing-chart,
-.pricing-table {
-  animation: fadeIn 0.3s ease-out;
-}
-
-/* Стили для кнопок действий */
-.modal-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid #e2e8f0;
-}
-
-.btn.primary {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn.primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-}
-
-.btn.danger {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn.danger:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-}
-
-/* Улучшенные стили для модальных окон */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px);
-}
-
-.modal-content {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  max-width: 90vw;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  animation: modalSlideIn 0.3s ease-out;
-}
-
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* Стили для скроллбаров */
-.pricing-table-scroll::-webkit-scrollbar {
-  width: 8px;
-}
-
-.pricing-table-scroll::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
-}
-
-.pricing-table-scroll::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-
-.pricing-table-scroll::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
 /* ===== СТИЛИ ДЛЯ ПАРАМЕТРОВ ЦЕНООБРАЗОВАНИЯ ===== */
 
 /* Компактная сетка параметров */
@@ -3013,6 +2000,14 @@ h1 {
   border: 1px solid var(--line);
 }
 
+.chart-subtitle {
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: var(--spacing-md);
+  font-style: italic;
+}
+
 .chart-legend-compact {
   display: flex;
   gap: 20px;
@@ -3094,222 +2089,77 @@ h1 {
   color: var(--ink);
 }
 
-/* ===== СТИЛИ ДЛЯ КАТАЛОГА ПРОЕКТОВ ===== */
-
-/* Улучшенные стили для проектов */
-.project-card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: var(--spacing-md);
-  margin-bottom: var(--spacing-md);
-  transition: all var(--transition-normal);
+.selected-row {
+  background: rgba(59, 130, 246, 0.1) !important;
+  border-left: 3px solid var(--primary);
 }
 
-.project-card:hover {
-  background: var(--card-hover);
-  border-color: var(--line-hover);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.project-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-md);
-  padding-bottom: var(--spacing-sm);
-  border-bottom: 1px solid var(--line);
-}
-
-.project-header h3 {
-  margin: 0;
-  color: var(--accent);
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.project-actions {
-  display: flex;
-  gap: var(--spacing-xs);
-}
-
-/* Кнопка добавления виллы внутри проекта */
-.add-villa-btn {
-  background: var(--success);
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: var(--radius-sm);
-  font-size: 11px;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  white-space: nowrap;
-}
-
-.add-villa-btn:hover {
-  background: var(--success-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-}
-
-/* ===== СТИЛИ ДЛЯ МОДАЛЬНЫХ ОКОН ===== */
-
-/* Улучшенные стили для модальных окон */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  z-index: var(--z-modal);
-  animation: fadeInScale 0.3s ease-out;
-}
-
-.modal-content {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  padding: 0;
-  max-width: 90vw;
-  max-height: 90vh;
-  overflow: hidden;
-  box-shadow: var(--shadow-xl);
-  animation: fadeInUp 0.4s ease-out 0.1s both;
-  position: relative;
-}
-
-.modal-content::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--primary), var(--accent), var(--success));
-}
-
-.modal-header {
-  padding: 24px 24px 16px;
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.5rem;
+.price-cell {
   font-weight: 600;
   color: var(--ink);
-}
-
-.modal-body {
-  padding: 24px;
-  overflow-y: auto;
-  max-height: 60vh;
-}
-
-/* ===== СТИЛИ ДЛЯ ФОРМ ===== */
-
-.form-section {
-  margin-bottom: 24px;
-}
-
-.form-section h4 {
-  margin: 0 0 16px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--ink);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.form-section h4::before {
-  content: '';
-  width: 3px;
-  height: 16px;
-  background: var(--accent);
-  border-radius: 2px;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.form-group {
-  display: grid;
-  gap: 6px;
-}
-
-.form-group label {
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.form-group label::before {
-  content: '';
-  width: 3px;
-  height: 3px;
-  background: var(--accent);
-  border-radius: 50%;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--line);
-  background: var(--card);
-  color: var(--ink);
-  font-size: 14px;
-  transition: all var(--transition-fast);
-  backdrop-filter: blur(10px);
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: var(--primary);
-  background: var(--card-hover);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  transform: translateY(-1px);
-}
-
-.form-group input:hover,
-.form-group select:hover,
-.form-group textarea:hover {
-  border-color: var(--line-hover);
-  background: var(--card-hover);
-}
-
-.form-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  padding-top: 20px;
-  border-top: 1px solid var(--line);
-  margin-top: 24px;
+  font-family: 'Courier New', monospace;
+  text-align: right;
 }
 
 /* ===== АДАПТИВНОСТЬ ===== */
+
+@media (max-width: 767px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .modal-content {
+    margin: 20px;
+    max-width: calc(100vw - 40px);
+  }
+  
+  .stages-table .col-stage {
+    min-width: 120px;
+  }
+  
+  .stages-table .col-percent,
+  .stages-table .col-month {
+    min-width: 60px;
+    max-width: 70px;
+  }
+  
+  .notification-center {
+    left: 20px;
+    right: 20px;
+    max-width: none;
+  }
+  
+  .scenarios-panel {
+    left: 20px;
+    right: 20px;
+    max-width: none;
+  }
+}
+
+@media (min-width: 1200px) {
+  .settings-row {
+    gap: var(--spacing-2xl);
+  }
+}
+
+@media (max-width: 480px) {
+  .field.compact {
+    min-width: 100px;
+  }
+  
+  .wrap {
+    padding: 0 12px;
+    margin: 16px auto;
+  }
+  
+  .card {
+    padding: 16px;
+  }
+}
 
 @media (max-width: 768px) {
   .pricing-grid-compact {
@@ -3345,6 +2195,30 @@ h1 {
   .factors-table td {
     padding: 6px 4px;
   }
+  
+  .pricing-config-modal,
+  .villa-pricing-modal {
+    max-width: 95vw;
+    margin: 20px;
+  }
+  
+  .brand-params {
+    grid-template-columns: 1fr;
+  }
+  
+  .params-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .pricing-chart {
+    height: 250px;
+    padding: 16px;
+  }
+  
+  .chart-legend {
+    flex-direction: column;
+    gap: 12px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -3361,3 +2235,167 @@ h1 {
     max-width: calc(100vw - 20px);
   }
 }
+
+/* ===== PWA СТИЛИ ===== */
+
+@media (display-mode: standalone) {
+  .wrap {
+    margin: 0;
+    padding: 16px;
+  }
+  
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ===== ПРОГРЕСС БАРЫ ===== */
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--card);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  border-radius: 4px;
+  transition: width var(--transition-normal);
+  position: relative;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+/* ===== ЗАГРУЗЧИКИ ===== */
+
+.loader {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  border-top-color: var(--primary);
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loader-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.loader-dots span {
+  width: 6px;
+  height: 6px;
+  background: var(--primary);
+  border-radius: 50%;
+  animation: bounce 1.4s ease-in-out infinite both;
+}
+
+.loader-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+/* ===== АНИМАЦИИ ДЛЯ ГРАФИКОВ ===== */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.pricing-chart,
+.pricing-table {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* ===== СКРОЛЛБАРЫ ===== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--card);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 4px;
+  transition: background var(--transition-fast);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--line-hover);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--card);
+}
+
+/* ===== ВЫБОР ТЕКСТА ===== */
+
+::selection {
+  background: var(--primary);
+  color: white;
+}
+
+::-moz-selection {
+  background: var(--primary);
+  color: white;
+}
+
+/* ===== ФОКУС ДЛЯ ДОСТУПНОСТИ ===== */
+
+.btn:focus,
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ===== СОСТОЯНИЯ ЗАГРУЗКИ ===== */
+
+.loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+/* ===== КОНЕЦ СТИЛЕЙ ===== */
