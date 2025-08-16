@@ -1599,7 +1599,7 @@ function App() {
             </div>
           </div>
           
-      {/* График ценообразования - С ДВУМЯ ЛИНИЯМИ */}
+     {/* График ценообразования - С ПОДПИСЯМИ ПО ОСИ Y */}
 <div className="pricing-chart-container">
   <h4>Динамика цены виллы</h4>
   <p className="chart-subtitle">Влияние факторов на цену и доходность от аренды</p>
@@ -1616,38 +1616,37 @@ function App() {
           if (pricingData.length === 0) return null;
           
           // Вычисляем данные по аренде для каждого года
-         
-const rentalData = pricingData.map(data => {
-  const rentalIncome = lines.reduce((total, line) => {
-    if (data.year <= 0) return 0;
-    
-    // Вычисляем количество месяцев работы в этом году
-    const yearStartMonth = handoverMonth + (data.year - 1) * 12 + 3; // +3 месяца после ключей
-    const yearEndMonth = handoverMonth + data.year * 12 + 3;
-    
-    // Проверяем, не превышает ли конец года срок лизхолда
-    const leaseholdEndMonth = Math.floor((line.snapshot?.leaseholdEndDate - startMonth) / (30 * 24 * 60 * 60 * 1000));
-    const actualEndMonth = Math.min(yearEndMonth, leaseholdEndMonth);
-    
-    if (yearStartMonth >= actualEndMonth) return total; // Вилла уже не работает
-    
-    // Количество месяцев работы в этом году
-    const workingMonths = Math.max(0, actualEndMonth - yearStartMonth);
-    
-    // Средний доход за месяц
-    const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, data.year);
-    const avgDaysPerMonth = 30.44; // Среднее количество дней в месяце
-    const occupancyDays = avgDaysPerMonth * (line.occupancyPct / 100);
-    const monthlyIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
-    
-    // Годовой доход = месячный доход × количество рабочих месяцев
-    const yearIncome = monthlyIncome * workingMonths;
-    
-    return total + yearIncome;
-  }, 0);
-  
-  return { ...data, rentalIncome };
-});
+          const rentalData = pricingData.map(data => {
+            const rentalIncome = lines.reduce((total, line) => {
+              if (data.year <= 0) return 0;
+              
+              // Вычисляем количество месяцев работы в этом году
+              const yearStartMonth = handoverMonth + (data.year - 1) * 12 + 3;
+              const yearEndMonth = handoverMonth + data.year * 12 + 3;
+              
+              // Проверяем, не превышает ли конец года срок лизхолда
+              const leaseholdEndMonth = Math.floor((line.snapshot?.leaseholdEndDate - startMonth) / (30 * 24 * 60 * 60 * 1000));
+              const actualEndMonth = Math.min(yearEndMonth, leaseholdEndMonth);
+              
+              if (yearStartMonth >= actualEndMonth) return total;
+              
+              // Количество месяцев работы в этом году
+              const workingMonths = Math.max(0, actualEndMonth - yearStartMonth);
+              
+              // Средний доход за месяц
+              const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, data.year);
+              const avgDaysPerMonth = 30.44;
+              const occupancyDays = avgDaysPerMonth * (line.occupancyPct / 100);
+              const monthlyIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
+              
+              // Годовой доход = месячный доход × количество рабочих месяцев
+              const yearIncome = monthlyIncome * workingMonths;
+              
+              return total + yearIncome;
+            }, 0);
+            
+            return { ...data, rentalIncome };
+          });
           
           // Находим диапазоны для обеих линий
           const maxPrice = Math.max(...pricingData.map(d => d.finalPrice));
@@ -1712,6 +1711,24 @@ const rentalData = pricingData.map(data => {
               <g className="chart-axes">
                 <line className="y-axis" x1="50" y1="50" x2="50" y2="250" stroke="#666" strokeWidth="1"/>
                 <line className="x-axis" x1="50" y1="250" x2="750" y2="250" stroke="#666" strokeWidth="1"/>
+              </g>
+              
+              {/* НОВЫЕ ПОДПИСИ ПО ОСИ Y - ЦИФРЫ В ДОЛЛАРАХ */}
+              <g className="y-labels">
+                {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
+                  // Для Final Price
+                  const price = minPrice + ratio * priceRange;
+                  const y = 250 - ratio * 200;
+                  
+                  return (
+                    <g key={i}>
+                      <line x1="45" y1={y} x2="50" y2={y} stroke="#666" strokeWidth="1"/>
+                      <text x="40" y={y + 4} textAnchor="end" fontSize="10" fill="#666">
+                        {fmtMoney(price, 'USD')}
+                      </text>
+                    </g>
+                  );
+                })}
               </g>
               
               {/* Подписи по оси X - РЕАЛЬНЫЕ ГОДЫ */}
