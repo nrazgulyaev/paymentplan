@@ -1616,20 +1616,38 @@ function App() {
           if (pricingData.length === 0) return null;
           
           // Вычисляем данные по аренде для каждого года
-          const rentalData = pricingData.map(data => {
-            const rentalIncome = lines.reduce((total, line) => {
-              if (data.year <= 0) return 0; // До получения ключей аренды нет
-              
-              const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, data.year);
-              const daysInYear = 365;
-              const occupancyDays = daysInYear * (line.occupancyPct / 100);
-              const yearIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
-              
-              return total + yearIncome;
-            }, 0);
-            
-            return { ...data, rentalIncome };
-          });
+         
+const rentalData = pricingData.map(data => {
+  const rentalIncome = lines.reduce((total, line) => {
+    if (data.year <= 0) return 0;
+    
+    // Вычисляем количество месяцев работы в этом году
+    const yearStartMonth = handoverMonth + (data.year - 1) * 12 + 3; // +3 месяца после ключей
+    const yearEndMonth = handoverMonth + data.year * 12 + 3;
+    
+    // Проверяем, не превышает ли конец года срок лизхолда
+    const leaseholdEndMonth = Math.floor((line.snapshot?.leaseholdEndDate - startMonth) / (30 * 24 * 60 * 60 * 1000));
+    const actualEndMonth = Math.min(yearEndMonth, leaseholdEndMonth);
+    
+    if (yearStartMonth >= actualEndMonth) return total; // Вилла уже не работает
+    
+    // Количество месяцев работы в этом году
+    const workingMonths = Math.max(0, actualEndMonth - yearStartMonth);
+    
+    // Средний доход за месяц
+    const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, data.year);
+    const avgDaysPerMonth = 30.44; // Среднее количество дней в месяце
+    const occupancyDays = avgDaysPerMonth * (line.occupancyPct / 100);
+    const monthlyIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
+    
+    // Годовой доход = месячный доход × количество рабочих месяцев
+    const yearIncome = monthlyIncome * workingMonths;
+    
+    return total + yearIncome;
+  }, 0);
+  
+  return { ...data, rentalIncome };
+});
           
           // Находим диапазоны для обеих линий
           const maxPrice = Math.max(...pricingData.map(d => d.finalPrice));
@@ -1731,7 +1749,8 @@ function App() {
     </svg>
   </div>
 </div>
-{/* Таблица факторов - С ДОХОДНОСТЬЮ ОТ АРЕНДЫ */}
+
+{/* Таблица факторов - С ПРАВИЛЬНЫМ РАСЧЕТОМ ДОХОДНОСТИ */}
 <div className="factors-table-container">
   <h4>Таблица факторов</h4>
   <div className="factors-table-scroll">
@@ -1758,14 +1777,31 @@ function App() {
               const realYear = startMonth.getFullYear() + handoverMonth / 12 + data.year;
               const displayYear = Math.floor(realYear);
               
-              // Вычисляем доходность от аренды для этого года
+              // ИСПРАВЛЕННЫЙ расчет доходности от аренды для этого года
               const rentalIncome = lines.reduce((total, line) => {
                 if (data.year <= 0) return total; // До получения ключей аренды нет
                 
+                // Вычисляем количество месяцев работы в этом году
+                const yearStartMonth = handoverMonth + (data.year - 1) * 12 + 3; // +3 месяца после ключей
+                const yearEndMonth = handoverMonth + data.year * 12 + 3;
+                
+                // Проверяем, не превышает ли конец года срок лизхолда
+                const leaseholdEndMonth = Math.floor((line.snapshot?.leaseholdEndDate - startMonth) / (30 * 24 * 60 * 60 * 1000));
+                const actualEndMonth = Math.min(yearEndMonth, leaseholdEndMonth);
+                
+                if (yearStartMonth >= actualEndMonth) return total; // Вилла уже не работает
+                
+                // Количество месяцев работы в этом году
+                const workingMonths = Math.max(0, actualEndMonth - yearStartMonth);
+                
+                // Средний доход за месяц
                 const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, data.year);
-                const daysInYear = 365;
-                const occupancyDays = daysInYear * (line.occupancyPct / 100);
-                const yearIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
+                const avgDaysPerMonth = 30.44; // Среднее количество дней в месяце
+                const occupancyDays = avgDaysPerMonth * (line.occupancyPct / 100);
+                const monthlyIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
+                
+                // Годовой доход = месячный доход × количество рабочих месяцев
+                const yearIncome = monthlyIncome * workingMonths;
                 
                 return total + yearIncome;
               }, 0);
