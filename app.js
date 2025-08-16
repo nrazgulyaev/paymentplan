@@ -1685,7 +1685,7 @@ function App() {
   </div>
 </div>
 
-{/* Таблица факторов - С РЕАЛЬНЫМИ ГОДАМИ */}
+{/* Таблица факторов - С ДОХОДНОСТЬЮ ОТ АРЕНДЫ */}
 <div className="factors-table-container">
   <h4>Таблица факторов</h4>
   <div className="factors-table-scroll">
@@ -1698,6 +1698,7 @@ function App() {
           <th>Brand Factor</th>
           <th>Коэффициент инфляции</th>
           <th>Final Price</th>
+          <th>Доходность от аренды</th>
         </tr>
       </thead>
       <tbody>
@@ -1711,6 +1712,18 @@ function App() {
               const realYear = startMonth.getFullYear() + handoverMonth / 12 + data.year;
               const displayYear = Math.floor(realYear);
               
+              // Вычисляем доходность от аренды для этого года
+              const rentalIncome = lines.reduce((total, line) => {
+                if (data.year <= 0) return total; // До получения ключей аренды нет
+                
+                const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, data.year);
+                const daysInYear = 365;
+                const occupancyDays = daysInYear * (line.occupancyPct / 100);
+                const yearIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
+                
+                return total + yearIncome;
+              }, 0);
+              
               return (
                 <tr key={index}>
                   <td>{displayYear}</td>
@@ -1719,6 +1732,7 @@ function App() {
                   <td>{data.brandFactor.toFixed(3)}</td>
                   <td>{Math.pow(1 + pricingConfig.inflationRatePct / 100, data.year).toFixed(3)}</td>
                   <td className="price-cell">{fmtMoney(data.finalPrice)}</td>
+                  <td className="rental-cell">{fmtMoney(rentalIncome)}</td>
                 </tr>
               );
             }) : null;
