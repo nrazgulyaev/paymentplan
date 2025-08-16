@@ -1832,7 +1832,7 @@ function App() {
                 <div className="pricing-section">
                   <h4>�� Основные параметры</h4>
                   <div className="form-row">
-                    <div className="form-group">
+                                        <div className="form-group">
                       <label>{t.inflationRate}</label>
                       <input 
                         type="number" 
@@ -1848,7 +1848,7 @@ function App() {
                       <span className="unit">%/год</span>
                     </div>
                     
-                                     <div className="form-group">
+                    <div className="form-group">
                       <label>{t.leaseAlpha}</label>
                       <input 
                         type="number" 
@@ -1865,7 +1865,7 @@ function App() {
                       <div className="hint">1 = линейно, &gt;1 = ускоренно, &lt;1 = замедленно</div>
                     </div>
                     
-                                     <div className="form-group">
+                    <div className="form-group">
                       <label>{t.agingBeta}</label>
                       <input 
                         type="number" 
