@@ -157,6 +157,7 @@ function App() {
       resetToDefault: 'Сбросить к дефолту',
       configSaved: 'Конфигурация сохранена!',
       configReset: 'Конфигурация сброшена к дефолту!',
+      close: 'Закрыть',
       
       // Существующие переводы...
       villasTitle: 'Расчёт (позиции)',
@@ -288,6 +289,7 @@ function App() {
       resetToDefault: 'Reset to Default',
       configSaved: 'Configuration saved!',
       configReset: 'Configuration reset to default!',
+      close: 'Close',
       
       // Existing translations...
       villasTitle: 'Calculation (Positions)',
@@ -860,6 +862,10 @@ function App() {
   const [showAddProjectModal, setShowAddProjectModal] = useState(false);
   const [showAddVillaModal, setShowAddVillaModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
+  // НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ ЦЕНООБРАЗОВАНИЯ
+  const [selectedVillaForPricing, setSelectedVillaForPricing] = useState(null);
+  const [showVillaPricingModal, setShowVillaPricingModal] = useState(false);
+  
   const [newProjectForm, setNewProjectForm] = useState({
     projectName: '',
     projectId: ''
@@ -945,8 +951,7 @@ function App() {
 
   // ===== PIN КОД =====
   const PIN_CODE = '1234';
-
-  // ... existing code ...
+// ... existing code ...
 
   return (
     <>
@@ -1540,334 +1545,998 @@ function App() {
         </div>
       )}
 
-      {/* Остальные модальные окна... */}
+      {/* Модальное окно добавления проекта */}
+      {showAddProjectModal && (
+        <div className="modal-overlay" onClick={() => setShowAddProjectModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>{t.addProject}</h3>
+            <div className="form-group">
+              <label>{t.projectName}:</label>
+              <input 
+                type="text" 
+                value={newProjectForm.projectName} 
+                onChange={e => setNewProjectForm(prev => ({...prev, projectName: e.target.value}))}
+                placeholder="Название проекта"
+                className="input"
+              />
+            </div>
+            <div className="modal-actions">
+              <button onClick={saveProject} className="btn primary">{t.save}</button>
+              <button onClick={() => setShowAddProjectModal(false)} className="btn">{t.cancel}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно добавления виллы */}
+      {showAddVillaModal && (
+        <div className="modal-overlay" onClick={() => setShowAddVillaModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>{t.addVilla}</h3>
+            <div className="form-group">
+              <label>{t.villaName}:</label>
+              <input 
+                type="text" 
+                value={newVillaForm.name} 
+                onChange={e => setNewVillaForm(prev => ({...prev, name: e.target.value}))}
+                placeholder="Название виллы"
+                className="input"
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.villaArea}:</label>
+              <input 
+                type="number" 
+                value={newVillaForm.area} 
+                onChange={e => setNewVillaForm(prev => ({...prev, area: +e.target.value}))}
+                placeholder="Площадь"
+                className="input"
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.villaPpsm}:</label>
+              <input 
+                type="number" 
+                value={newVillaForm.ppsm} 
+                onChange={e => setNewVillaForm(prev => ({...prev, ppsm: +e.target.value}))}
+                placeholder="Цена за м²"
+                className="input"
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.villaBasePrice}:</label>
+              <input 
+                type="number" 
+                value={newVillaForm.baseUSD} 
+                onChange={e => setNewVillaForm(prev => ({...prev, baseUSD: +e.target.value}))}
+                placeholder="Базовая цена"
+                className="input"
+              />
+            </div>
+            <div className="form-group">
+              <label>Срок лизинга (лет):</label>
+              <input 
+                type="number" 
+                value={newVillaForm.leaseTotalYears} 
+                onChange={e => setNewVillaForm(prev => ({...prev, leaseTotalYears: +e.target.value}))}
+                placeholder="30"
+                className="input"
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.leaseholdEndDate}:</label>
+              <input 
+                type="date" 
+                value={newVillaForm.leaseholdEndDate ? newVillaForm.leaseholdEndDate.toISOString().split('T')[0] : ''} 
+                onChange={e => setNewVillaForm(prev => ({...prev, leaseholdEndDate: new Date(e.target.value)}))}
+                className="input"
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.dailyRate}:</label>
+              <input 
+                type="number" 
+                value={newVillaForm.dailyRateUSD} 
+                onChange={e => setNewVillaForm(prev => ({...prev, dailyRateUSD: +e.target.value}))}
+                placeholder="Стоимость ночи"
+                className="input"
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.rentalPriceIndex}:</label>
+              <input 
+                type="number" 
+                value={newVillaForm.rentalPriceIndexPct} 
+                onChange={e => setNewVillaForm(prev => ({...prev, rentalPriceIndexPct: +e.target.value}))}
+                placeholder="Индексация в год (%)"
+                className="input"
+              />
+            </div>
+            <div className="modal-actions">
+              <button onClick={saveVilla} className="btn primary">{t.save}</button>
+              <button onClick={() => setShowAddVillaModal(false)} className="btn">{t.cancel}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+// ... existing code ...
+
+      {/* 2. Расчёт (позиции) */}
+      <div className="card">
+        <h3>{t.calculation}</h3>
+        <div className="table-container">
+          <table className="calculation-table">
+            <thead>
+              <tr>
+                <th>{t.project}</th>
+                <th>{t.villa}</th>
+                <th>{t.area}</th>
+                <th>{t.basePrice}</th>
+                <th>{t.beforeKeys}</th>
+                <th>{t.afterKeys}</th>
+                <th>{t.ownTerms}</th>
+                <th>{t.months}</th>
+                <th>{t.monthlyRate}</th>
+                <th>{t.dailyRate}</th>
+                <th>{t.occupancyRate}</th>
+                <th>{t.rentalPriceIndex}</th>
+                <th>{t.actions}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lines.map(line => {
+                const villa = catalog.flatMap(p => p.villas).find(v => v.villaId === line.villaId);
+                const project = catalog.find(p => p.projectId === line.projectId);
+                if (!villa || !project) return null;
+                
+                return (
+                  <tr key={line.id}>
+                    <td>{project.name}</td>
+                    <td>{villa.name}</td>
+                    <td>{villa.area}m²</td>
+                    <td>{fmtMoney(villa.baseUSD)}</td>
+                    <td>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={line.prePct}
+                        onChange={e => updLine(line.id, { prePct: +e.target.value })}
+                        className="range-slider"
+                      />
+                      <span>{line.prePct}%</span>
+                    </td>
+                    <td>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={line.afterPct}
+                        onChange={e => updLine(line.id, { afterPct: +e.target.value })}
+                        className="range-slider"
+                      />
+                      <span>{line.afterPct}%</span>
+                    </td>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={line.ownTerms}
+                        onChange={e => updLine(line.id, { ownTerms: e.target.checked })}
+                      />
+                    </td>
+                    <td>
+                      {line.ownTerms ? (
+                        <input
+                          type="number"
+                          min="1"
+                          value={line.months || ''}
+                          onChange={e => updLine(line.id, { months: +e.target.value })}
+                          placeholder={t.months}
+                        />
+                      ) : (
+                        <span>{t.standard}</span>
+                      )}
+                    </td>
+                    <td>
+                      {line.ownTerms ? (
+                        <input
+                          type="number"
+                          min="0.1"
+                          step="0.1"
+                          value={line.monthlyRatePct || ''}
+                          onChange={e => updLine(line.id, { monthlyRatePct: +e.target.value })}
+                          placeholder="%"
+                        />
+                      ) : (
+                        <span>{t.standard}</span>
+                      )}
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={villa.dailyRateUSD || ''}
+                        onChange={e => {
+                          const updatedVilla = { ...villa, dailyRateUSD: +e.target.value };
+                          setCatalog(prev => prev.map(p => 
+                            p.projectId === project.projectId 
+                              ? { ...p, villas: p.villas.map(v => v.villaId === villa.villaId ? updatedVilla : v) }
+                              : p
+                          ));
+                        }}
+                        placeholder="USD/сутки"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={villa.occupancyPct || ''}
+                        onChange={e => {
+                          const updatedVilla = { ...villa, occupancyPct: +e.target.value };
+                          setCatalog(prev => prev.map(p => 
+                            p.projectId === project.projectId 
+                              ? { ...p, villas: p.villas.map(v => v.villaId === villa.villaId ? updatedVilla : v) }
+                              : p
+                          ));
+                        }}
+                        placeholder="%"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={villa.rentalPriceIndexPct || ''}
+                        onChange={e => {
+                          const updatedVilla = { ...villa, rentalPriceIndexPct: +e.target.value };
+                          setCatalog(prev => prev.map(p => 
+                            p.projectId === project.projectId 
+                              ? { ...p, villas: p.villas.map(v => v.villaId === villa.villaId ? updatedVilla : v) }
+                              : p
+                          ));
+                        }}
+                        placeholder="%/год"
+                      />
+                    </td>
+                    <td>
+                      <button onClick={() => delLine(line.id)} className="btn-danger">
+                        {t.delete}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <button onClick={addFromCatalog} className="btn-primary">
+          {t.addFromCatalog}
+        </button>
+      </div>
+
+      {/* 3. KPI показатели */}
+      <div className="card">
+        <h3>{t.kpi}</h3>
+        <div className="kpi-grid">
+          <div className="kpi-item">
+            <div className="kpi-value">{fmtMoney(project.totalCost)}</div>
+            <div className="kpi-label">{t.totalCost}</div>
+          </div>
+          <div className="kpi-item">
+            <div className="kpi-value">{fmtMoney(project.beforeKeys)}</div>
+            <div className="kpi-label">{t.beforeKeys}</div>
+          </div>
+          <div className="kpi-item">
+            <div className="kpi-value">{fmtMoney(project.afterKeys)}</div>
+            <div className="kpi-label">{t.after}</div>
+          </div>
+          <div className="kpi-item">
+            <div className="kpi-value">{fmtMoney(project.remainingBalance)}</div>
+            <div className="kpi-label">{t.remainingBalance}</div>
+          </div>
+          <div className="kpi-item">
+            <div className="kpi-value">{project.totalTerm}</div>
+            <div className="kpi-label">{t.totalTerm}</div>
+          </div>
+          <div className="kpi-item">
+            <div className="kpi-value">{totalLeaseholdTerm}</div>
+            <div className="kpi-label">{t.cleanLeaseholdTerm}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Базовая рассрочка */}
+      <div className="card">
+        <h3>{t.basicInstallment}</h3>
+        <div className="table-container">
+          <table className="stages-table">
+            <thead>
+              <tr>
+                <th className="col-stage">
+                  <div className="col-header">
+                    <div className="col-title">{t.stage}</div>
+                    <div className="col-description">{t.stageDescription}</div>
+                  </div>
+                </th>
+                <th className="col-percent">
+                  <div className="col-header">
+                    <div className="col-title">{t.percent}</div>
+                    <div className="col-description">{t.percentDescription}</div>
+                  </div>
+                </th>
+                <th className="col-month">
+                  <div className="col-header">
+                    <div className="col-title">{t.month}</div>
+                    <div className="col-description">{t.monthDescription}</div>
+                  </div>
+                </th>
+                <th className="col-actions">
+                  <div className="col-header">
+                    <div className="col-title">{t.actions}</div>
+                    <div className="col-description">{t.actionsDescription}</div>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {stages.map((stage, i) => (
+                <tr key={i}>
+                  <td>
+                    <input
+                      type="text"
+                      value={stage.name}
+                      onChange={e => updateStage(i, 'name', e.target.value)}
+                      placeholder={t.stageName}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={stage.percent}
+                      onChange={e => updateStage(i, 'percent', +e.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      value={stage.month}
+                      onChange={e => updateStage(i, 'month', +e.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <button onClick={() => deleteStage(i)} className="btn-danger">
+                      {t.delete}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <button onClick={addStage} className="btn-primary">
+          {t.addStage}
+        </button>
+      </div>
+
+      {/* 5. Кэшфлоу */}
+      <div className="card">
+        <h3>{t.cashflow}</h3>
+        <div className="table-container">
+          <table className="cashflow-table">
+            <thead>
+              <tr>
+                <th>{t.month}</th>
+                <th>{t.payment}</th>
+                <th>{t.rentalIncome}</th>
+                <th>{t.netPayment}</th>
+                <th>{t.remainingBalance}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {project.cashflow.map((item, i) => (
+                <tr key={i} className="cashflow-row">
+                  <td>{item.label}</td>
+                  <td>{fmtMoney(item.payment)}</td>
+                  <td>{fmtMoney(item.rentalIncome)}</td>
+                  <td className={item.netPayment > 0 ? 'positive' : 'negative'}>
+                    {fmtMoney(item.netPayment)}
+                  </td>
+                  <td>{fmtMoney(item.remainingBalance)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 6. График общей доходности от сдачи в аренду */}
+      <div className="card">
+        <h3>{t.rentalIncomeChart}</h3>
+        <div className="rental-chart">
+          <div className="chart-container">
+            {yearlyRentalData.map((yearData, index) => (
+              <div key={index} className="chart-bar">
+                <div className="bar-label">{yearData.year}</div>
+                <div className="bar-container">
+                  <div 
+                    className="bar-fill" 
+                    style={{ 
+                      height: `${(yearData.cumulativeIncome / Math.max(...yearlyRentalData.map(d => d.cumulativeIncome))) * 200}px`,
+                      backgroundColor: '#3b82f6'
+                    }}
+                  ></div>
+                </div>
+                <div className="bar-values">
+                  <div className="year-income">{fmtMoney(yearData.yearlyIncome)}</div>
+                  <div className="cumulative-income">{fmtMoney(yearData.cumulativeIncome)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="chart-legend">
+            <div className="legend-item">
+              <div className="legend-color" style={{backgroundColor: '#3b82f6'}}></div>
+              <span>{t.cumulativeIncome}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 7. Каталог проектов и вилл (редактор) */}
+      <CatalogManager
+        catalog={catalog}
+        setCatalog={setCatalog}
+        t={t}
+        lang={lang}
+        fmtMoney={fmtMoney}
+        showAddProjectModal={showAddProjectModal}
+        setShowAddProjectModal={setShowAddProjectModal}
+        showAddVillaModal={showAddVillaModal}
+        setShowAddVillaModal={setShowAddVillaModal}
+        editingProject={editingProject}
+        setEditingProject={setEditingProject}
+        newProjectForm={newProjectForm}
+        setNewProjectForm={setNewProjectForm}
+        newVillaForm={newVillaForm}
+        setNewVillaForm={setNewVillaForm}
+        addProject={addProject}
+        saveProject={saveProject}
+        addVilla={addVilla}
+        saveVilla={saveVilla}
+      />
+
+      {/* Модальные окна */}
+      {/* ... existing code ... */}
+
+// ... existing code ...
+
+      {/* Модальные окна */}
+      
+      {/* Модальное окно добавления проекта */}
+      {showAddProjectModal && (
+        <div className="modal-overlay" onClick={() => setShowAddProjectModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>{t.addProject}</h3>
+            <div className="form-group">
+              <label>{t.projectName}</label>
+              <input
+                type="text"
+                value={newProjectForm.name}
+                onChange={e => setNewProjectForm(prev => ({ ...prev, name: e.target.value }))}
+                placeholder={t.projectName}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.projectLocation}</label>
+              <input
+                type="text"
+                value={newProjectForm.location}
+                onChange={e => setNewProjectForm(prev => ({ ...prev, location: e.target.value }))}
+                placeholder={t.projectLocation}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.projectDescription}</label>
+              <textarea
+                value={newProjectForm.description}
+                onChange={e => setNewProjectForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder={t.projectDescription}
+              />
+            </div>
+            <div className="modal-buttons">
+              <button onClick={() => setShowAddProjectModal(false)} className="btn-secondary">
+                {t.cancel}
+              </button>
+              <button onClick={addProject} className="btn-primary">
+                {t.add}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно добавления виллы */}
+      {showAddVillaModal && (
+        <div className="modal-overlay" onClick={() => setShowAddVillaModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>{t.addVilla}</h3>
+            <div className="form-group">
+              <label>{t.selectProject}</label>
+              <select
+                value={newVillaForm.projectId}
+                onChange={e => setNewVillaForm(prev => ({ ...prev, projectId: e.target.value }))}
+              >
+                <option value="">{t.selectProject}</option>
+                {catalog.map(project => (
+                  <option key={project.projectId} value={project.projectId}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>{t.villaName}</label>
+              <input
+                type="text"
+                value={newVillaForm.name}
+                onChange={e => setNewVillaForm(prev => ({ ...prev, name: e.target.value }))}
+                placeholder={t.villaName}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.villaArea}</label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                value={newVillaForm.area}
+                onChange={e => setNewVillaForm(prev => ({ ...prev, area: +e.target.value }))}
+                placeholder="m²"
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.basePrice}</label>
+              <input
+                type="number"
+                min="0"
+                step="1000"
+                value={newVillaForm.baseUSD}
+                onChange={e => setNewVillaForm(prev => ({ ...prev, baseUSD: +e.target.value }))}
+                placeholder="USD"
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.handoverMonth}</label>
+              <input
+                type="month"
+                value={newVillaForm.handoverMonth}
+                onChange={e => setNewVillaForm(prev => ({ ...prev, handoverMonth: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.leaseholdEndDate}</label>
+              <input
+                type="date"
+                value={newVillaForm.leaseholdEndDate}
+                onChange={e => setNewVillaForm(prev => ({ ...prev, leaseholdEndDate: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.dailyRate}</label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                value={newVillaForm.dailyRateUSD}
+                onChange={e => setNewVillaForm(prev => ({ ...prev, dailyRateUSD: +e.target.value }))}
+                placeholder="USD/сутки"
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.occupancyRate}</label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                value={newVillaForm.occupancyPct}
+                onChange={e => setNewVillaForm(prev => ({ ...prev, occupancyPct: +e.target.value }))}
+                placeholder="%"
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.rentalPriceIndex}</label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                value={newVillaForm.rentalPriceIndexPct}
+                onChange={e => setNewVillaForm(prev => ({ ...prev, rentalPriceIndexPct: +e.target.value }))}
+                placeholder="%/год"
+              />
+            </div>
+            <div className="modal-buttons">
+              <button onClick={() => setShowAddVillaModal(false)} className="btn-secondary">
+                {t.cancel}
+              </button>
+              <button onClick={addVilla} className="btn-primary">
+                {t.add}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно редактирования проекта */}
+      {editingProject && (
+        <div className="modal-overlay" onClick={() => setEditingProject(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>{t.editProject}</h3>
+            <div className="form-group">
+              <label>{t.projectName}</label>
+              <input
+                type="text"
+                value={editingProject.name}
+                onChange={e => setEditingProject(prev => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.projectLocation}</label>
+              <input
+                type="text"
+                value={editingProject.location}
+                onChange={e => setEditingProject(prev => ({ ...prev, location: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.projectDescription}</label>
+              <textarea
+                value={editingProject.description}
+                onChange={e => setEditingProject(prev => ({ ...prev, description: e.target.value }))}
+              />
+            </div>
+            <div className="modal-buttons">
+              <button onClick={() => setEditingProject(null)} className="btn-secondary">
+                {t.cancel}
+              </button>
+              <button onClick={saveProject} className="btn-primary">
+                {t.save}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно редактирования виллы */}
+      {editingVilla && (
+        <div className="modal-overlay" onClick={() => setEditingVilla(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>{t.editVilla}</h3>
+            <div className="form-group">
+              <label>{t.villaName}</label>
+              <input
+                type="text"
+                value={editingVilla.name}
+                onChange={e => setEditingVilla(prev => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.villaArea}</label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                value={editingVilla.area}
+                onChange={e => setEditingVilla(prev => ({ ...prev, area: +e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.basePrice}</label>
+              <input
+                type="number"
+                min="0"
+                step="1000"
+                value={editingVilla.baseUSD}
+                onChange={e => setEditingVilla(prev => ({ ...prev, baseUSD: +e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.handoverMonth}</label>
+              <input
+                type="month"
+                value={editingVilla.handoverMonth}
+                onChange={e => setEditingVilla(prev => ({ ...prev, handoverMonth: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.leaseholdEndDate}</label>
+              <input
+                type="date"
+                value={editingVilla.leaseholdEndDate}
+                onChange={e => setEditingVilla(prev => ({ ...prev, leaseholdEndDate: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.dailyRate}</label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                value={editingVilla.dailyRateUSD}
+                onChange={e => setEditingVilla(prev => ({ ...prev, dailyRateUSD: +e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.occupancyRate}</label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                value={editingVilla.occupancyPct}
+                onChange={e => setEditingVilla(prev => ({ ...prev, occupancyPct: +e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.rentalPriceIndex}</label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                value={editingVilla.rentalPriceIndexPct}
+                onChange={e => setEditingVilla(prev => ({ ...prev, rentalPriceIndexPct: +e.target.value }))}
+              />
+            </div>
+            <div className="modal-buttons">
+              <button onClick={() => setEditingVilla(null)} className="btn-secondary">
+                {t.cancel}
+              </button>
+              <button onClick={saveVilla} className="btn-primary">
+                {t.save}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно настроек ценообразования */}
+      {showPricingModal && (
+        <div className="modal-overlay" onClick={() => setShowPricingModal(false)}>
+          <div className="modal-content pricing-modal" onClick={e => e.stopPropagation()}>
+            <h3>{t.pricingSettings}</h3>
+            
+            <div className="pricing-section">
+              <h4>{t.inflationSection}</h4>
+              <div className="form-group">
+                <label>{t.inflationRate}</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={pricingConfig.inflationRatePct}
+                  onChange={e => setPricingConfig(prev => ({ 
+                    ...prev, 
+                    inflationRatePct: +e.target.value 
+                  }))}
+                />
+                <span className="help-text">{t.inflationHelp}</span>
+              </div>
+            </div>
+
+            <div className="pricing-section">
+              <h4>{t.leaseSection}</h4>
+              <div className="form-group">
+                <label>{t.leaseAlpha}</label>
+                <input
+                  type="number"
+                  min="0.1"
+                  max="5"
+                  step="0.1"
+                  value={pricingConfig.leaseAlpha}
+                  onChange={e => setPricingConfig(prev => ({ 
+                    ...prev, 
+                    leaseAlpha: +e.target.value 
+                  }))}
+                />
+                <span className="help-text">{t.leaseAlphaHelp}</span>
+              </div>
+            </div>
+
+            <div className="pricing-section">
+              <h4>{t.agingSection}</h4>
+              <div className="form-group">
+                <label>{t.agingBeta}</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="0.1"
+                  step="0.001"
+                  value={pricingConfig.agingBeta}
+                  onChange={e => setPricingConfig(prev => ({ 
+                    ...prev, 
+                    agingBeta: +e.target.value 
+                  }))}
+                />
+                <span className="help-text">{t.agingBetaHelp}</span>
+              </div>
+            </div>
+
+            <div className="pricing-section">
+              <h4>{t.brandSection}</h4>
+              <div className="form-group">
+                <label>{t.brandPeak}</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="3"
+                  step="0.1"
+                  value={pricingConfig.brandPeak}
+                  onChange={e => setPricingConfig(prev => ({ 
+                    ...prev, 
+                    brandPeak: +e.target.value 
+                  }))}
+                />
+                <span className="help-text">{t.brandPeakHelp}</span>
+              </div>
+              <div className="form-group">
+                <label>{t.brandRampYears}</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="20"
+                  step="1"
+                  value={pricingConfig.brandRampYears}
+                  onChange={e => setPricingConfig(prev => ({ 
+                    ...prev, 
+                    brandRampYears: +e.target.value 
+                  }))}
+                />
+                <span className="help-text">{t.brandRampYearsHelp}</span>
+              </div>
+              <div className="form-group">
+                <label>{t.brandPlateauYears}</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="20"
+                  step="1"
+                  value={pricingConfig.brandPlateauYears}
+                  onChange={e => setPricingConfig(prev => ({ 
+                    ...prev, 
+                    brandPlateauYears: +e.target.value 
+                  }))}
+                />
+                <span className="help-text">{t.brandPlateauYearsHelp}</span>
+              </div>
+              <div className="form-group">
+                <label>{t.brandDecayYears}</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="20"
+                  step="1"
+                  value={pricingConfig.brandDecayYears}
+                  onChange={e => setPricingConfig(prev => ({ 
+                    ...prev, 
+                    brandDecayYears: +e.target.value 
+                  }))}
+                />
+                <span className="help-text">{t.brandDecayYearsHelp}</span>
+              </div>
+              <div className="form-group">
+                <label>{t.brandTail}</label>
+                <input
+                  type="number"
+                  min="0.1"
+                  max="2"
+                  step="0.1"
+                  value={pricingConfig.brandTail}
+                  onChange={e => setPricingConfig(prev => ({ 
+                    ...prev, 
+                    brandTail: +e.target.value 
+                  }))}
+                />
+                <span className="help-text">{t.brandTailHelp}</span>
+              </div>
+            </div>
+
+            <div className="modal-buttons">
+              <button onClick={resetPricingConfig} className="btn-secondary">
+                {t.reset}
+              </button>
+              <button onClick={() => setShowPricingModal(false)} className="btn-primary">
+                {t.close}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно графика ценообразования виллы */}
+      {showVillaPricingModal && selectedVillaForPricing && (
+        <div className="modal-overlay" onClick={() => setShowVillaPricingModal(false)}>
+          <div className="modal-content pricing-chart-modal" onClick={e => e.stopPropagation()}>
+            <h3>{t.villaPricingChart} - {selectedVillaForPricing.name}</h3>
+            
+            <div className="pricing-chart">
+              <div className="chart-container">
+                {generatePricingChartData(selectedVillaForPricing, pricingConfig).map((data, index) => (
+                  <div key={index} className="chart-bar">
+                    <div className="bar-label">{data.year}</div>
+                    <div className="bar-container">
+                      <div 
+                        className="bar-fill market-price" 
+                        style={{ 
+                          height: `${(data.marketPrice / Math.max(...generatePricingChartData(selectedVillaForPricing, pricingConfig).map(d => d.marketPrice))) * 150}px`,
+                          backgroundColor: '#10b981'
+                        }}
+                        title={`${t.marketPrice}: ${fmtMoney(data.marketPrice)}`}
+                      ></div>
+                      <div 
+                        className="bar-fill final-price" 
+                        style={{ 
+                          height: `${(data.finalPrice / Math.max(...generatePricingChartData(selectedVillaForPricing, pricingConfig).map(d => d.finalPrice))) * 150}px`,
+                          backgroundColor: '#3b82f6'
+                        }}
+                        title={`${t.finalPrice}: ${fmtMoney(data.finalPrice)}`}
+                      ></div>
+                    </div>
+                    <div className="bar-values">
+                      <div className="year-value">{fmtMoney(data.finalPrice)}</div>
+                      <div className="factors">
+                        <span title={`LeaseFactor: ${(data.leaseFactor * 100).toFixed(1)}%`}>
+                          L:{(data.leaseFactor * 100).toFixed(0)}%
+                        </span>
+                        <span title={`AgeFactor: ${(data.ageFactor * 100).toFixed(1)}%`}>
+                          A:{(data.ageFactor * 100).toFixed(0)}%
+                        </span>
+                        <span title={`BrandFactor: ${(data.brandFactor * 100).toFixed(1)}%`}>
+                          B:{(data.brandFactor * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="chart-legend">
+                <div className="legend-item">
+                  <div className="legend-color" style={{backgroundColor: '#10b981'}}></div>
+                  <span>{t.marketPrice}</span>
+                </div>
+                <div className="legend-item">
+                  <div className="legend-color" style={{backgroundColor: '#3b82f6'}}></div>
+                  <span>{t.finalPrice}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-buttons">
+              <button onClick={() => setShowVillaPricingModal(false)} className="btn-primary">
+                {t.close}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
 
-// ===== НОВЫЕ КОМПОНЕНТЫ ДЛЯ ЦЕНООБРАЗОВАНИЯ =====
-
-// Модальное окно конфигурации ценообразования
-function PricingConfigModal({ config, onSave, onReset, onClose, t, lang }) {
-  const [localConfig, setLocalConfig] = useState(config);
-
-  const handleSave = () => {
-    onSave(localConfig);
-  };
-
-  const handleReset = () => {
-    setLocalConfig(DEFAULT_PRICING_CONFIG);
-    onReset();
-  };
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content pricing-config-modal" onClick={e => e.stopPropagation()}>
-        <h3>{t.pricingConfig}</h3>
-        
-        <div className="pricing-sections">
-          {/* Инфляция */}
-          <div className="pricing-section">
-            <h4>{t.inflation}</h4>
-            <div className="form-group">
-              <label>{t.inflationRatePct}:</label>
-              <input 
-                type="number" 
-                min="0" 
-                max="100" 
-                step="0.1" 
-                value={localConfig.inflationRatePct} 
-                onChange={e => setLocalConfig(prev => ({...prev, inflationRatePct: parseFloat(e.target.value) || 0}))}
-                className="input"
-              />
-              <span className="unit">%</span>
-            </div>
-          </div>
-
-          {/* Убывание ценности lease */}
-          <div className="pricing-section">
-            <h4>{t.leaseDecay}</h4>
-            <div className="form-group">
-              <label>{t.leaseAlpha}:</label>
-              <input 
-                type="number" 
-                min="0.1" 
-                max="5" 
-                step="0.1" 
-                value={localConfig.leaseAlpha} 
-                onChange={e => setLocalConfig(prev => ({...prev, leaseAlpha: parseFloat(e.target.value) || 1}))}
-                className="input"
-              />
-              <div className="hint">{t.leaseAlphaHint}</div>
-            </div>
-          </div>
-
-          {/* Старение */}
-          <div className="pricing-section">
-            <h4>{t.aging}</h4>
-            <div className="form-group">
-              <label>{t.agingBeta}:</label>
-              <input 
-                type="number" 
-                min="0" 
-                max="0.2" 
-                step="0.001" 
-                value={localConfig.agingBeta} 
-                onChange={e => setLocalConfig(prev => ({...prev, agingBeta: parseFloat(e.target.value) || 0}))}
-                className="input"
-              />
-              <div className="hint">{t.agingBetaHint}</div>
-            </div>
-          </div>
-
-          {/* Бренд/популярность */}
-          <div className="pricing-section">
-            <h4>{t.brand}</h4>
-            <div className="brand-params">
-              <div className="form-group">
-                <label>{t.brandPeak}:</label>
-                <input 
-                  type="number" 
-                  min="1.0" 
-                  max="1.5" 
-                  step="0.01" 
-                  value={localConfig.brandPeak} 
-                  onChange={e => setLocalConfig(prev => ({...prev, brandPeak: parseFloat(e.target.value) || 1.2}))}
-                  className="input"
-                />
-              </div>
-              <div className="form-group">
-                <label>{t.brandRampYears}:</label>
-                <input 
-                  type="number" 
-                  min="0" 
-                  step="1" 
-                  value={localConfig.brandRampYears} 
-                  onChange={e => setLocalConfig(prev => ({...prev, brandRampYears: parseInt(e.target.value) || 0}))}
-                  className="input"
-                />
-              </div>
-              <div className="form-group">
-                <label>{t.brandPlateauYears}:</label>
-                <input 
-                  type="number" 
-                  min="0" 
-                  step="1" 
-                  value={localConfig.brandPlateauYears} 
-                  onChange={e => setLocalConfig(prev => ({...prev, brandPlateauYears: parseInt(e.target.value) || 0}))}
-                  className="input"
-                />
-              </div>
-              <div className="form-group">
-                <label>{t.brandDecayYears}:</label>
-                <input 
-                  type="number" 
-                  min="0" 
-                  step="1" 
-                  value={localConfig.brandDecayYears} 
-                  onChange={e => setLocalConfig(prev => ({...prev, brandDecayYears: parseInt(e.target.value) || 0}))}
-                  className="input"
-                />
-              </div>
-              <div className="form-group">
-                <label>{t.brandTail}:</label>
-                <input 
-                  type="number" 
-                  min="0.8" 
-                  max="1.2" 
-                  step="0.01" 
-                  value={localConfig.brandTail} 
-                  onChange={e => setLocalConfig(prev => ({...prev, brandTail: parseFloat(e.target.value) || 1.0}))}
-                  className="input"
-                />
-              </div>
-            </div>
-            
-            {/* Мини-график профиля BrandFactor */}
-            <div className="brand-factor-preview">
-              <h5>Профиль BrandFactor(t):</h5>
-              <div className="brand-factor-chart">
-                {/* Здесь будет мини-график */}
-                <div className="brand-factor-info">
-                  <div>Рост: 1.0 → {localConfig.brandPeak} за {localConfig.brandRampYears} лет</div>
-                  <div>Плато: {localConfig.brandPeak} за {localConfig.brandPlateauYears} лет</div>
-                  <div>Спад: {localConfig.brandPeak} → {localConfig.brandTail} за {localConfig.brandDecayYears} лет</div>
-                  <div>Хвост: {localConfig.brandTail}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="modal-actions">
-          <button onClick={handleSave} className="btn primary">{t.saveConfig}</button>
-          <button onClick={handleReset} className="btn">{t.resetToDefault}</button>
-          <button onClick={onClose} className="btn">{t.cancel}</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Модальное окно графика ценообразования для конкретной виллы
-function VillaPricingModal({ villa, pricingConfig, onClose, t, lang, fmtMoney }) {
-  const [selectedYear, setSelectedYear] = useState(0);
-  
-  // Генерация данных для графика
-  const chartData = useMemo(() => {
-    return generatePricingChartData(villa, pricingConfig);
-  }, [villa, pricingConfig]);
-
-  // Нахождение максимальной цены для масштабирования графика
-  const maxPrice = useMemo(() => {
-    return Math.max(...chartData.map(d => Math.max(d.marketPrice, d.finalPrice)));
-  }, [chartData]);
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content villa-pricing-modal" onClick={e => e.stopPropagation()}>
-        <h3>Ценообразование: {villa.snapshot?.name}</h3>
-        
-        {/* Параметры расчёта (read-only) */}
-        <div className="pricing-params-display">
-          <h4>Параметры расчёта:</h4>
-          <div className="params-grid">
-            <div className="param-item">
-              <span className="param-label">Инфляция:</span>
-              <span className="param-value">g = {pricingConfig.inflationRatePct}%</span>
-            </div>
-            <div className="param-item">
-              <span className="param-label">Старение:</span>
-              <span className="param-value">β = {pricingConfig.agingBeta}</span>
-            </div>
-            <div className="param-item">
-              <span className="param-label">Lease α:</span>
-              <span className="param-value">α = {pricingConfig.leaseAlpha}</span>
-            </div>
-            <div className="param-item">
-              <span className="param-label">Brand:</span>
-              <span className="param-value">peak={pricingConfig.brandPeak}, ramp={pricingConfig.brandRampYears}, plateau={pricingConfig.brandPlateauYears}, decay={pricingConfig.brandDecayYears}, tail={pricingConfig.brandTail}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* График ценообразования */}
-        <div className="pricing-chart-section">
-          <h4>График ценообразования:</h4>
-          <div className="pricing-chart">
-            <div className="chart-lines">
-              {chartData.map((data, index) => (
-                <div key={index} className="chart-line">
-                  <div className="line-points">
-                    <div 
-                      className="point market-point" 
-                      style={{
-                        left: `${(data.year / Math.max(...chartData.map(d => d.year))) * 100}%`,
-                        bottom: `${(data.marketPrice / maxPrice) * 100}%`
-                      }}
-                      title={`Год ${data.year}: Рыночная цена ${fmtMoney(data.marketPrice, 'USD')}`}
-                    ></div>
-                    <div 
-                      className="point final-point" 
-                      style={{
-                        left: `${(data.year / Math.max(...chartData.map(d => d.year))) * 100}%`,
-                        bottom: `${(data.finalPrice / maxPrice) * 100}%`
-                      }}
-                      title={`Год ${data.year}: Итоговая цена ${fmtMoney(data.finalPrice, 'USD')}`}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="chart-axes">
-              <div className="y-axis">
-                <span>{fmtMoney(maxPrice, 'USD')}</span>
-                <span>{fmtMoney(maxPrice * 0.5, 'USD')}</span>
-                <span>$0</span>
-              </div>
-              <div className="x-axis">
-                <span>0</span>
-                <span>{Math.floor(chartData.length / 4)}</span>
-                <span>{Math.floor(chartData.length / 2)}</span>
-                <span>{Math.floor(chartData.length * 3 / 4)}</span>
-                <span>{chartData.length - 1}</span>
-              </div>
-            </div>
-            <div className="chart-legend">
-              <div className="legend-item">
-                <div className="legend-color market-color"></div>
-                <span>Рыночная цена (без износа/lease/бренда)</span>
-              </div>
-              <div className="legend-item">
-                <div className="legend-color final-color"></div>
-                <span>Итоговая цена по формуле</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Таблица факторов */}
-        <div className="pricing-table-section">
-          <h4>Таблица факторов:</h4>
-          <div className="pricing-table-scroll">
-            <table className="pricing-table">
-              <thead>
-                <tr>
-                  <th>Год (t)</th>
-                  <th>LeaseFactor</th>
-                  <th>AgeFactor</th>
-                  <th>BrandFactor</th>
-                  <th>Price(t)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {chartData.map((data, index) => (
-                  <tr key={index} className={selectedYear === data.year ? 'selected-row' : ''}>
-                    <td>{data.year}</td>
-                    <td>{data.leaseFactor.toFixed(4)}</td>
-                    <td>{data.ageFactor.toFixed(4)}</td>
-                    <td>{data.brandFactor.toFixed(4)}</td>
-                    <td className="price-cell">{fmtMoney(data.finalPrice, 'USD')}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="modal-actions">
-          <button onClick={onClose} className="btn">{t.close}</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ===== КОМПОНЕНТ КАТАЛОГА =====
-function CatalogManager({ 
-  catalog, 
-  setCatalog, 
-  t, 
-  lang, 
-  fmtMoney,
-  showAddProjectModal,
-  setShowAddProjectModal,
-  showAddVillaModal,
-  setShowAddVillaModal,
-  editingProject,
-  setEditingProject,
-  newProjectForm,
-  setNewProjectForm,
-  newVillaForm,
-  setNewVillaForm,
-  addProject,
-  saveProject,
-  addVilla,
-  saveVilla
-}) {
-  // ... existing code ...
-<｜tool▁call▁end｜><｜tool▁calls▁end｜>
-  // ... existing code ...
+// ... existing code ...
+// ... existing code ...
 
 // ===== КОМПОНЕНТ КАТАЛОГА =====
 function CatalogManager({ 
@@ -1895,19 +2564,24 @@ function CatalogManager({
   const [sortBy, setSortBy] = useState('name');
   const [areaFilter, setAreaFilter] = useState({ from: '', to: '' });
   const [priceFilter, setPriceFilter] = useState({ from: '', to: '' });
+  const [editingVilla, setEditingVilla] = useState(null);
+  const [showVillaPricingModal, setShowVillaPricingModal] = useState(false);
+  const [selectedVillaForPricing, setSelectedVillaForPricing] = useState(null);
 
   const filteredCatalog = useMemo(() => {
-    let filtered = [...catalog];
-    
+    let filtered = catalog;
+
+    // Поиск по названию
     if (searchTerm) {
       filtered = filtered.filter(project => 
-        project.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         project.villas.some(villa => 
           villa.name.toLowerCase().includes(searchTerm.toLowerCase())
         )
       );
     }
-    
+
+    // Фильтр по площади
     if (areaFilter.from || areaFilter.to) {
       filtered = filtered.map(project => ({
         ...project,
@@ -1919,7 +2593,8 @@ function CatalogManager({
         })
       })).filter(project => project.villas.length > 0);
     }
-    
+
+    // Фильтр по цене
     if (priceFilter.from || priceFilter.to) {
       filtered = filtered.map(project => ({
         ...project,
@@ -1931,34 +2606,36 @@ function CatalogManager({
         })
       })).filter(project => project.villas.length > 0);
     }
-    
-    filtered.sort((a, b) => {
+
+    // Сортировка
+    filtered = [...filtered].sort((a, b) => {
       switch (sortBy) {
-        case 'price':
-          const aPrice = Math.min(...a.villas.map(v => v.baseUSD));
-          const bPrice = Math.min(...b.villas.map(v => v.baseUSD));
-          return aPrice - bPrice;
-        case 'area':
-          const aArea = Math.min(...a.villas.map(v => v.area));
-          const bArea = Math.min(...b.villas.map(v => v.area));
-          return aArea - bArea;
         case 'name':
+          return a.name.localeCompare(b.name);
+        case 'price':
+          const aAvgPrice = a.villas.reduce((sum, v) => sum + v.baseUSD, 0) / a.villas.length;
+          const bAvgPrice = b.villas.reduce((sum, v) => sum + v.baseUSD, 0) / b.villas.length;
+          return aAvgPrice - bAvgPrice;
+        case 'area':
+          const aAvgArea = a.villas.reduce((sum, v) => sum + v.area, 0) / a.villas.length;
+          const bAvgArea = b.villas.reduce((sum, v) => sum + v.area, 0) / b.villas.length;
+          return aAvgArea - bAvgArea;
         default:
-          return a.projectName.localeCompare(b.projectName);
+          return 0;
       }
     });
-    
+
     return filtered;
   }, [catalog, searchTerm, sortBy, areaFilter, priceFilter]);
 
   const deleteProject = (projectId) => {
-    if (confirm(t.deleteProjectConfirm)) {
+    if (confirm(t.confirmDeleteProject)) {
       setCatalog(prev => prev.filter(p => p.projectId !== projectId));
     }
   };
 
   const deleteVilla = (projectId, villaId) => {
-    if (confirm(t.deleteVillaConfirm)) {
+    if (confirm(t.confirmDeleteVilla)) {
       setCatalog(prev => prev.map(p => 
         p.projectId === projectId 
           ? { ...p, villas: p.villas.filter(v => v.villaId !== villaId) }
@@ -1968,35 +2645,95 @@ function CatalogManager({
   };
 
   const exportCatalog = () => {
-    const dataStr = JSON.stringify(catalog, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'arconique_catalog.json';
-    link.click();
+    const data = catalog.flatMap(project => 
+      project.villas.map(villa => ({
+        project: project.name,
+        location: project.location,
+        villa: villa.name,
+        area: villa.area,
+        basePrice: villa.baseUSD,
+        handoverMonth: villa.handoverMonth,
+        leaseholdEndDate: villa.leaseholdEndDate,
+        dailyRate: villa.dailyRateUSD,
+        occupancyRate: villa.occupancyPct,
+        rentalPriceIndex: villa.rentalPriceIndexPct
+      }))
+    );
+
+    const csv = [
+      Object.keys(data[0]).join(','),
+      ...data.map(row => Object.values(row).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'catalog.csv';
+    a.click();
     URL.revokeObjectURL(url);
   };
 
   const importCatalog = (event) => {
     const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const imported = JSON.parse(e.target.result);
-          if (Array.isArray(imported)) {
-            setCatalog(imported);
-            alert(t.catalogImported);
-          } else {
-            alert(t.wrongFileFormat);
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const csv = e.target.result;
+        const lines = csv.split('\n');
+        const headers = lines[0].split(',');
+        const data = lines.slice(1).filter(line => line.trim()).map(line => {
+          const values = line.split(',');
+          const row = {};
+          headers.forEach((header, index) => {
+            row[header.trim()] = values[index]?.trim() || '';
+          });
+          return row;
+        });
+
+        // Группируем по проектам
+        const projectsMap = new Map();
+        data.forEach(row => {
+          if (!projectsMap.has(row.project)) {
+            projectsMap.set(row.project, {
+              projectId: Date.now() + Math.random(),
+              name: row.project,
+              location: row.location,
+              description: '',
+              villas: []
+            });
           }
-        } catch (error) {
-          alert(t.importError);
-        }
-      };
-      reader.readAsText(file);
-    }
+          
+          const project = projectsMap.get(row.project);
+          project.villas.push({
+            villaId: Date.now() + Math.random(),
+            name: row.villa,
+            area: +row.area || 0,
+            baseUSD: +row.basePrice || 0,
+            handoverMonth: row.handoverMonth || '',
+            leaseholdEndDate: row.leaseholdEndDate || '',
+            dailyRateUSD: +row.dailyRate || 0,
+            occupancyPct: +row.occupancyRate || 0,
+            rentalPriceIndexPct: +row.rentalPriceIndex || 0
+          });
+        });
+
+        const newCatalog = Array.from(projectsMap.values());
+        setCatalog(prev => [...prev, ...newCatalog]);
+        alert(t.importSuccess);
+      } catch (error) {
+        alert(t.importError);
+        console.error('Import error:', error);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const showVillaPricing = (villa) => {
+    setSelectedVillaForPricing(villa);
+    setShowVillaPricingModal(true);
   };
 
   return (
@@ -2019,59 +2756,59 @@ function CatalogManager({
           </select>
           
           <div className="filter-group">
-            <input 
-              type="number" 
-              placeholder={t.areaFrom} 
-              value={areaFilter.from} 
-              onChange={e => setAreaFilter(prev => ({...prev, from: e.target.value}))}
+            <input
+              type="number"
+              placeholder={t.areaFrom}
+              value={areaFilter.from}
+              onChange={e => setAreaFilter(prev => ({ ...prev, from: e.target.value }))}
               className="filter-input"
             />
             <span>-</span>
-            <input 
-              type="number" 
-              placeholder={t.areaTo} 
-              value={areaFilter.to} 
-              onChange={e => setAreaFilter(prev => ({...prev, to: e.target.value}))}
+            <input
+              type="number"
+              placeholder={t.areaTo}
+              value={areaFilter.to}
+              onChange={e => setAreaFilter(prev => ({ ...prev, to: e.target.value }))}
               className="filter-input"
             />
           </div>
           
           <div className="filter-group">
-            <input 
-              type="number" 
-              placeholder={t.priceFrom} 
-              value={priceFilter.from} 
-              onChange={e => setPriceFilter(prev => ({...prev, from: e.target.value}))}
+            <input
+              type="number"
+              placeholder={t.priceFrom}
+              value={priceFilter.from}
+              onChange={e => setPriceFilter(prev => ({ ...prev, from: e.target.value }))}
               className="filter-input"
             />
             <span>-</span>
-            <input 
-              type="number" 
-              placeholder={t.priceTo} 
-              value={priceFilter.to} 
-              onChange={e => setPriceFilter(prev => ({...prev, to: e.target.value}))}
+            <input
+              type="number"
+              placeholder={t.priceTo}
+              value={priceFilter.to}
+              onChange={e => setPriceFilter(prev => ({ ...prev, to: e.target.value }))}
               className="filter-input"
             />
           </div>
         </div>
         
         <div className="catalog-actions">
-          <button onClick={() => setShowAddProjectModal(true)} className="btn primary">
+          <button onClick={() => setShowAddProjectModal(true)} className="btn-primary">
             {t.addProject}
           </button>
-          <button onClick={() => setShowAddVillaModal(true)} className="btn success">
+          <button onClick={() => setShowAddVillaModal(true)} className="btn-primary">
             {t.addVilla}
           </button>
-          <button onClick={exportCatalog} className="btn">
-            {t.exportCatalog}
+          <button onClick={exportCatalog} className="btn-secondary">
+            {t.export}
           </button>
-          <label className="btn import-btn">
-            {t.importCatalog}
-            <input 
-              type="file" 
-              accept=".json" 
-              onChange={importCatalog} 
-              style={{display: 'none'}}
+          <label className="btn-secondary">
+            {t.import}
+            <input
+              type="file"
+              accept=".csv"
+              onChange={importCatalog}
+              style={{ display: 'none' }}
             />
           </label>
         </div>
@@ -2082,80 +2819,56 @@ function CatalogManager({
         {filteredCatalog.map(project => (
           <div key={project.projectId} className="project-card">
             <div className="project-header">
-              <h3>{project.projectName}</h3>
+              <div className="project-info">
+                <h4>{project.name}</h4>
+                <p>{project.location}</p>
+                {project.description && <p>{project.description}</p>}
+              </div>
               <div className="project-actions">
-                <button 
-                  onClick={() => setEditingProject(project)} 
-                  className="btn small"
-                >
-                  ✏️
+                <button onClick={() => setEditingProject(project)} className="btn-secondary">
+                  {t.edit}
                 </button>
-                <button 
-                  onClick={() => deleteProject(project.projectId)} 
-                  className="btn danger small"
-                >
-                  🗑️
+                <button onClick={() => deleteProject(project.projectId)} className="btn-danger">
+                  {t.delete}
                 </button>
               </div>
             </div>
             
-            <div className="villas-grid">
+            <div className="villas-list">
               {project.villas.map(villa => (
                 <div key={villa.villaId} className="villa-card">
-                  <div className="villa-header">
-                    <h4>{villa.name}</h4>
-                    <div className="villa-actions">
-                      <button 
-                        onClick={() => setNewVillaForm(villa)} 
-                        className="btn small"
-                      >
-                        ✏️
-                      </button>
-                      <button 
-                        onClick={() => deleteVilla(project.projectId, villa.villaId)} 
-                        className="btn danger small"
-                      >
-                        🗑️
-                      </button>
+                  <div className="villa-info">
+                    <h5>{villa.name}</h5>
+                    <div className="villa-details">
+                      <span>{villa.area}m²</span>
+                      <span>{fmtMoney(villa.baseUSD)}</span>
+                      {villa.handoverMonth && (
+                        <span>{t.handoverMonth}: {villa.handoverMonth}</span>
+                      )}
+                      {villa.leaseholdEndDate && (
+                        <span>{t.leaseholdEndDate}: {villa.leaseholdEndDate}</span>
+                      )}
+                      {villa.dailyRateUSD > 0 && (
+                        <span>{t.dailyRate}: ${villa.dailyRateUSD}/сутки</span>
+                      )}
+                      {villa.occupancyPct > 0 && (
+                        <span>{t.occupancyRate}: {villa.occupancyPct}%</span>
+                      )}
+                      {villa.rentalPriceIndexPct > 0 && (
+                        <span>{t.rentalPriceIndex}: {villa.rentalPriceIndexPct}%/год</span>
+                      )}
                     </div>
                   </div>
-                  
-                  <div className="villa-details">
-                    <div className="detail-row">
-                      <span className="label">{t.villaArea}:</span>
-                      <span className="value">{villa.area} м²</span>
-                    </div>
-                    <div className="detail-row">
-                      <span className="label">{t.villaPpsm}:</span>
-                      <span className="value">${villa.ppsm}</span>
-                    </div>
-                    <div className="detail-row">
-                      <span className="label">{t.villaBasePrice}:</span>
-                      <span className="value">{fmtMoney(villa.baseUSD, 'USD')}</span>
-                    </div>
-                    {/* НОВЫЕ ПОЛЯ ДЛЯ ЛИЗХОЛДА И АРЕНДЫ */}
-                    <div className="detail-row">
-                      <span className="label">{t.leaseholdEndDate}:</span>
-                      <span className="value">
-                        {villa.leaseholdEndDate ? 
-                          villa.leaseholdEndDate.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US') : 
-                          t.notSet
-                        }
-                      </span>
-                    </div>
-                    <div className="detail-row">
-                      <span className="label">{t.dailyRate}:</span>
-                      <span className="value">${villa.dailyRateUSD || 150}</span>
-                    </div>
-                    <div className="detail-row">
-                      <span className="label">{t.rentalPriceIndex}:</span>
-                      <span className="value">{villa.rentalPriceIndexPct || 5}%</span>
-                    </div>
-                    {/* НОВОЕ ПОЛЕ: Срок лизинга */}
-                    <div className="detail-row">
-                      <span className="label">Срок лизинга:</span>
-                      <span className="value">{villa.leaseTotalYears || 30} {t.years}</span>
-                    </div>
+                  <div className="villa-actions">
+                    <button onClick={() => setEditingVilla(villa)} className="btn-secondary">
+                      {t.edit}
+                    </button>
+                    <button onClick={() => showVillaPricing(villa)} className="btn-secondary">
+                      {t.pricingChart}
+                    </button>
+                    <button onClick={() => deleteVilla(project.projectId, villa.villaId)} className="btn-danger">
+                      {t.delete}
+                    </button>
                   </div>
                 </div>
               ))}
@@ -2163,6 +2876,844 @@ function CatalogManager({
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ... existing code ...
+// ... existing code ...
+
+  // ===== ФУНКЦИИ ДЛЯ РАБОТЫ С ЛИНИЯМИ =====
+  const updLine = (id, patch) => setLines(prev => prev.map(l => l.id === id ? {...l, ...patch} : l));
+  const delLine = (id) => setLines(prev => prev.filter(l => l.id !== id));
+
+  const addFromCatalog = () => setModalOpen(true);
+  const addFromCatalogLine = (villa, projectId) => {
+    const nid = (lines[lines.length - 1]?.id || 0) + 1;
+    const newLine = {
+      id: nid,
+      projectId: projectId,
+      villaId: villa.villaId,
+      qty: 1,
+      prePct: 70,
+      ownTerms: false,
+      months: null,
+      monthlyRatePct: null,
+      firstPostUSD: 0,
+      discountPct: 0,
+      termMonths: 12,
+      ratePct: 1.5
+    };
+    setLines(prev => [...prev, newLine]);
+    setModalOpen(false);
+  };
+
+  // ===== ФУНКЦИИ ДЛЯ РАБОТЫ СО СТАДИЯМИ =====
+  const addStage = () => {
+    const newStage = {
+      name: '',
+      percent: 0,
+      month: 0
+    };
+    setStages(prev => [...prev, newStage]);
+  };
+
+  const updateStage = (index, field, value) => {
+    setStages(prev => prev.map((stage, i) => 
+      i === index ? { ...stage, [field]: value } : stage
+    ));
+  };
+
+  const deleteStage = (index) => {
+    setStages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // ===== ФУНКЦИИ ДЛЯ РАБОТЫ С КАТАЛОГОМ =====
+  const addProject = () => {
+    if (!newProjectForm.name.trim()) {
+      alert(t.projectNameRequired);
+      return;
+    }
+    
+    const newProject = {
+      projectId: Date.now() + Math.random(),
+      name: newProjectForm.name,
+      location: newProjectForm.location,
+      description: newProjectForm.description,
+      villas: []
+    };
+    
+    setCatalog(prev => [...prev, newProject]);
+    setNewProjectForm({ name: '', location: '', description: '' });
+    setShowAddProjectModal(false);
+  };
+
+  const saveProject = () => {
+    if (!editingProject) return;
+    
+    setCatalog(prev => prev.map(p => 
+      p.projectId === editingProject.projectId ? editingProject : p
+    ));
+    setEditingProject(null);
+  };
+
+  const addVilla = () => {
+    if (!newVillaForm.projectId || !newVillaForm.name.trim()) {
+      alert(t.villaDataRequired);
+      return;
+    }
+    
+    const newVilla = {
+      villaId: Date.now() + Math.random(),
+      name: newVillaForm.name,
+      area: newVillaForm.area || 0,
+      baseUSD: newVillaForm.baseUSD || 0,
+      handoverMonth: newVillaForm.handoverMonth || '',
+      leaseholdEndDate: newVillaForm.leaseholdEndDate || '',
+      dailyRateUSD: newVillaForm.dailyRateUSD || 0,
+      occupancyPct: newVillaForm.occupancyPct || 0,
+      rentalPriceIndexPct: newVillaForm.rentalPriceIndexPct || 0
+    };
+    
+    setCatalog(prev => prev.map(p => 
+      p.projectId === newVillaForm.projectId 
+        ? { ...p, villas: [...p.villas, newVilla] }
+        : p
+    ));
+    
+    setNewVillaForm({ 
+      projectId: '', 
+      name: '', 
+      area: '', 
+      baseUSD: '', 
+      handoverMonth: '', 
+      leaseholdEndDate: '', 
+      dailyRateUSD: '', 
+      occupancyPct: '', 
+      rentalPriceIndexPct: '' 
+    });
+    setShowAddVillaModal(false);
+  };
+
+  const saveVilla = () => {
+    if (!editingVilla) return;
+    
+    setCatalog(prev => prev.map(p => ({
+      ...p,
+      villas: p.villas.map(v => 
+        v.villaId === editingVilla.villaId ? editingVilla : v
+      )
+    })));
+    setEditingVilla(null);
+  };
+
+  // ===== ФУНКЦИИ ЭКСПОРТА =====
+  const exportCSV = () => {
+    const data = project.cashflow.map((item, i) => ({
+      month: item.label,
+      payment: item.payment,
+      rentalIncome: item.rentalIncome,
+      netPayment: item.netPayment,
+      remainingBalance: item.remainingBalance
+    }));
+
+    const csv = [
+      Object.keys(data[0]).join(','),
+      ...data.map(row => Object.values(row).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cashflow.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportXLSX = () => {
+    const data = project.cashflow.map((item, i) => ({
+      month: item.label,
+      payment: item.payment,
+      rentalIncome: item.rentalIncome,
+      netPayment: item.netPayment,
+      remainingBalance: item.remainingBalance
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Cashflow');
+    XLSX.writeFile(wb, 'cashflow.xlsx');
+  };
+
+  const exportPDF = () => {
+    const element = document.createElement('div');
+    element.innerHTML = `
+      <h1>${t.cashflow}</h1>
+      <p><strong>${t.totalCost}:</strong> ${fmtMoney(project.totalCost)}</p>
+      <p><strong>${t.totalTerm}:</strong> ${project.totalTerm}</p>
+      <p><strong>${t.cleanLeaseholdTerm}:</strong> ${totalLeaseholdTerm}</p>
+      <table>
+        <thead>
+          <tr>
+            <th>${t.month}</th>
+            <th>${t.payment}</th>
+            <th>${t.rentalIncome}</th>
+            <th>${t.netPayment}</th>
+            <th>${t.remainingBalance}</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${project.cashflow.map(item => `
+            <tr>
+              <td>${item.label}</td>
+              <td>${fmtMoney(item.payment)}</td>
+              <td>${fmtMoney(item.rentalIncome)}</td>
+              <td>${fmtMoney(item.netPayment)}</td>
+              <td>${fmtMoney(item.remainingBalance)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+
+    html2pdf().from(element).save('cashflow.pdf');
+  };
+
+  // ===== ФУНКЦИИ НАСТРОЕК ЦЕНООБРАЗОВАНИЯ =====
+  const resetPricingConfig = () => {
+    setPricingConfig(DEFAULT_PRICING_CONFIG);
+  };
+
+  // ===== ЭФФЕКТЫ =====
+  useEffect(() => {
+    // Обновляем заголовок страницы
+    document.title = t.title;
+    const appTitleElement = document.getElementById('app-title');
+    if (appTitleElement) {
+      appTitleElement.textContent = t.title;
+    }
+  }, [t.title]);
+
+  // ===== PIN КОД =====
+  const PIN_CODE = '1234';
+
+  return (
+    <>
+      {/* Внизу по порядку: */}
+      
+      {/* 1. Настройки */}
+      <div className="card">
+        {/* Ряд 1: Все настройки в один ряд */}
+        <div className="row">
+          <div className="field compact">
+            <label>{t.lang}</label>
+            <select value={lang} onChange={e => setLang(e.target.value)}>
+              <option value="ru">Русский</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+          
+          <div className="field compact">
+            <label>{t.currencyDisplay}</label>
+            <select value={currencyDisplay} onChange={e => setCurrencyDisplay(e.target.value)}>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="IDR">IDR</option>
+            </select>
+          </div>
+          
+          <div className="field compact">
+            <label>{t.startMonth}</label>
+            <input
+              type="month"
+              value={startMonth}
+              onChange={e => setStartMonth(e.target.value)}
+            />
+          </div>
+          
+          {isEditor && (
+            <>
+              <div className="field compact">
+                <label>{t.usdToIdr}</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="100"
+                  value={usdToIdr}
+                  onChange={e => setUsdToIdr(+e.target.value)}
+                />
+              </div>
+              
+              <div className="field compact">
+                <label>{t.usdToEur}</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={usdToEur}
+                  onChange={e => setUsdToEur(+e.target.value)}
+                />
+              </div>
+              
+              <div className="field compact">
+                <label>{t.globalTerm}</label>
+                <input
+                  type="range"
+                  min="12"
+                  max="60"
+                  value={globalTerm}
+                  onChange={e => setGlobalTerm(+e.target.value)}
+                  className="range-slider"
+                />
+                <span>{globalTerm} {t.months}</span>
+              </div>
+            </>
+          )}
+          
+          {!isEditor && (
+            <div className="field compact">
+              <label>{t.globalTerm}</label>
+              <input
+                type="number"
+                min="12"
+                max="60"
+                value={globalTerm}
+                onChange={e => setGlobalTerm(+e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+        
+        {/* Ряд 2: Кнопка переключения в редактор */}
+        <div className="row">
+          <button onClick={toggleEditorMode} className="btn-primary">
+            {isEditor ? t.switchToClient : t.switchToEditor}
+          </button>
+          
+          {isEditor && (
+            <button onClick={() => setShowPricingModal(true)} className="btn-secondary">
+              {t.pricingSettings}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 2. Расчёт (позиции) */}
+      <div className="card">
+        <h3>{t.calculation}</h3>
+        <div className="table-container">
+          <table className="calculation-table">
+            <thead>
+              <tr>
+                <th>{t.project}</th>
+                <th>{t.villa}</th>
+                <th>{t.area}</th>
+                <th>{t.basePrice}</th>
+                <th>{t.beforeKeys}</th>
+                <th>{t.afterKeys}</th>
+                <th>{t.ownTerms}</th>
+                <th>{t.months}</th>
+                <th>{t.monthlyRate}</th>
+                <th>{t.dailyRate}</th>
+                <th>{t.occupancyRate}</th>
+                <th>{t.rentalPriceIndex}</th>
+                <th>{t.actions}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lines.map(line => {
+                const villa = catalog.flatMap(p => p.villas).find(v => v.villaId === line.villaId);
+                const project = catalog.find(p => p.projectId === line.projectId);
+                if (!villa || !project) return null;
+                
+                return (
+                  <tr key={line.id}>
+                    <td>{project.name}</td>
+                    <td>{villa.name}</td>
+                    <td>{villa.area}m²</td>
+                    <td>{fmtMoney(villa.baseUSD)}</td>
+                    <td>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={line.prePct}
+                        onChange={e => updLine(line.id, { prePct: +e.target.value })}
+                        className="range-slider"
+                      />
+                      <span>{line.prePct}%</span>
+                    </td>
+                    <td>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={line.afterPct}
+                        onChange={e => updLine(line.id, { afterPct: +e.target.value })}
+                        className="range-slider"
+                      />
+                      <span>{line.afterPct}%</span>
+                    </td>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={line.ownTerms}
+                        onChange={e => updLine(line.id, { ownTerms: e.target.checked })}
+                      />
+                    </td>
+                    <td>
+                      {line.ownTerms ? (
+                        <input
+                          type="number"
+                          min="1"
+                          value={line.months || ''}
+                          onChange={e => updLine(line.id, { months: +e.target.value })}
+                          placeholder={t.months}
+                        />
+                      ) : (
+                        <span>{t.standard}</span>
+                      )}
+                    </td>
+                    <td>
+                      {line.ownTerms ? (
+                        <input
+                          type="number"
+                          min="0.1"
+                          step="0.1"
+                          value={line.monthlyRatePct || ''}
+                          onChange={e => updLine(line.id, { monthlyRatePct: +e.target.value })}
+                          placeholder="%"
+                        />
+                      ) : (
+                        <span>{t.standard}</span>
+                      )}
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={villa.dailyRateUSD || ''}
+                        onChange={e => {
+                          const updatedVilla = { ...villa, dailyRateUSD: +e.target.value };
+                          setCatalog(prev => prev.map(p => 
+                            p.projectId === project.projectId 
+                              ? { ...p, villas: p.villas.map(v => v.villaId === villa.villaId ? updatedVilla : v) }
+                              : p
+                          ));
+                        }}
+                        placeholder="USD/сутки"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={villa.occupancyPct || ''}
+                        onChange={e => {
+                          const updatedVilla = { ...villa, occupancyPct: +e.target.value };
+                          setCatalog(prev => prev.map(p => 
+                            p.projectId === project.projectId 
+                              ? { ...p, villas: p.villas.map(v => v.villaId === villa.villaId ? updatedVilla : v) }
+                              : p
+                          ));
+                        }}
+                        placeholder="%"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={villa.rentalPriceIndexPct || ''}
+                        onChange={e => {
+                          const updatedVilla = { ...villa, rentalPriceIndexPct: +e.target.value };
+                          setCatalog(prev => prev.map(p => 
+                            p.projectId === project.projectId 
+                              ? { ...p, villas: p.villas.map(v => v.villaId === villa.villaId ? updatedVilla : v) }
+                              : p
+                          ));
+                        }}
+                        placeholder="%/год"
+                      />
+                    </td>
+                    <td>
+                      <button onClick={() => delLine(line.id)} className="btn-danger">
+                        {t.delete}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <button onClick={addFromCatalog} className="btn-primary">
+          {t.addFromCatalog}
+        </button>
+      </div>
+
+      {/* 3. KPI показатели */}
+      <div className="card">
+        <h3>{t.kpi}</h3>
+        <div className="kpi-grid">
+          <div className="kpi-item">
+            <div className="kpi-value">{fmtMoney(project.totalCost)}</div>
+            <div className="kpi-label">{t.totalCost}</div>
+          </div>
+          <div className="kpi-item">
+            <div className="kpi-value">{fmtMoney(project.beforeKeys)}</div>
+            <div className="kpi-label">{t.beforeKeys}</div>
+          </div>
+          <div className="kpi-item">
+            <div className="kpi-value">{fmtMoney(project.afterKeys)}</div>
+            <div className="kpi-label">{t.after}</div>
+          </div>
+          <div className="kpi-item">
+            <div className="kpi-value">{fmtMoney(project.remainingBalance)}</div>
+            <div className="kpi-label">{t.remainingBalance}</div>
+          </div>
+          <div className="kpi-item">
+            <div className="kpi-value">{project.totalTerm}</div>
+            <div className="kpi-label">{t.totalTerm}</div>
+          </div>
+          <div className="kpi-item">
+            <div className="kpi-value">{totalLeaseholdTerm}</div>
+            <div className="kpi-label">{t.cleanLeaseholdTerm}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Базовая рассрочка */}
+      <div className="card">
+        <h3>{t.basicInstallment}</h3>
+        <div className="table-container">
+          <table className="stages-table">
+            <thead>
+              <tr>
+                <th className="col-stage">
+                  <div className="col-header">
+                    <div className="col-title">{t.stage}</div>
+                    <div className="col-description">{t.stageDescription}</div>
+                  </div>
+                </th>
+                <th className="col-percent">
+                  <div className="col-header">
+                    <div className="col-title">{t.percent}</div>
+                    <div className="col-description">{t.percentDescription}</div>
+                  </div>
+                </th>
+                <th className="col-month">
+                  <div className="col-header">
+                    <div className="col-title">{t.month}</div>
+                    <div className="col-description">{t.monthDescription}</div>
+                  </div>
+                </th>
+                <th className="col-actions">
+                  <div className="col-header">
+                    <div className="col-title">{t.actions}</div>
+                    <div className="col-description">{t.actionsDescription}</div>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {stages.map((stage, i) => (
+                <tr key={i}>
+                  <td>
+                    <input
+                      type="text"
+                      value={stage.name}
+                      onChange={e => updateStage(i, 'name', e.target.value)}
+                      placeholder={t.stageName}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={stage.percent}
+                      onChange={e => updateStage(i, 'percent', +e.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      value={stage.month}
+                      onChange={e => updateStage(i, 'month', +e.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <button onClick={() => deleteStage(i)} className="btn-danger">
+                      {t.delete}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <button onClick={addStage} className="btn-primary">
+          {t.addStage}
+        </button>
+      </div>
+
+      {/* 5. Кэшфлоу */}
+      <div className="card">
+        <h3>{t.cashflow}</h3>
+        <div className="table-container">
+          <table className="cashflow-table">
+            <thead>
+              <tr>
+                <th>{t.month}</th>
+                <th>{t.payment}</th>
+                <th>{t.rentalIncome}</th>
+                <th>{t.netPayment}</th>
+                <th>{t.remainingBalance}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {project.cashflow.map((item, i) => (
+                <tr key={i} className="cashflow-row">
+                  <td>{item.label}</td>
+                  <td>{fmtMoney(item.payment)}</td>
+                  <td>{fmtMoney(item.rentalIncome)}</td>
+                  <td className={item.netPayment > 0 ? 'positive' : 'negative'}>
+                    {fmtMoney(item.netPayment)}
+                  </td>
+                  <td>{fmtMoney(item.remainingBalance)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        
+        <div className="export-buttons">
+          <button onClick={exportCSV} className="btn-secondary">{t.exportCSV}</button>
+          <button onClick={exportXLSX} className="btn-secondary">{t.exportXLSX}</button>
+          <button onClick={exportPDF} className="btn-secondary">{t.exportPDF}</button>
+        </div>
+      </div>
+
+      {/* 6. График общей доходности от сдачи в аренду */}
+      <div className="card">
+        <h3>{t.rentalIncomeChart}</h3>
+        <div className="rental-chart">
+          <div className="chart-container">
+            {yearlyRentalData.map((yearData, index) => (
+              <div key={index} className="chart-bar">
+                <div className="bar-label">{yearData.year}</div>
+                <div className="bar-container">
+                  <div 
+                    className="bar-fill" 
+                    style={{ 
+                      height: `${(yearData.cumulativeIncome / Math.max(...yearlyRentalData.map(d => d.cumulativeIncome))) * 200}px`,
+                      backgroundColor: '#3b82f6'
+                    }}
+                  ></div>
+                </div>
+                <div className="bar-values">
+                  <div className="year-income">{fmtMoney(yearData.yearlyIncome)}</div>
+                  <div className="cumulative-income">{fmtMoney(yearData.cumulativeIncome)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="chart-legend">
+            <div className="legend-item">
+              <div className="legend-color" style={{backgroundColor: '#3b82f6'}}></div>
+              <span>{t.cumulativeIncome}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 7. Каталог проектов и вилл (редактор) */}
+      <CatalogManager
+        catalog={catalog}
+        setCatalog={setCatalog}
+        t={t}
+        lang={lang}
+        fmtMoney={fmtMoney}
+        showAddProjectModal={showAddProjectModal}
+        setShowAddProjectModal={setShowAddProjectModal}
+        showAddVillaModal={showAddVillaModal}
+        setShowAddVillaModal={setShowAddVillaModal}
+        editingProject={editingProject}
+        setEditingProject={setEditingProject}
+        newProjectForm={newProjectForm}
+        setNewProjectForm={setNewProjectForm}
+        newVillaForm={newVillaForm}
+        setNewVillaForm={setNewVillaForm}
+        addProject={addProject}
+        saveProject={saveProject}
+        addVilla={addVilla}
+        saveVilla={saveVilla}
+      />
+
+      {/* Модальные окна */}
+      
+      {/* Модальное окно добавления проекта */}
+      {showAddProjectModal && (
+        <div className="modal-overlay" onClick={() => setShowAddProjectModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>{t.addProject}</h3>
+            <div className="form-group">
+              <label>{t.projectName}</label>
+              <input
+                type="text"
+                value={newProjectForm.name}
+                onChange={e => setNewProjectForm(prev => ({ ...prev, name: e.target.value }))}
+                placeholder={t.projectName}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.projectLocation}</label>
+              <input
+                type="text"
+                value={newProjectForm.location}
+                onChange={e => setNewProjectForm(prev => ({ ...prev, location: e.target.value }))}
+                placeholder={t.projectLocation}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.projectDescription}</label>
+              <textarea
+                value={newProjectForm.description}
+                onChange={e => setNewProjectForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder={t.projectDescription}
+              />
+            </div>
+            <div className="modal-buttons">
+              <button onClick={() => setShowAddProjectModal(false)} className="btn-secondary">
+                {t.cancel}
+              </button>
+              <button onClick={addProject} className="btn-primary">
+                {t.add}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно добавления виллы */}
+      {showAddVillaModal && (
+        <div className="modal-overlay" onClick={() => setShowAddVillaModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>{t.addVilla}</h3>
+            <div className="form-group">
+              <label>{t.selectProject}</label>
+              <select
+                value={newVillaForm.projectId}
+                onChange={e => setNewVillaForm(prev => ({ ...prev, projectId: e.target.value }))}
+              >
+                <option value="">{t.selectProject}</option>
+                {catalog.map(project => (
+                  <option key={project.projectId} value={project.projectId}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>{t.villaName}</label>
+              <input
+                type="text"
+                value={newVillaForm.name}
+                onChange={e => setNewVillaForm(prev => ({ ...prev, name: e.target.value }))}
+                placeholder={t.villaName}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.villaArea}</label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                value={newVillaForm.area}
+                onChange={e => setNewVillaForm(prev => ({ ...prev, area: +e.target.value }))}
+                placeholder="m²"
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.basePrice}</label>
+              <input
+                type="number"
+                min="0"
+                step="1000"
+                value={newVillaForm.baseUSD}
+                onChange={e => setNewVillaForm(prev => ({ ...prev, baseUSD: +e.target.value }))}
+                placeholder="USD"
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.handoverMonth}</label>
+              <input
+                type="month"
+                value={newVillaForm.handoverMonth}
+                onChange={e => setNewVillaForm(prev => ({ ...prev, handoverMonth: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.leaseholdEndDate}</label>
+              <input
+                type="date"
+                value={newVillaForm.leaseholdEndDate}
+                onChange={e => setNewVillaForm(prev => ({ ...prev, leaseholdEndDate: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.dailyRate}</label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                value={newVillaForm.dailyRateUSD}
+                onChange={e => setNewVillaForm(prev => ({ ...prev, dailyRateUSD: +e.target.value }))}
+                placeholder="USD/сутки"
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.occupancyRate}</label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                value={newVillaForm.occupancyPct}
+                onChange={e => setNewVillaForm(prev => ({ ...prev, occupancyPct: +e.target.value }))}
+                placeholder="%"
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.rentalPriceIndex}</label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                value={newVillaForm.rentalPriceIndexPct}
+                onChange={e => setNewVillaForm(prev => ({ ...prev, rentalPriceIndexPct: +e.target.value }))}
+                placeholder="%/год"
+              />
+            </div>
+            <div className="modal-buttons">
+              <button onClick={() => setShowAddVillaModal(false)} className="btn-secondary">
+                {t.cancel}
+              </button>
+              <button onClick={addVilla} className="btn-primary">
+                {t.add}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Модальное окно редактирования проекта */}
       {editingProject && (
@@ -2170,35 +3721,356 @@ function CatalogManager({
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <h3>{t.editProject}</h3>
             <div className="form-group">
-              <label>{t.projectName}:</label>
-              <input 
-                type="text" 
-                value={editingProject.projectName} 
-                onChange={e => setEditingProject(prev => ({...prev, projectName: e.target.value}))}
-                className="input"
+              <label>{t.projectName}</label>
+              <input
+                type="text"
+                value={editingProject.name}
+                onChange={e => setEditingProject(prev => ({ ...prev, name: e.target.value }))}
               />
             </div>
-            <div className="modal-actions">
-              <button onClick={() => {
-                setCatalog(prev => prev.map(p => 
-                  p.projectId === editingProject.projectId ? editingProject : p
-                ));
-                setEditingProject(null);
-              }} className="btn primary">
-                {t.save}
-              </button>
-              <button onClick={() => setEditingProject(null)} className="btn">
+            <div className="form-group">
+              <label>{t.projectLocation}</label>
+              <input
+                type="text"
+                value={editingProject.location}
+                onChange={e => setEditingProject(prev => ({ ...prev, location: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.projectDescription}</label>
+              <textarea
+                value={editingProject.description}
+                onChange={e => setEditingProject(prev => ({ ...prev, description: e.target.value }))}
+              />
+            </div>
+            <div className="modal-buttons">
+              <button onClick={() => setEditingProject(null)} className="btn-secondary">
                 {t.cancel}
+              </button>
+              <button onClick={saveProject} className="btn-primary">
+                {t.save}
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+
+      {/* Модальное окно редактирования виллы */}
+      {editingVilla && (
+        <div className="modal-overlay" onClick={() => setEditingVilla(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>{t.editVilla}</h3>
+            <div className="form-group">
+              <label>{t.villaName}</label>
+              <input
+                type="text"
+                value={editingVilla.name}
+                onChange={e => setEditingVilla(prev => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.villaArea}</label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                value={editingVilla.area}
+                onChange={e => setEditingVilla(prev => ({ ...prev, area: +e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.basePrice}</label>
+              <input
+                type="number"
+                min="0"
+                step="1000"
+                value={editingVilla.baseUSD}
+                onChange={e => setEditingVilla(prev => ({ ...prev, baseUSD: +e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.handoverMonth}</label>
+              <input
+                type="month"
+                value={editingVilla.handoverMonth}
+                onChange={e => setEditingVilla(prev => ({ ...prev, handoverMonth: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.leaseholdEndDate}</label>
+              <input
+                type="date"
+                value={editingVilla.leaseholdEndDate}
+                onChange={e => setEditingVilla(prev => ({ ...prev, leaseholdEndDate: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.dailyRate}</label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                value={editingVilla.dailyRateUSD}
+                onChange={e => setEditingVilla(prev => ({ ...prev, dailyRateUSD: +e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.occupancyRate}</label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                value={editingVilla.occupancyPct}
+                onChange={e => setEditingVilla(prev => ({ ...prev, occupancyPct: +e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.rentalPriceIndex}</label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                value={editingVilla.rentalPriceIndexPct}
+                onChange={e => setEditingVilla(prev => ({ ...prev, rentalPriceIndexPct: +e.target.value }))}
+              />
+            </div>
+            <div className="modal-buttons">
+              <button onClick={() => setEditingVilla(null)} className="btn-secondary">
+                {t.cancel}
+              </button>
+              <button onClick={saveVilla} className="btn-primary">
+                {t.save}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно настроек ценообразования */}
+      {showPricingModal && (
+        <div className="modal-overlay" onClick={() => setShowPricingModal(false)}>
+          <div className="modal-content pricing-modal" onClick={e => e.stopPropagation()}>
+            <h3>{t.pricingSettings}</h3>
+            
+            <div className="pricing-section">
+              <h4>{t.inflationSection}</h4>
+              <div className="form-group">
+                <label>{t.inflationRate}</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={pricingConfig.inflationRatePct}
+                  onChange={e => setPricingConfig(prev => ({ 
+                    ...prev, 
+                    inflationRatePct: +e.target.value 
+                  }))}
+                />
+                <span className="help-text">{t.inflationHelp}</span>
+              </div>
+            </div>
+
+            <div className="pricing-section">
+              <h4>{t.leaseSection}</h4>
+              <div className="form-group">
+                <label>{t.leaseAlpha}</label>
+                <input
+                  type="number"
+                  min="0.1"
+                  max="5"
+                  step="0.1"
+                  value={pricingConfig.leaseAlpha}
+                  onChange={e => setPricingConfig(prev => ({ 
+                    ...prev, 
+                    leaseAlpha: +e.target.value 
+                  }))}
+                />
+                <span className="help-text">{t.leaseAlphaHelp}</span>
+              </div>
+            </div>
+
+            <div className="pricing-section">
+              <h4>{t.agingSection}</h4>
+              <div className="form-group">
+                <label>{t.agingBeta}</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="0.1"
+                  step="0.001"
+                  value={pricingConfig.agingBeta}
+                  onChange={e => setPricingConfig(prev => ({ 
+                    ...prev, 
+                    agingBeta: +e.target.value 
+                  }))}
+                />
+                <span className="help-text">{t.agingBetaHelp}</span>
+              </div>
+            </div>
+
+            <div className="pricing-section">
+              <h4>{t.brandSection}</h4>
+              <div className="form-group">
+                <label>{t.brandPeak}</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="3"
+                  step="0.1"
+                  value={pricingConfig.brandPeak}
+                  onChange={e => setPricingConfig(prev => ({ 
+                    ...prev, 
+                    brandPeak: +e.target.value 
+                  }))}
+                />
+                <span className="help-text">{t.brandPeakHelp}</span>
+              </div>
+              <div className="form-group">
+                <label>{t.brandRampYears}</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="20"
+                  step="1"
+                  value={pricingConfig.brandRampYears}
+                  onChange={e => setPricingConfig(prev => ({ 
+                    ...prev, 
+                    brandRampYears: +e.target.value 
+                  }))}
+                />
+                <span className="help-text">{t.brandRampYearsHelp}</span>
+              </div>
+              <div className="form-group">
+                <label>{t.brandPlateauYears}</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="20"
+                  step="1"
+                  value={pricingConfig.brandPlateauYears}
+                  onChange={e => setPricingConfig(prev => ({ 
+                    ...prev, 
+                    brandPlateauYears: +e.target.value 
+                  }))}
+                />
+                <span className="help-text">{t.brandPlateauYearsHelp}</span>
+              </div>
+              <div className="form-group">
+                <label>{t.brandDecayYears}</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="20"
+                  step="1"
+                  value={pricingConfig.brandDecayYears}
+                  onChange={e => setPricingConfig(prev => ({ 
+                    ...prev, 
+                    brandDecayYears: +e.target.value 
+                  }))}
+                />
+                <span className="help-text">{t.brandDecayYearsHelp}</span>
+              </div>
+              <div className="form-group">
+                <label>{t.brandTail}</label>
+                <input
+                  type="number"
+                  min="0.1"
+                  max="2"
+                  step="0.1"
+                  value={pricingConfig.brandTail}
+                  onChange={e => setPricingConfig(prev => ({ 
+                    ...prev, 
+                    brandTail: +e.target.value 
+                  }))}
+                />
+                <span className="help-text">{t.brandTailHelp}</span>
+              </div>
+            </div>
+
+            <div className="modal-buttons">
+              <button onClick={resetPricingConfig} className="btn-secondary">
+                {t.reset}
+              </button>
+              <button onClick={() => setShowPricingModal(false)} className="btn-primary">
+                {t.close}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно графика ценообразования виллы */}
+      {showVillaPricingModal && selectedVillaForPricing && (
+        <div className="modal-overlay" onClick={() => setShowVillaPricingModal(false)}>
+          <div className="modal-content pricing-chart-modal" onClick={e => e.stopPropagation()}>
+            <h3>{t.villaPricingChart} - {selectedVillaForPricing.name}</h3>
+            
+            <div className="pricing-chart">
+              <div className="chart-container">
+                {generatePricingChartData(selectedVillaForPricing, pricingConfig).map((data, index) => (
+                  <div key={index} className="chart-bar">
+                    <div className="bar-label">{data.year}</div>
+                    <div className="bar-container">
+                      <div 
+                        className="bar-fill market-price" 
+                        style={{ 
+                          height: `${(data.marketPrice / Math.max(...generatePricingChartData(selectedVillaForPricing, pricingConfig).map(d => d.marketPrice))) * 150}px`,
+                          backgroundColor: '#10b981'
+                        }}
+                        title={`${t.marketPrice}: ${fmtMoney(data.marketPrice)}`}
+                      ></div>
+                      <div 
+                        className="bar-fill final-price" 
+                        style={{ 
+                          height: `${(data.finalPrice / Math.max(...generatePricingChartData(selectedVillaForPricing, pricingConfig).map(d => d.finalPrice))) * 150}px`,
+                          backgroundColor: '#3b82f6'
+                        }}
+                        title={`${t.finalPrice}: ${fmtMoney(data.finalPrice)}`}
+                      ></div>
+                    </div>
+                    <div className="bar-values">
+                      <div className="year-value">{fmtMoney(data.finalPrice)}</div>
+                      <div className="factors">
+                        <span title={`LeaseFactor: ${(data.leaseFactor * 100).toFixed(1)}%`}>
+                          L:{(data.leaseFactor * 100).toFixed(0)}%
+                        </span>
+                        <span title={`AgeFactor: ${(data.ageFactor * 100).toFixed(1)}%`}>
+                          A:{(data.ageFactor * 100).toFixed(0)}%
+                        </span>
+                        <span title={`BrandFactor: ${(data.brandFactor * 100).toFixed(1)}%`}>
+                          B:{(data.brandFactor * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="chart-legend">
+                <div className="legend-item">
+                  <div className="legend-color" style={{backgroundColor: '#10b981'}}></div>
+                  <span>{t.marketPrice}</span>
+                </div>
+                <div className="legend-item">
+                  <div className="legend-color" style={{backgroundColor: '#3b82f6'}}></div>
+                  <span>{t.finalPrice}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-buttons">
+              <button onClick={() => setShowVillaPricingModal(false)} className="btn-primary">
+                {t.close}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
 // ===== РЕНДЕРИНГ ПРИЛОЖЕНИЯ =====
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
-            
