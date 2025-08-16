@@ -543,9 +543,6 @@ function App() {
       const data = [];
       
       for (let year = 0; year <= Math.min(totalYears, 20); year++) {
-        // УБИРАЕМ marketPrice - он не нужен
-        // const marketPrice = villa.baseUSD * Math.pow(1 + pricingConfig.inflationRatePct / 100, year);
-        
         // ДОБАВЛЯЕМ коэффициент инфляции как отдельный фактор
         const inflationFactor = Math.pow(1 + pricingConfig.inflationRatePct / 100, year);
         
@@ -558,13 +555,10 @@ function App() {
         
         data.push({
           year,
-          // УБИРАЕМ marketPrice
-          // marketPrice,
           finalPrice,
           leaseFactor: leaseFactor(year, totalYears, pricingConfig.leaseAlpha),
           ageFactor: ageFactor(year, pricingConfig.agingBeta),
           brandFactor: brandFactor(year, pricingConfig),
-          // ДОБАВЛЯЕМ коэффициент инфляции
           inflationFactor: inflationFactor
         });
       }
@@ -576,7 +570,6 @@ function App() {
     }
   };
 
-  // ... existing code ...
   // Функции для работы с проектами (ВОССТАНОВЛЕНЫ СТАРЫЕ)
   const addProject = () => {
     setNewProjectForm({
@@ -855,7 +848,6 @@ function App() {
     setModalOpen(false);
   };
 
-  // ... existing code ...
   // Функции экспорта (ОБНОВЛЕНЫ С НОВЫМИ ПОЛЯМИ)
   const exportCSV = () => {
     const rows = [
@@ -929,7 +921,7 @@ function App() {
         <meta charset="UTF-8">
         <title>${t.reportTitle}</title>
         <style>
-          body { font-family: Arial, sans-serif; margin: 20px; }
+                    body { font-family: Arial, sans-serif; margin: 20px; }
           .header { text-align: center; margin-bottom: 30px; }
           .header h1 { color: #333; margin: 0; }
           .header .date { color: #666; margin-top: 10px; }
@@ -1143,7 +1135,6 @@ function App() {
         </div>
       </div>
 
-      {/* ... existing code ... */}
       {/* 2. Расчёт (позиции) - ОБНОВЛЕН С НОВЫМИ ПОЛЯМИ ДЛЯ АРЕНДЫ */}
       <div className="card">
         <div className="calculation-header">
@@ -1361,7 +1352,322 @@ function App() {
         </div>
       </div>
 
-      {/* ... existing code ... */}
+      {/* 4. Базовая рассрочка - ВОССТАНОВЛЕН СТАРЫЙ ДИЗАЙН */}
+      <div className="card">
+        <div className="stages-section">
+          <h3>{t.stagesTitle}</h3>
+          
+          <table className="stages-table">
+            <thead>
+              <tr>
+                <th>{t.stage}</th>
+                <th>{t.percent}</th>
+                <th>{t.month}</th>
+                <th>{t.actions}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stages.map(stage => (
+                <tr key={stage.id}>
+                  <td>
+                    <input 
+                      type="text" 
+                      value={stage.label} 
+                      onChange={e => updStage(stage.id, {label: e.target.value})}
+                      placeholder="Название этапа"
+                      className="stage-input"
+                    />
+                  </td>
+                  <td>
+                    <input 
+                      type="number" 
+                      value={stage.pct} 
+                      onChange={e => updStage(stage.id, {pct: +e.target.value})}
+                      placeholder="%"
+                      className="stage-input-small"
+                    />
+                  </td>
+                  <td>
+                    <input 
+                      type="number" 
+                      value={stage.month} 
+                      onChange={e => updStage(stage.id, {month: +e.target.value})}
+                      placeholder="Месяц"
+                      className="stage-input-small"
+                    />
+                  </td>
+                  <td>
+                    <button onClick={() => delStage(stage.id)} className="btn danger small">
+                      {t.delete}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          
+          <div className="row" style={{marginTop: 8, alignItems: 'center', justifyContent: 'space-between'}}>
+            <button className="btn primary" onClick={addStage}>{t.addStage}</button>
+            <div className="pill">
+              {t.stagesSum} {Math.round(stagesSumPct * 100) / 100}%
+              {stagesSumPct !== 100 && (
+                <span className="warning">
+                  {stagesSumPct < 100 ? t.notEnough : t.exceeds} 100%
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 5. Сводный кэшфлоу по месяцам */}
+      <div className="cashflow-block">
+        <div className="card">
+          <div className="card-header">
+            <h2>{t.cashflowTitle}</h2>
+            <div className="export-buttons">
+              <button className="btn" onClick={exportCSV}>{t.exportCSV}</button>
+              <button className="btn" onClick={exportXLSX}>{t.exportXLSX}</button>
+              <button className="btn" onClick={exportPDF}>{t.exportPDF}</button>
+            </div>
+          </div>
+          
+          <div className="cashflow-scroll">
+            <table className="cashflow-table">
+              <thead>
+                <tr>
+                  <th>{t.month}</th>
+                  <th style={{textAlign: 'left'}}>{t.description}</th>
+                  <th>{t.amountDue}</th>
+                  <th>{t.rentalIncome}</th>
+                  <th>{t.netPayment}</th>
+                  <th>{t.remainingBalance}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {project.cashflow.map(c => (
+                  <tr key={c.month}>
+                    <td>{formatMonth(c.month)}</td>
+                    <td style={{textAlign: 'left'}}>{(c.items || []).join(' + ')}</td>
+                    <td>{fmtMoney(c.amountUSD, currency)}</td>
+                    <td>{fmtMoney(c.rentalIncome || 0, currency)}</td>
+                    <td className={c.netPayment >= 0 ? 'positive' : 'negative'}>
+                      {fmtMoney(c.netPayment || 0, currency)}
+                    </td>
+                    <td>{fmtMoney(c.balanceUSD, currency)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* 6. График общей доходности от сдачи в аренду - УПРОЩЕННЫЙ */}
+      <div className="card">
+        <h3>{t.rentalIncomeChart}</h3>
+        <div className="rental-chart">
+          <div className="chart-container">
+            {yearlyRentalData.map((yearData, index) => (
+              <div key={index} className="chart-bar">
+                <div className="bar-label">
+                  {yearData.year === 0 ? t.keys : `${yearData.year} ${t.years}`}
+                </div>
+                
+                <div className="bar-container">
+                  <div 
+                    className="bar-fill" 
+                    style={{
+                      height: `${Math.max(10, (yearData.cumulativeIncome / Math.max(...yearlyRentalData.map(y => y.cumulativeIncome))) * 200)}px`,
+                      backgroundColor: yearData.year === 0 ? '#e2e8f0' : '#3b82f6'
+                    }}
+                  ></div>
+                </div>
+                
+                <div className="bar-values">
+                  <div className="cumulative-income">{fmtMoney(yearData.cumulativeIncome, currency)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="chart-legend">
+            <div className="legend-item">
+              <div className="legend-color" style={{backgroundColor: '#3b82f6'}}></div>
+              <span>{t.cumulativeIncome}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 7. Параметры расчёта и график ценообразования - ОБНОВЛЕННЫЙ */}
+      {lines.length > 0 && (
+        <div className="card">
+          <h3>📊 Параметры расчёта</h3>
+          
+          {/* Параметры расчёта - РЕДАКТИРУЕМЫЕ в редакторском режиме */}
+          <div className="calculation-params-editable">
+            <div className="param-item-editable">
+              <label className="param-label-editable">Инфляция (g):</label>
+              {!isClient ? (
+                <input 
+                  type="number" 
+                  min="0" 
+                  max="50" 
+                  step="0.1" 
+                  value={pricingConfig.inflationRatePct} 
+                  onChange={e => setPricingConfig(prev => ({
+                    ...prev, 
+                    inflationRatePct: clamp(parseFloat(e.target.value || 0), 0, 50)
+                  }))}
+                  className="param-input-editable"
+                />
+              ) : (
+                <span className="param-value-display">{pricingConfig.inflationRatePct}%/год</span>
+              )}
+            </div>
+            
+            <div className="param-item-editable">
+              <label className="param-label-editable">Старение (β):</label>
+              {!isClient ? (
+                <input 
+                  type="number" 
+                  min="0" 
+                  max="1" 
+                  step="0.001" 
+                  value={pricingConfig.agingBeta} 
+                  onChange={e => setPricingConfig(prev => ({
+                    ...prev, 
+                    agingBeta: clamp(parseFloat(e.target.value || 0), 0, 1)
+                  }))}
+                  className="param-input-editable"
+                />
+              ) : (
+                <span className="param-value-display">{pricingConfig.agingBeta}/год</span>
+              )}
+            </div>
+            
+            <div className="param-item-editable">
+              <label className="param-label-editable">Lease Decay (α):</label>
+              {!isClient ? (
+                <input 
+                  type="number" 
+                  min="0" 
+                  max="5" 
+                  step="0.1" 
+                  value={pricingConfig.leaseAlpha} 
+                  onChange={e => setPricingConfig(prev => ({
+                    ...prev, 
+                    leaseAlpha: clamp(parseFloat(e.target.value || 0), 0, 5)
+                  }))}
+                  className="param-input-editable"
+                />
+              ) : (
+                <span className="param-value-display">{pricingConfig.leaseAlpha}</span>
+              )}
+            </div>
+            
+            <div className="param-item-editable">
+              <label className="param-label-editable">Brand Peak:</label>
+              {!isClient ? (
+                <input 
+                  type="number" 
+                  min="0.5" 
+                  max="3" 
+                  step="0.1" 
+                  value={pricingConfig.brandPeak} 
+                  onChange={e => setPricingConfig(prev => ({
+                    ...prev, 
+                    brandPeak: clamp(parseFloat(e.target.value || 0), 0.5, 3)
+                  }))}
+                  className="param-input-editable"
+                />
+              ) : (
+                <span className="param-value-display">{pricingConfig.brandPeak}x</span>
+              )}
+            </div>
+            
+            <div className="param-item-editable">
+              <label className="param-label-editable">Brand Ramp (годы):</label>
+              {!isClient ? (
+                <input 
+                  type="number" 
+                  min="1" 
+                  max="10" 
+                  step="1" 
+                  value={pricingConfig.brandRampYears} 
+                  onChange={e => setPricingConfig(prev => ({
+                    ...prev, 
+                    brandRampYears: clamp(parseInt(e.target.value || 0, 10), 1, 10)
+                  }))}
+                  className="param-input-editable"
+                />
+              ) : (
+                <span className="param-value-display">{pricingConfig.brandRampYears} лет</span>
+              )}
+            </div>
+            
+            <div className="param-item-editable">
+              <label className="param-label-editable">Brand Plateau (годы):</label>
+              {!isClient ? (
+                <input 
+                  type="number" 
+                  min="0" 
+                  max="15" 
+                  step="1" 
+                  value={pricingConfig.brandPlateauYears} 
+                  onChange={e => setPricingConfig(prev => ({
+                    ...prev, 
+                    brandPlateauYears: clamp(parseInt(e.target.value || 0, 10), 0, 15)
+                  }))}
+                  className="param-input-editable"
+                />
+              ) : (
+                <span className="param-value-display">{pricingConfig.brandPlateauYears} лет</span>
+              )}
+            </div>
+            
+            <div className="param-item-editable">
+              <label className="param-label-editable">Brand Decay (годы):</label>
+              {!isClient ? (
+                <input 
+                  type="number" 
+                  min="1" 
+                  max="20" 
+                  step="1" 
+                  value={pricingConfig.brandDecayYears} 
+                  onChange={e => setPricingConfig(prev => ({
+                    ...prev, 
+                    brandDecayYears: clamp(parseInt(e.target.value || 0, 10), 1, 20)
+                  }))}
+                  className="param-input-editable"
+                />
+              ) : (
+                <span className="param-value-display">{pricingConfig.brandDecayYears} лет</span>
+              )}
+            </div>
+            
+            <div className="param-item-editable">
+              <label className="param-label-editable">Brand Tail:</label>
+              {!isClient ? (
+                <input 
+                  type="number" 
+                  min="0.1" 
+                  max="2" 
+                  step="0.1" 
+                  value={pricingConfig.brandTail} 
+                  onChange={e => setPricingConfig(prev => ({
+                    ...prev, 
+                    brandTail: clamp(parseFloat(e.target.value || 0), 0.1, 2)
+                  }))}
+                  className="param-input-editable"
+                />
+              ) : (
+                <span className="param-value-display">{pricingConfig.brandTail}x</span>
+              )}
+            </div>
+          </div>
+          
           {/* График ценообразования - ТОЛЬКО Final Price */}
           <div className="pricing-chart-container">
             <h4>Динамика цены виллы</h4>
@@ -1378,14 +1684,12 @@ function App() {
                     
                     if (pricingData.length === 0) return null;
                     
-                    // ТОЛЬКО Final Price для расчета диапазона
                     const maxPrice = Math.max(...pricingData.map(d => d.finalPrice));
                     const minPrice = Math.min(...pricingData.map(d => d.finalPrice));
                     const priceRange = maxPrice - minPrice;
                     
                     return (
                       <>
-                        {/* ТОЛЬКО Final Price линия */}
                         <polyline
                           className="chart-line"
                           points={pricingData.map((d, i) => 
@@ -1396,7 +1700,6 @@ function App() {
                           strokeWidth="2"
                         />
                         
-                        {/* Точки только для Final Price */}
                         <g className="line-points">
                           {pricingData.map((d, i) => (
                             <g key={i}>
@@ -1410,13 +1713,11 @@ function App() {
                           ))}
                         </g>
                         
-                        {/* Оси */}
                         <g className="chart-axes">
                           <line className="y-axis" x1="50" y1="50" x2="50" y2="250" stroke="#666" strokeWidth="1"/>
                           <line className="x-axis" x1="50" y1="250" x2="750" y2="250" stroke="#666" strokeWidth="1"/>
                         </g>
                         
-                        {/* УПРОЩЕННАЯ легенда - только Final Price */}
                         <g className="chart-legend">
                           <rect x="600" y="20" width="15" height="15" fill="#2196F3"/>
                           <text x="620" y="32" fontSize="12" fill="#333">Final Price</text>
@@ -1440,7 +1741,6 @@ function App() {
                     <th>Lease Factor</th>
                     <th>Age Factor</th>
                     <th>Brand Factor</th>
-                    {/* ИЗМЕНЯЕМ: убираем Market Price, добавляем коэффициент инфляции */}
                     <th>Коэффициент инфляции</th>
                     <th>Final Price</th>
                   </tr>
@@ -1457,7 +1757,6 @@ function App() {
                           <td>{data.leaseFactor.toFixed(3)}</td>
                           <td>{data.ageFactor.toFixed(3)}</td>
                           <td>{data.brandFactor.toFixed(3)}</td>
-                          {/* ИЗМЕНЯЕМ: показываем коэффициент инфляции вместо Market Price */}
                           <td>{data.inflationFactor.toFixed(3)}</td>
                           <td className="price-cell">{fmtMoney(data.finalPrice)}</td>
                         </tr>
@@ -1632,7 +1931,6 @@ function App() {
   );
 }
 
-// ... existing code ...
 // ===== КОМПОНЕНТ КАТАЛОГА - ОБНОВЛЕН С НОВЫМИ ПОЛЯМИ И УПРОЩЕННЫМ ИНТЕРФЕЙСОМ =====
 function CatalogManager({ 
   catalog, 
@@ -1655,16 +1953,7 @@ function CatalogManager({
   addVilla,
   saveVilla
 }) {
-  // УБИРАЕМ все состояния для поиска и фильтров
-  // const [searchTerm, setSearchTerm] = useState('');
-  // const [sortBy, setSortBy] = useState('name');
-  // const [areaFilter, setAreaFilter] = useState({ from: '', to: '' });
-  // const [priceFilter, setPriceFilter] = useState({ from: '', to: '' });
-
-  // УБИРАЕМ сложную логику фильтрации
-  // const filteredCatalog = useMemo(() => { ... }, [catalog, searchTerm, sortBy, areaFilter, priceFilter]);
-
-  const deleteProject = (projectId) => {
+    const deleteProject = (projectId) => {
     if (confirm(t.deleteProjectConfirm)) {
       setCatalog(prev => prev.filter(p => p.projectId !== projectId));
     }
