@@ -1,4 +1,4 @@
-// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С ЛИЗХОЛДОМ, ИНДЕКСАЦИЕЙ И ЦЕНООБРАЗОВАНИЕМ) - ПОЛНОСТЬЮ РАБОЧАЯ ВЕРСИЯ =====
+// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С ЛИЗХОЛДОМ, ИНДЕКСАЦИЕЙ И ЦЕНООБРАЗОВАНИЕМ) - ПОЛНОСТЬЮ ИСПРАВЛЕННАЯ ВЕРСИЯ =====
 
 const { useState, useEffect, useMemo, useRef } = React;
 const { createRoot } = ReactDOM;
@@ -473,7 +473,7 @@ function App() {
     return yearlyIncome;
   };
 
-  // НОВЫЕ ФУНКЦИИ ЦЕНООБРАЗОВАНИЯ
+  // НОВЫЕ ФУНКЦИИ ЦЕНООБРАЗОВАНИЯ - ИСПРАВЛЕНЫ
   const leaseFactor = (year, totalYears, alpha) => {
     try {
       if (totalYears <= 0 || year < 0) return 1;
@@ -518,11 +518,12 @@ function App() {
     }
   };
 
+  // ИСПРАВЛЕНО: Используем startMonth вместо new Date()
   const calculateVillaPrice = (villa, yearOffset) => {
     try {
       if (!villa || !villa.leaseholdEndDate) return 0;
       
-      const totalYears = Math.ceil((villa.leaseholdEndDate - new Date()) / (365 * 24 * 60 * 60 * 1000));
+      const totalYears = Math.ceil((villa.leaseholdEndDate - startMonth) / (365 * 24 * 60 * 60 * 1000));
       const basePrice = villa.baseUSD;
       
       const leaseF = leaseFactor(yearOffset, totalYears, pricingConfig.leaseAlpha);
@@ -537,11 +538,12 @@ function App() {
     }
   };
 
+  // ИСПРАВЛЕНО: Используем startMonth вместо new Date()
   const generatePricingData = (villa) => {
     try {
       if (!villa || !villa.leaseholdEndDate) return [];
       
-      const totalYears = Math.ceil((villa.leaseholdEndDate - new Date()) / (365 * 24 * 60 * 60 * 1000));
+      const totalYears = Math.ceil((villa.leaseholdEndDate - startMonth) / (365 * 24 * 60 * 60 * 1000));
       const data = [];
       
       for (let year = 0; year <= Math.min(totalYears, 20); year++) {
@@ -617,7 +619,13 @@ function App() {
     setShowAddVillaModal(true);
   };
 
+  // ИСПРАВЛЕНО: Добавлена проверка на editingProject
   const saveVilla = () => {
+    if (!editingProject) {
+      alert('Ошибка: не выбран проект для добавления виллы');
+      return;
+    }
+    
     if (!newVillaForm.name) {
       alert(t.villaNameRequired);
       return;
@@ -664,6 +672,22 @@ function App() {
       dailyRateUSD: 150,
       rentalPriceIndexPct: 5
     });
+  };
+
+  // НОВАЯ ФУНКЦИЯ: Редактирование виллы
+  const editVilla = (villa, projectId) => {
+    setNewVillaForm({
+      villaId: villa.villaId,
+      name: villa.name,
+      area: villa.area,
+      ppsm: villa.ppsm,
+      baseUSD: villa.baseUSD,
+      leaseholdEndDate: villa.leaseholdEndDate,
+      dailyRateUSD: villa.dailyRateUSD,
+      rentalPriceIndexPct: villa.rentalPriceIndexPct
+    });
+    setEditingProject(projectId);
+    setShowAddVillaModal(true);
   };
 
   // Расчет данных по строкам (ОБНОВЛЕН С НОВОЙ ЛОГИКОЙ АРЕНДЫ)
@@ -843,7 +867,7 @@ function App() {
     setModalOpen(false);
   };
 
-  // Функции экспорта (ОБНОВЛЕНЫ С НОВЫМИ ПОЛЯМИ)
+  // Функции экспорта (ОБНОВЛЕНЫ С НОВЫМИ ПОЛЯМИ И ПРОВЕРКАМИ)
   const exportCSV = () => {
     const rows = [
       [t.month, t.description, t.amountDue, t.rentalIncome, t.netPayment, t.remainingBalance],
@@ -865,6 +889,7 @@ function App() {
     URL.revokeObjectURL(a.href);
   };
 
+  // ИСПРАВЛЕНО: Добавлена проверка на XLSX
   const exportXLSX = () => {
     if (typeof XLSX === 'undefined') {
       alert(t.xlsxNotLoaded);
@@ -894,8 +919,7 @@ function App() {
       [t.dailyRate]: ld.line.dailyRateUSD || 0,
       [t.occupancyRate]: ld.line.occupancyPct || 0,
       [t.rentalPriceIndex]: ld.line.rentalPriceIndexPct || 0,
-      [t.leaseholdEndDate]: ld.line.snapshot?.leaseholdEndDate ? ld.line.snapshot.leaseholdEndDate.toLocaleDateString() : ''
-    })));
+      [t.leaseholdEndDate]: ld.line.snapshot?.leaseholdEndDate ? ld.line.snapshot.leaseholdEndDate.toLocaleDateString() : ''    })));
     
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws1, 'Cashflow');
@@ -903,6 +927,7 @@ function App() {
     XLSX.writeFile(wb, `arconique_installments_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
+  // ИСПРАВЛЕНО: Добавлена проверка на html2pdf
   const exportPDF = () => {
     if (typeof html2pdf === 'undefined') {
       alert(t.html2pdfNotLoaded);
@@ -920,7 +945,7 @@ function App() {
           .header { text-align: center; margin-bottom: 30px; }
           .header h1 { color: #333; margin: 0; }
           .header .date { color: #666; margin-top: 10px; }
-                    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
           th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
           th { background-color: #f5f5f5; font-weight: bold; }
           .summary { margin: 20px 0; padding: 20px; background: #f9f9f9; }
@@ -1464,46 +1489,47 @@ function App() {
         </div>
       </div>
 
-     {/* 6. НОВЫЙ БЛОК: График общей доходности от сдачи в аренду */}
-<div className="card">
-  <h3>{t.rentalIncomeChart}</h3>
-  <div className="rental-chart">
-    <div className="chart-container">
-      {yearlyRentalData && Array.isArray(yearlyRentalData) && yearlyRentalData.length > 0 ? (
-        yearlyRentalData.map((yearData, index) => (
-          <div key={index} className="chart-bar">
-            <div className="bar-label">{yearData.year === 0 ? t.keys : `${yearData.year} ${t.years}`}</div>
-            <div className="bar-container">
-              <div 
-                className="bar-fill" 
-                style={{
-                  height: `${Math.max(10, (yearData.yearIncome / Math.max(...yearlyRentalData.map(y => y.yearIncome))) * 200)}px`,
-                  backgroundColor: yearData.year === 0 ? '#e2e8f0' : '#3b82f6'
-                }}
-              ></div>
+      {/* 6. ИСПРАВЛЕННЫЙ БЛОК: График общей доходности от сдачи в аренду */}
+      <div className="card">
+        <h3>{t.rentalIncomeChart}</h3>
+        <div className="rental-chart">
+          <div className="chart-container">
+            {yearlyRentalData && Array.isArray(yearlyRentalData) && yearlyRentalData.length > 0 ? (
+              yearlyRentalData.map((yearData, index) => (
+                <div key={index} className="chart-bar">
+                  <div className="bar-label">{yearData.year === 0 ? t.keys : `${yearData.year} ${t.years}`}</div>
+                  <div className="bar-container">
+                    <div 
+                      className="bar-fill" 
+                      style={{
+                        height: `${Math.max(10, (yearData.yearIncome / Math.max(...yearlyRentalData.map(y => y.yearIncome))) * 200)}px`,
+                        backgroundColor: yearData.year === 0 ? '#e2e8f0' : '#3b82f6'
+                      }}
+                    ></div>
+                  </div>
+                  <div className="bar-values">
+                    <div className="year-income">{fmtMoney(yearData.yearIncome, currency)}</div>
+                    <div className="cumulative-income">{fmtMoney(yearData.cumulativeIncome, currency)}</div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="no-data">Нет данных для отображения</div>
+            )}
+          </div>
+          <div className="chart-legend">
+            <div className="legend-item">
+              <div className="legend-color" style={{backgroundColor: '#3b82f6'}}></div>
+              <span>{t.totalIncome}</span>
             </div>
-            <div className="bar-values">
-              <div className="year-income">{fmtMoney(yearData.yearIncome, currency)}</div>
-              <div className="cumulative-income">{fmtMoney(yearData.cumulativeIncome, currency)}</div>
+            <div className="legend-item">
+              <div className="legend-color" style={{backgroundColor: '#e2e8f0'}}></div>
+              <span>{t.cumulativeIncome}</span>
             </div>
           </div>
-        ))
-      ) : (
-        <div className="no-data">Нет данных для отображения</div>
-      )}
-    </div>
-    <div className="chart-legend">
-      <div className="legend-item">
-        <div className="legend-color" style={{backgroundColor: '#3b82f6'}}></div>
-        <span>{t.totalIncome}</span>
+        </div>
       </div>
-      <div className="legend-item">
-        <div className="legend-color" style={{backgroundColor: '#e2e8f0'}}></div>
-        <span>{t.cumulativeIncome}</span>
-      </div>
-    </div>
-  </div>
-</div>
+
       {/* 7. НОВЫЙ БЛОК: Параметры расчёта и график ценообразования */}
       {lines.length > 0 && (
         <div className="card">
@@ -1673,6 +1699,7 @@ function App() {
             saveProject={saveProject}
             addVilla={addVilla}
             saveVilla={saveVilla}
+            editVilla={editVilla}
           />
         </div>
       )}
@@ -1831,7 +1858,8 @@ function CatalogManager({
   addProject,
   saveProject,
   addVilla,
-  saveVilla
+  saveVilla,
+  editVilla
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('name');
@@ -1875,8 +1903,7 @@ function CatalogManager({
     }
     
     filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'price':
+      switch (sortBy) {        case 'price':
           const aPrice = Math.min(...a.villas.map(v => v.baseUSD));
           const bPrice = Math.min(...b.villas.map(v => v.baseUSD));
           return aPrice - bPrice;
@@ -1913,7 +1940,7 @@ function CatalogManager({
     const dataStr = JSON.stringify(catalog, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
+    const link = document.createElement('a');
     link.href = url;
     link.download = 'arconique_catalog.json';
     link.click();
@@ -2048,7 +2075,7 @@ function CatalogManager({
                     <h4>{villa.name}</h4>
                     <div className="villa-actions">
                       <button 
-                        onClick={() => setNewVillaForm(villa)} 
+                        onClick={() => editVilla(villa, project.projectId)} 
                         className="btn small"
                       >
                         ✏️
@@ -2138,4 +2165,3 @@ function CatalogManager({
 // ===== РЕНДЕРИНГ ПРИЛОЖЕНИЯ =====
 const root = createRoot(document.getElementById('root'));
 root.render(<App />);
-          
