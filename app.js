@@ -1599,7 +1599,7 @@ function App() {
             </div>
           </div>
           
-     {/* График ценообразования - С ПОДПИСЯМИ ПО ОСИ Y */}
+    {/* График ценообразования - С ОБЩИМ МАСШТАБОМ ДЛЯ ОБЕИХ ЛИНИЙ */}
 <div className="pricing-chart-container">
   <h4>Динамика цены виллы</h4>
   <p className="chart-subtitle">Влияние факторов на цену и доходность от аренды</p>
@@ -1615,31 +1615,31 @@ function App() {
           
           if (pricingData.length === 0) return null;
           
-          // Вычисляем данные по аренде для каждого года
+          // ИСПРАВЛЕННЫЙ расчет данных по аренде для каждого года
           const rentalData = pricingData.map(data => {
             const rentalIncome = lines.reduce((total, line) => {
-              if (data.year <= 0) return 0;
+              if (data.year < 0) return 0;
               
-              // Вычисляем количество месяцев работы в этом году
-              const yearStartMonth = handoverMonth + (data.year - 1) * 12 + 3;
-              const yearEndMonth = handoverMonth + data.year * 12 + 3;
+              let yearStartMonth, yearEndMonth;
               
-              // Проверяем, не превышает ли конец года срок лизхолда
+              if (data.year === 0) {
+                yearStartMonth = handoverMonth + 3;
+                yearEndMonth = 12;
+              } else {
+                yearStartMonth = 1;
+                yearEndMonth = 12;
+              }
+              
               const leaseholdEndMonth = Math.floor((line.snapshot?.leaseholdEndDate - startMonth) / (30 * 24 * 60 * 60 * 1000));
               const actualEndMonth = Math.min(yearEndMonth, leaseholdEndMonth);
               
               if (yearStartMonth >= actualEndMonth) return total;
               
-              // Количество месяцев работы в этом году
-              const workingMonths = Math.max(0, actualEndMonth - yearStartMonth);
-              
-              // Средний доход за месяц
+              const workingMonths = Math.max(0, actualEndMonth - yearStartMonth + 1);
               const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, data.year);
               const avgDaysPerMonth = 30.44;
               const occupancyDays = avgDaysPerMonth * (line.occupancyPct / 100);
               const monthlyIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
-              
-              // Годовой доход = месячный доход × количество рабочих месяцев
               const yearIncome = monthlyIncome * workingMonths;
               
               return total + yearIncome;
@@ -1648,59 +1648,61 @@ function App() {
             return { ...data, rentalIncome };
           });
           
-          // Находим диапазоны для обеих линий
+          // ИСПРАВЛЕНО: ОБЩИЙ диапазон для обеих линий
           const maxPrice = Math.max(...pricingData.map(d => d.finalPrice));
           const minPrice = Math.min(...pricingData.map(d => d.finalPrice));
-          const priceRange = maxPrice - minPrice;
-          
           const maxRental = Math.max(...rentalData.map(d => d.rentalIncome));
           const minRental = Math.min(...rentalData.map(d => d.rentalIncome));
-          const rentalRange = maxRental - minRental;
+          
+          // ОБЩИЙ диапазон: от минимального значения до максимального
+          const globalMin = Math.min(minPrice, minRental);
+          const globalMax = Math.max(maxPrice, maxRental);
+          const globalRange = globalMax - globalMin;
           
           return (
             <>
-              {/* Линия Final Price (синяя) */}
+              {/* Линия Final Price (синяя) - использует ОБЩИЙ диапазон */}
               <polyline
                 className="chart-line"
                 points={pricingData.map((d, i) => 
-                  `${50 + i * 35},${250 - ((d.finalPrice - minPrice) / priceRange) * 200}`
+                  `${50 + i * 35},${250 - ((d.finalPrice - globalMin) / globalRange) * 200}`
                 ).join(' ')}
                 fill="none"
                 stroke="#2196F3"
                 strokeWidth="2"
               />
               
-              {/* Линия доходности от аренды (зеленая) */}
+              {/* Линия доходности от аренды (зеленая) - использует ОБЩИЙ диапазон */}
               <polyline
                 className="chart-line"
                 points={rentalData.map((d, i) => 
-                  `${50 + i * 35},${250 - ((d.rentalIncome - minRental) / rentalRange) * 200}`
+                  `${50 + i * 35},${250 - ((d.rentalIncome - globalMin) / globalRange) * 200}`
                 ).join(' ')}
                 fill="none"
                 stroke="#4CAF50"
                 strokeWidth="2"
               />
               
-              {/* Точки для Final Price */}
+              {/* Точки для Final Price - ОБЩИЙ диапазон */}
               <g className="line-points">
                 {pricingData.map((d, i) => (
                   <circle
                     key={`price-${i}`}
                     cx={50 + i * 35}
-                    cy={250 - ((d.finalPrice - minPrice) / priceRange) * 200}
+                    cy={250 - ((d.finalPrice - globalMin) / globalRange) * 200}
                     r="3"
                     fill="#2196F3"
                   />
                 ))}
               </g>
               
-              {/* Точки для доходности от аренды */}
+              {/* Точки для доходности от аренды - ОБЩИЙ диапазон */}
               <g className="line-points">
                 {rentalData.map((d, i) => (
                   <circle
                     key={`rental-${i}`}
                     cx={50 + i * 35}
-                    cy={250 - ((d.rentalIncome - minRental) / rentalRange) * 200}
+                    cy={250 - ((d.rentalIncome - globalMin) / globalRange) * 200}
                     r="3"
                     fill="#4CAF50"
                   />
@@ -1713,18 +1715,18 @@ function App() {
                 <line className="x-axis" x1="50" y1="250" x2="750" y2="250" stroke="#666" strokeWidth="1"/>
               </g>
               
-              {/* НОВЫЕ ПОДПИСИ ПО ОСИ Y - ЦИФРЫ В ДОЛЛАРАХ */}
+              {/* ПОДПИСИ ПО ОСИ Y - ОБЩИЙ диапазон */}
               <g className="y-labels">
                 {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
-                  // Для Final Price
-                  const price = minPrice + ratio * priceRange;
+                  // ОБЩИЙ диапазон для обеих линий
+                  const value = globalMin + ratio * globalRange;
                   const y = 250 - ratio * 200;
                   
                   return (
                     <g key={i}>
                       <line x1="45" y1={y} x2="50" y2={y} stroke="#666" strokeWidth="1"/>
                       <text x="40" y={y + 4} textAnchor="end" fontSize="10" fill="#666">
-                        {fmtMoney(price, 'USD')}
+                        {fmtMoney(value, 'USD')}
                       </text>
                     </g>
                   );
