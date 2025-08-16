@@ -1832,7 +1832,9 @@ function App() {
                 <div className="pricing-section">
                   <h4>�� Основные параметры</h4>
                   <div className="form-row">
-                                        <div className="form-group">
+
+
+                                      <div className="form-group">
                       <label>{t.inflationRate}</label>
                       <input 
                         type="number" 
