@@ -1,715 +1,659 @@
-// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С ЛИЗХОЛДОМ И ИНДЕКСАЦИЕЙ) - ИСПРАВЛЕННАЯ ВЕРСИЯ =====
+// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С ИНФЛЯЦИЕЙ, СТАРЕНИЕМ И БРЕНД-ФАКТОРОМ) =====
 
-const { useState, useEffect, useMemo, useRef } = React;
+// ===== ТИПЫ И ИНТЕРФЕЙСЫ =====
+// PricingConfig - конфигурация ценообразования
+const DEFAULT_PRICING_CONFIG = {
+  inflationRatePct: 10,        // g в процентах (0..100), по умолчанию 10
+  leaseAlpha: 1,               // alpha, по умолчанию 1
+  agingBeta: 0.025,            // beta в долях/год, по умолчанию 0.025
+  brandPeak: 1.2,              // по умолчанию 1.2
+  brandRampYears: 3,           // по умолчанию 3
+  brandPlateauYears: 4,        // по умолчанию 4
+  brandDecayYears: 8,          // по умолчанию 8
+  brandTail: 1.0               // по умолчанию 1.0
+};
 
-// PIN для редакторского режима
-const PIN_CODE = '334346';
+// ===== УТИЛИТЫ РАСЧЕТА ЦЕНООБРАЗОВАНИЯ =====
 
-// Основной компонент приложения
+// Фактор убывания ценности lease
+function leaseFactor(t, T, alpha) {
+  const rem = Math.max(T - t, 0);
+  return Math.pow(rem / T, alpha);
+}
+
+// Фактор старения (износа/обесценения)
+function ageFactor(t, beta) {
+  return Math.exp(-beta * t);
+}
+
+// Фактор бренда/популярности
+function brandFactor(t, brandParams) {
+  const { peak, rampYears, plateauYears, decayYears, tail } = brandParams;
+  
+  if (t <= 0) return 1.0;
+
+  if (rampYears > 0 && t <= rampYears) {
+    // от 1.0 до peak
+    return 1.0 + (peak - 1.0) * (t / rampYears);
+  }
+
+  const afterRamp = Math.max(t - rampYears, 0);
+
+  if (afterRamp > 0 && afterRamp <= plateauYears) {
+    return peak;
+  }
+
+  const afterPlateau = Math.max(afterRamp - plateauYears, 0);
+
+  if (decayYears > 0 && afterPlateau > 0 && afterPlateau <= decayYears) {
+    // от peak до tail
+    return peak + (tail - peak) * (afterPlateau / decayYears);
+  }
+
+  return tail;
+}
+
+// Итоговая цена в году t
+function priceAtYear(params) {
+  const { P0, g, t, T, alpha, beta, brand } = params;
+  const market = P0 * Math.pow(1 + g, t);
+  return market
+    * leaseFactor(t, T, alpha)
+    * ageFactor(t, beta)
+    * brandFactor(t, brand);
+}
+
+// Генерация данных для графика ценообразования
+function generatePricingChartData(villa, pricingConfig, maxYears = 60) {
+  const data = [];
+  const P0 = villa.baseUSD;
+  const T = villa.leaseTotalYears || 30;
+  const g = pricingConfig.inflationRatePct / 100;
+  const alpha = pricingConfig.leaseAlpha;
+  const beta = pricingConfig.agingBeta;
+  const brand = {
+    peak: pricingConfig.brandPeak,
+    rampYears: pricingConfig.brandRampYears,
+    plateauYears: pricingConfig.brandPlateauYears,
+    decayYears: pricingConfig.brandDecayYears,
+    tail: pricingConfig.brandTail
+  };
+
+  for (let t = 0; t <= Math.min(T, maxYears); t++) {
+    const marketPrice = P0 * Math.pow(1 + g, t);
+    const finalPrice = priceAtYear({ P0, g, t, T, alpha, beta, brand });
+    
+    data.push({
+      year: t,
+      marketPrice,
+      finalPrice,
+      leaseFactor: leaseFactor(t, T, alpha),
+      ageFactor: ageFactor(t, beta),
+      brandFactor: brandFactor(t, brand),
+      leaseRemaining: Math.max(T - t, 0)
+    });
+  }
+  
+  return data;
+}
+
+// ===== ОСНОВНОЕ ПРИЛОЖЕНИЕ =====
 function App() {
+  // ===== СОСТОЯНИЕ =====
   const [lang, setLang] = useState('ru');
-  const [isClient, setIsClient] = useState(true); // По умолчанию клиентский режим
   const [currency, setCurrency] = useState('USD');
-  const [idrPerUsd, setIdrPerUsd] = useState(16500);
-  const [eurPerUsd, setEurPerUsd] = useState(0.92);
-  const [handoverMonth, setHandoverMonth] = useState(12);
+  const [idrPerUsd, setIdrPerUsd] = useState(16000);
+  const [eurPerUsd, setEurPerUsd] = useState(0.85);
+  const [startMonth, setStartMonth] = useState(new Date(2025, 7, 1)); // 1 августа 2025
+  const [handoverMonth, setHandoverMonth] = useState(18);
+  const [monthlyRatePct, setMonthlyRatePct] = useState(1.5);
   const [months, setMonths] = useState(12);
-  const [monthlyRatePct, setMonthlyRatePct] = useState(8.33);
-  const [startMonth, setStartMonth] = useState(new Date());
+  const [isClient, setIsClient] = useState(false);
   
-  // ОБНОВЛЕНО: Правильная структура каталога с проектами и виллами + ЛИЗХОЛД
-  const [catalog, setCatalog] = useState([
-    {
-      projectId: 'ahao',
-      projectName: 'AHAO Gardens',
-      villas: [
-        {
-          villaId: 'ahao-2br', 
-          name: '2BR Garden Villa', 
-          area: 100, 
-          ppsm: 2500, 
-          baseUSD: 250000,
-          // НОВЫЕ ПОЛЯ ДЛЯ ЛИЗХОЛДА И АРЕНДЫ:
-          leaseholdEndDate: new Date(2030, 11, 31), // 31 декабря 2030
-          dailyRateUSD: 150,
-          rentalPriceIndexPct: 5 // 5% в год
-        },
-        {
-          villaId: 'ahao-3br', 
-          name: '3BR Garden Villa', 
-          area: 130, 
-          ppsm: 2450, 
-          baseUSD: 318500,
-          leaseholdEndDate: new Date(2030, 11, 31),
-          dailyRateUSD: 180,
-          rentalPriceIndexPct: 5
-        }
-      ]
-    },
-    {
-      projectId: 'enso',
-      projectName: 'Enso Villas',
-      villas: [
-        {
-          villaId: 'enso-2br', 
-          name: 'Enso 2BR', 
-          area: 100, 
-          ppsm: 2500, 
-          baseUSD: 250000,
-          leaseholdEndDate: new Date(2030, 11, 31),
-          dailyRateUSD: 150,
-          rentalPriceIndexPct: 5
-        },
-        {
-          villaId: 'enso-3br', 
-          name: 'Enso 3BR', 
-          area: 120, 
-          ppsm: 2700, 
-          baseUSD: 324000,
-          leaseholdEndDate: new Date(2030, 11, 31),
-          dailyRateUSD: 170,
-          rentalPriceIndexPct: 5
-        }
-      ]
-    }
-  ]);
+  // НОВОЕ: Конфигурация ценообразования
+  const [pricingConfig, setPricingConfig] = useState(DEFAULT_PRICING_CONFIG);
+  const [showPricingConfigModal, setShowPricingConfigModal] = useState(false);
   
-  // Правильная структура этапов рассрочки
-  const [stages, setStages] = useState([
-    {id: 1, label: 'Договор', pct: 30, month: 0},
-    {id: 2, label: '50% готовности', pct: 30, month: 6},
-    {id: 3, label: '70% готовности', pct: 20, month: 9},
-    {id: 4, label: '90% готовности', pct: 15, month: 11},
-    {id: 5, label: 'Ключи', pct: 5, month: 12},
-  ]);
-  
-  const [lines, setLines] = useState([
-    {
-      id: 1,
-      projectId: 'enso',
-      villaId: 'enso-2br',
-      qty: 1,
-      prePct: 70,
-      ownTerms: false,
-      months: null,
-      monthlyRatePct: null,
-      firstPostUSD: 0,
-      discountPct: 0,
-      // ОБНОВЛЕНО: Новые поля для аренды с индексацией
-      dailyRateUSD: 150, // Стоимость проживания в сутки (USD)
-      occupancyPct: 75,  // Средняя заполняемость за месяц (%)
-      rentalPriceIndexPct: 5, // Индексация цены аренды в год (%)
-      snapshot: {
-        name: 'Enso 2BR', 
-        area: 100, 
-        ppsm: 2500, 
-        baseUSD: 250000,
-        leaseholdEndDate: new Date(2030, 11, 31) // Дата окончания лизхолда
-      }
-    }
-  ]);
-
-  // Состояния для модальных окон
-  const [modalOpen, setModalOpen] = useState(false);
-  const [showAddProjectModal, setShowAddProjectModal] = useState(false);
-  const [showAddVillaModal, setShowAddVillaModal] = useState(false);
-  const [editingProject, setEditingProject] = useState(null);
-  const [newProjectForm, setNewProjectForm] = useState({
-    projectId: '',
-    projectName: '',
-    villas: []
-  });
-  const [newVillaForm, setNewVillaForm] = useState({
-    villaId: '',
-    name: '',
-    area: 100,
-    ppsm: 2500,
-    baseUSD: 250000,
-    // НОВЫЕ ПОЛЯ ДЛЯ ЛИЗХОЛДА И АРЕНДЫ:
-    leaseholdEndDate: new Date(2030, 11, 31),
-    dailyRateUSD: 150,
-    rentalPriceIndexPct: 5
-  });
-
-  // ОБНОВЛЕНО: Переводы с новыми полями
+  // ===== ПЕРЕВОДЫ =====
   const T = {
     ru: {
-      title: 'Arconique / Калькулятор рассрочки для любимых клиентов',
-      lang: 'Язык интерфейса',
+      title: 'Arconique - Калькулятор рассрочки',
+      lang: 'Язык',
       currencyDisplay: 'Валюта отображения',
       idrRate: 'IDR за 1 USD',
       eurRate: 'EUR за 1 USD',
-      handoverMonth: 'Месяц получения ключей',
-      globalTerm: 'Глобальный срок post‑handover (6–24 мес)',
-      globalRate: 'Глобальная ставка, %/мес',
-      clientTerm: 'Срок post‑handover (мес)',
       startMonth: 'Начальный месяц',
+      handoverMonth: 'Месяц получения ключей',
+      globalRate: 'Глобальная ставка, %/мес',
+      globalTerm: 'Глобальный срок, мес',
+      clientTerm: 'Срок рассрочки (клиент), мес',
+      months: 'мес',
+      toggleToEditor: 'Переключиться в редактор',
+      toggleToClient: 'Переключиться в клиент',
+      client: 'Клиент',
+      editor: 'Редактор',
+      enterPin: 'Введите PIN для доступа к редактору:',
+      wrongPin: 'Неверный PIN!',
+      editorActivated: 'Редактор активирован!',
+      switchedToClient: 'Переключено в клиентский режим',
+      
+      // Новые переводы для ценообразования
+      pricingConfig: 'Параметры ценообразования',
+      inflation: 'Инфляция рынка вилл',
+      inflationRatePct: 'Годовой рост, %',
+      leaseDecay: 'Убывание ценности lease',
+      leaseAlpha: 'Степень убывания (α)',
+      leaseAlphaHint: '1 — линейно; >1 — сильнее дисконт в конце',
+      aging: 'Старение (износ/обесценение)',
+      agingBeta: 'Коэффициент старения (β)',
+      agingBetaHint: '0.025 ≈ 2.5%/год экспоненциально',
+      brand: 'Бренд/популярность',
+      brandPeak: 'Пик бренда',
+      brandRampYears: 'Годы роста',
+      brandPlateauYears: 'Годы плато',
+      brandDecayYears: 'Годы спада',
+      brandTail: 'Хвост бренда',
+      saveConfig: 'Сохранить',
+      resetToDefault: 'Сбросить к дефолту',
+      configSaved: 'Конфигурация сохранена!',
+      configReset: 'Конфигурация сброшена к дефолту!',
+      
+      // Существующие переводы...
+      villasTitle: 'Расчёт (позиции)',
+      addFromCatalog: 'Добавить из каталога',
+      project: 'Проект',
+      villa: 'Вилла',
+      qty: 'Кол-во',
+      area: 'Площадь',
+      ppsm: 'Цена за м²',
+      price: 'Цена',
+      discount: 'Скидка, %',
+      prePct: 'До ключей, %',
+      months: 'Месяцы',
+      rate: 'Ставка, %/мес',
+      dailyRate: 'Стоимость ночи',
+      occupancyRate: 'Заполняемость, %',
+      rentalPriceIndex: 'Индексация аренды, %',
+      lineTotal: 'Итого по позиции',
+      addStage: 'Добавить этап',
       stagesTitle: 'Базовая рассрочка',
       stage: 'Этап',
       percent: '%',
       month: 'Месяц',
-      addStage: 'Добавить этап',
+      actions: 'Действия',
       delete: 'Удалить',
-      villasTitle: 'Расчёт (позиции)',
-      project: 'Проект',
-      villa: 'Вилла',
-      qty: 'Кол-во',
-      area: 'м²',
-      ppsm: '$ / м²',
-      price: 'Базовая стоимость (USD)',
-      discount: 'Скидка, %',
-      prePct: 'До ключей, %',
-      months: 'Срок рассрочки, мес',
-      rate: 'Ставка, %/мес',
-      lineTotal: 'Итоговая стоимость',
-      addFromCatalog: 'Добавить из каталога',
+      stagesSum: 'Сумма этапов:',
+      notEnough: 'Недостаточно',
+      exceeds: 'Превышает',
       cashflowTitle: 'Сводный кэшфлоу по месяцам',
       exportCSV: 'Экспорт CSV',
-      exportXLSX: 'Экспорт Excel',
-      exportPDF: 'Сохранить в PDF',
-      lines: 'Выбрано вилл',
-      keys: 'Ключи через',
-      client: 'Клиент',
-      editor: 'Редактор',
+      exportXLSX: 'Экспорт XLSX',
+      exportPDF: 'Экспорт PDF',
+      month: 'Месяц',
+      description: 'Описание',
+      amountDue: 'К оплате',
+      rentalIncome: 'Доход от аренды',
+      netPayment: 'Чистый платеж/доход',
+      remainingBalance: 'Остаток долга',
       catalogTitle: 'Каталог проектов и вилл (редактор)',
       addProject: 'Добавить проект',
       addVilla: 'Добавить виллу',
-      importJSON: 'Импорт JSON',
-      exportJSON: 'Экспорт JSON',
-      selectFromCatalog: 'Выбор из каталога',
-      search: 'Поиск',
-      areaFrom: 'м² от',
-      areaTo: 'м² до',
+      exportCatalog: 'Экспорт каталога',
+      importCatalog: 'Импорт каталога',
+      searchPlaceholder: 'Поиск по названию...',
+      sortByName: 'По названию',
+      sortByPrice: 'По цене',
+      sortByArea: 'По площади',
+      areaFrom: 'Площадь от',
+      areaTo: 'до',
       priceFrom: 'Цена от',
-      priceTo: 'Цена до',
-      sort: 'Сортировать',
-      byPrice: 'по цене',
-      byArea: 'по площади',
-      byName: 'по названию',
-      addSelected: 'Добавить выбранные',
-      cancel: 'Отмена',
-      save: 'Сохранить',
-      edit: 'Редактировать',
-      remove: 'Удалить',
+      priceTo: 'до',
       projectName: 'Название проекта',
       villaName: 'Название виллы',
-      villaArea: 'Площадь (м²)',
-      villaPpsm: 'Цена за м² ($)',
-      villaBasePrice: 'Базовая цена ($)',
-      projectNameRequired: 'Введите название проекта',
-      villaNameRequired: 'Введите название виллы',
-      // Дополнительные переводы
-      toggleToEditor: 'Переключиться в редактор',
-      toggleToClient: 'Переключиться в клиент',
-      enterPin: 'Введите PIN для входа в редакторский режим:',
-      editorActivated: 'Режим редактора активирован',
-      wrongPin: 'Неверный PIN',
-      switchedToClient: 'Переключено в клиентский режим',
-      stagesSum: 'Сумма этапов:',
-      notEnough: '— не хватает',
-      exceeds: '— превышает',
-      projectExists: 'Проект с таким ID уже существует',
-      villaExists: 'Вилла с таким ID уже существует в этом проекте',
-      fillProjectId: 'Заполните ID и название проекта',
-      fillVillaId: 'Заполните ID и название виллы',
-      deleteProjectConfirm: 'Удалить проект и все его виллы?',
-      deleteVillaConfirm: 'Удалить виллу?',
-      catalogImported: 'Каталог успешно импортирован',
-      wrongFileFormat: 'Неверный формат файла',
-      importError: 'Ошибка при импорте файла',
-      xlsxNotLoaded: 'Библиотека XLSX не загружена',
-      html2pdfNotLoaded: 'Библиотека html2pdf не загружена',
-      reportTitle: 'Arconique - Отчет по рассрочке',
-      reportCreated: 'Отчет создан:',
-      projectSummary: 'Сводка проекта',
-      totalAmount: 'Общая сумма:',
-      finalPrice: 'Итоговая цена:',
-      interest: 'Проценты:',
-      monthlyCashflow: 'Денежный поток по месяцам',
-      month: 'Месяц',
-      description: 'Описание',
-      amountDue: 'Сумма к оплате',
-      remainingBalance: 'Остаток долга',
-      after: 'После ключей',
-      firstPayment: 'Первый платёж',
-      // ОБНОВЛЕНО: Новые переводы для лизхолда и индексации
-      dailyRate: 'Стоимость проживания в сутки (USD)',
-      occupancyRate: 'Средняя заполняемость за месяц (%)',
-      rentalIncome: 'Прогнозируемый доход от аренды в месяц',
-      netPayment: 'Чистый платеж/доход в месяц',
+      villaArea: 'Площадь виллы',
+      villaPpsm: 'Цена за м²',
+      villaBasePrice: 'Базовая цена',
       leaseholdEndDate: 'Дата окончания лизхолда',
-      rentalPriceIndex: 'Индексация цены аренды в год (%)',
+      dailyRate: 'Стоимость проживания в сутки',
+      rentalPriceIndex: 'Индексация роста цены аренды в год',
+      save: 'Сохранить',
+      cancel: 'Отмена',
+      editProject: 'Редактировать проект',
+      deleteProjectConfirm: 'Удалить проект?',
+      deleteVillaConfirm: 'Удалить виллу?',
+      catalogImported: 'Каталог импортирован!',
+      wrongFileFormat: 'Неверный формат файла!',
+      importError: 'Ошибка импорта!',
+      notSet: 'Не задано',
+      rentalIncomeChart: 'График общей доходности от сдачи в аренду',
+      totalIncome: 'Доход за год',
+      cumulativeIncome: 'Накопительный доход',
       cleanLeaseholdTerm: 'Чистый срок лизхолда',
       years: 'лет',
-      months: 'месяцев',
-      rentalIncomeChart: 'График общей доходности от сдачи в аренду',
-      totalIncome: 'Общий доход за год',
-      cumulativeIncome: 'Накопительный доход'
+      months: 'мес',
+      totalAmount: 'Общая сумма',
+      amountDue: 'К оплате',
+      after: 'После ключей',
+      interest: 'Проценты',
+      finalPrice: 'Итоговая цена',
+      lines: 'Позиций',
+      keys: 'Ключи через',
+      selectFromCatalog: 'Выберите из каталога',
+      addSelected: 'Добавить выбранную',
+      reportTitle: 'Отчет по рассрочке Arconique',
+      reportCreated: 'Отчет создан',
+      projectSummary: 'Сводка по проекту',
+      monthlyCashflow: 'Месячный кэшфлоу',
+      xlsxNotLoaded: 'XLSX.js не загружен',
+      html2pdfNotLoaded: 'html2pdf.js не загружен'
     },
     en: {
-      title: 'Arconique / Installments Calculator',
+      title: 'Arconique - Installment Calculator',
       lang: 'Language',
-      currencyDisplay: 'Display currency',
+      currencyDisplay: 'Display Currency',
       idrRate: 'IDR per 1 USD',
       eurRate: 'EUR per 1 USD',
-      handoverMonth: 'Handover month',
-      globalTerm: 'Global post‑handover term (6–24 mo)',
-      globalRate: 'Global rate, %/month',
-      clientTerm: 'Post‑handover term (months)',
-      startMonth: 'Start month',
-      stagesTitle: 'Basic installments',
-      stage: 'Stage',
-      percent: '%',
-      month: 'Month',
-      addStage: 'Add stage',
-      delete: 'Delete',
-      villasTitle: 'Calculation (lines)',
+      startMonth: 'Start Month',
+      handoverMonth: 'Handover Month',
+      globalRate: 'Global Rate, %/month',
+      globalTerm: 'Global Term, months',
+      clientTerm: 'Installment Term (Client), months',
+      months: 'mo',
+      toggleToEditor: 'Switch to Editor',
+      toggleToClient: 'Switch to Client',
+      client: 'Client',
+      editor: 'Editor',
+      enterPin: 'Enter PIN to access editor:',
+      wrongPin: 'Wrong PIN!',
+      editorActivated: 'Editor activated!',
+      switchedToClient: 'Switched to client mode',
+      
+      // New translations for pricing
+      pricingConfig: 'Pricing Parameters',
+      inflation: 'Villa Market Inflation',
+      inflationRatePct: 'Annual Growth, %',
+      leaseDecay: 'Lease Value Decay',
+      leaseAlpha: 'Decay Degree (α)',
+      leaseAlphaHint: '1 — linear; >1 — stronger discount at end',
+      aging: 'Aging (Depreciation)',
+      agingBeta: 'Aging Coefficient (β)',
+      agingBetaHint: '0.025 ≈ 2.5%/year exponentially',
+      brand: 'Brand/Popularity',
+      brandPeak: 'Brand Peak',
+      brandRampYears: 'Growth Years',
+      brandPlateauYears: 'Plateau Years',
+      brandDecayYears: 'Decay Years',
+      brandTail: 'Brand Tail',
+      saveConfig: 'Save',
+      resetToDefault: 'Reset to Default',
+      configSaved: 'Configuration saved!',
+      configReset: 'Configuration reset to default!',
+      
+      // Existing translations...
+      villasTitle: 'Calculation (Positions)',
+      addFromCatalog: 'Add from Catalog',
       project: 'Project',
       villa: 'Villa',
       qty: 'Qty',
-      area: 'sqm',
-      ppsm: '$ / sqm',
-      price: 'Base Price (USD)',
+      area: 'Area',
+      ppsm: 'Price per m²',
+      price: 'Price',
       discount: 'Discount, %',
-      prePct: 'Pre‑handover, %',
-      months: 'Installment term, mo',
-      rate: 'Rate, %/mo',
-      lineTotal: 'Final price',
-      addFromCatalog: 'Add from catalog',
-      cashflowTitle: 'Monthly consolidated cashflow',
-      exportCSV: 'Export CSV',
-      exportXLSX: 'Export Excel',
-      exportPDF: 'Save to PDF',
-      lines: 'Selected villas',
-      keys: 'Keys in',
-      client: 'Client',
-      editor: 'Editor',
-      catalogTitle: 'Projects & Villas Catalog (editor)',
-      addProject: 'Add project',
-      addVilla: 'Add villa',
-      importJSON: 'Import JSON',
-      exportJSON: 'Export JSON',
-      selectFromCatalog: 'Select from catalog',
-      search: 'Search',
-      areaFrom: 'sqm from',
-      areaTo: 'sqm to',
-      priceFrom: 'Price from',
-      priceTo: 'Price to',
-      sort: 'Sort',
-      byPrice: 'by price',
-      byArea: 'by area',
-      byName: 'by name',
-      addSelected: 'Add selected',
-      cancel: 'Cancel',
-      save: 'Save',
-      edit: 'Edit',
-      remove: 'Remove',
-      projectName: 'Project Name',
-      villaName: 'Villa Name',
-      villaArea: 'Area (sqm)',
-      villaPpsm: 'Price per sqm ($)',
-      villaBasePrice: 'Base Price ($)',
-      projectNameRequired: 'Enter project name',
-      villaNameRequired: 'Enter villa name',
-      // Additional translations
-      toggleToEditor: 'Switch to Editor',
-      toggleToClient: 'Switch to Client',
-      enterPin: 'Enter PIN to access editor mode:',
-      editorActivated: 'Editor mode activated',
-      wrongPin: 'Wrong PIN',
-      switchedToClient: 'Switched to client mode',
+      prePct: 'Before Keys, %',
+      months: 'Months',
+      rate: 'Rate, %/month',
+      dailyRate: 'Daily Rate',
+      occupancyRate: 'Occupancy, %',
+      rentalPriceIndex: 'Rental Price Indexation, %',
+      lineTotal: 'Line Total',
+      addStage: 'Add Stage',
+      stagesTitle: 'Basic Installment',
+      stage: 'Stage',
+      percent: '%',
+      month: 'Month',
+      actions: 'Actions',
+      delete: 'Delete',
       stagesSum: 'Stages sum:',
-      notEnough: '— not enough',
-      exceeds: '— exceeds',
-      projectExists: 'Project with this ID already exists',
-      villaExists: 'Villa with this ID already exists in this project',
-      fillProjectId: 'Fill in project ID and name',
-      fillVillaId: 'Fill in villa ID and name',
-      deleteProjectConfirm: 'Delete project and all its villas?',
-      deleteVillaConfirm: 'Delete villa?',
-      catalogImported: 'Catalog successfully imported',
-      wrongFileFormat: 'Wrong file format',
-      importError: 'Error importing file',
-      xlsxNotLoaded: 'XLSX library not loaded',
-      html2pdfNotLoaded: 'html2pdf library not loaded',
-      reportTitle: 'Arconique - Installment Report',
-      reportCreated: 'Report created:',
-      projectSummary: 'Project Summary',
-      totalAmount: 'Total amount:',
-      finalPrice: 'Final price:',
-      interest: 'Interest:',
-      monthlyCashflow: 'Monthly cashflow',
+      notEnough: 'Not enough',
+      exceeds: 'Exceeds',
+      cashflowTitle: 'Monthly Cashflow Summary',
+      exportCSV: 'Export CSV',
+      exportXLSX: 'Export XLSX',
+      exportPDF: 'Export PDF',
       month: 'Month',
       description: 'Description',
-      amountDue: 'Amount due',
-      remainingBalance: 'Remaining balance',
-      after: 'After keys',
-      firstPayment: 'First payment',
-      // ОБНОВЛЕНО: Новые переводы для лизхолда и индексации
-      dailyRate: 'Daily accommodation rate (USD)',
-      occupancyRate: 'Average monthly occupancy (%)',
-      rentalIncome: 'Projected monthly rental income',
-      netPayment: 'Net payment/income per month',
-      leaseholdEndDate: 'Leasehold end date',
-      rentalPriceIndex: 'Rental price indexation per year (%)',
-      cleanLeaseholdTerm: 'Clean leasehold term',
+      amountDue: 'Amount Due',
+      rentalIncome: 'Rental Income',
+      netPayment: 'Net Payment/Income',
+      remainingBalance: 'Remaining Balance',
+      catalogTitle: 'Projects and Villas Catalog (Editor)',
+      addProject: 'Add Project',
+      addVilla: 'Add Villa',
+      exportCatalog: 'Export Catalog',
+      importCatalog: 'Import Catalog',
+      searchPlaceholder: 'Search by name...',
+      sortByName: 'By Name',
+      sortByPrice: 'By Price',
+      sortByArea: 'By Area',
+      areaFrom: 'Area from',
+      areaTo: 'to',
+      priceFrom: 'Price from',
+      priceTo: 'to',
+      projectName: 'Project Name',
+      villaName: 'Villa Name',
+      villaArea: 'Villa Area',
+      villaPpsm: 'Price per m²',
+      villaBasePrice: 'Base Price',
+      leaseholdEndDate: 'Leasehold End Date',
+      dailyRate: 'Daily Rate',
+      rentalPriceIndex: 'Annual Rental Price Indexation',
+      save: 'Save',
+      cancel: 'Cancel',
+      editProject: 'Edit Project',
+      deleteProjectConfirm: 'Delete project?',
+      deleteVillaConfirm: 'Delete villa?',
+      catalogImported: 'Catalog imported!',
+      wrongFileFormat: 'Wrong file format!',
+      importError: 'Import error!',
+      notSet: 'Not set',
+      rentalIncomeChart: 'Total Rental Income Chart',
+      totalIncome: 'Annual Income',
+      cumulativeIncome: 'Cumulative Income',
+      cleanLeaseholdTerm: 'Clean Leasehold Term',
       years: 'years',
       months: 'months',
-      rentalIncomeChart: 'Chart of total rental income',
-      totalIncome: 'Total income per year',
-      cumulativeIncome: 'Cumulative income'
+      totalAmount: 'Total Amount',
+      amountDue: 'Amount Due',
+      after: 'After Keys',
+      interest: 'Interest',
+      finalPrice: 'Final Price',
+      lines: 'Lines',
+      keys: 'Keys in',
+      selectFromCatalog: 'Select from Catalog',
+      addSelected: 'Add Selected',
+      reportTitle: 'Arconique Installment Report',
+      reportCreated: 'Report created',
+      projectSummary: 'Project Summary',
+      monthlyCashflow: 'Monthly Cashflow',
+      xlsxNotLoaded: 'XLSX.js not loaded',
+      html2pdfNotLoaded: 'html2pdf.js not loaded'
     }
   };
 
-// ... existing code ...
-// ... existing code ...
+  const t = T[lang];
 
-  // Получаем переводы для текущего языка
-  const t = T[lang] || T.ru; // fallback на русский
-
-  // Обновление заголовка страницы
+  // ===== ЭФФЕКТЫ =====
   useEffect(() => {
-    // Проверяем, существует ли элемент перед изменением
+    document.title = t.title;
     const appTitleElement = document.getElementById('app-title');
     if (appTitleElement) {
       appTitleElement.textContent = t.title;
     }
-    document.title = t.title;
   }, [t.title]);
 
-  // ИСПРАВЛЕНИЕ: Добавить недостающие функции и переменные
-  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-  const fmtMoney = (n, c = 'USD') => new Intl.NumberFormat('en-US', {style: 'currency', currency: c, maximumFractionDigits: 2}).format(n || 0);
-  const stagesSumPct = stages.reduce((s, x) => s + (+x.pct || 0), 0);
+  // Загрузка конфигурации ценообразования из localStorage
+  useEffect(() => {
+    const savedConfig = localStorage.getItem('arconique_pricing_config');
+    if (savedConfig) {
+      try {
+        const parsed = JSON.parse(savedConfig);
+        setPricingConfig({ ...DEFAULT_PRICING_CONFIG, ...parsed });
+      } catch (e) {
+        console.warn('Failed to parse saved pricing config, using defaults');
+      }
+    }
+  }, []);
 
-  // Форматирование месяца для кэшфлоу (ВОССТАНОВЛЕНО СТАРОЕ)
-  const formatMonth = (monthOffset) => {
+  // Сохранение конфигурации ценообразования в localStorage
+  const savePricingConfig = (newConfig) => {
+    setPricingConfig(newConfig);
+    localStorage.setItem('arconique_pricing_config', JSON.stringify(newConfig));
+    alert(t.configSaved);
+    setShowPricingConfigModal(false);
+  };
+
+  // Сброс конфигурации к дефолту
+  const resetPricingConfig = () => {
+    setPricingConfig(DEFAULT_PRICING_CONFIG);
+    localStorage.removeItem('arconique_pricing_config');
+    alert(t.configReset);
+  };
+
+  // ===== ОСТАЛЬНОЕ СОСТОЯНИЕ =====
+  const [stages, setStages] = useState([
+    {id: 1, label: 'Договор', pct: 30, month: 0},
+    {id: 2, label: '50% готовности', pct: 40, month: 6},
+    {id: 3, label: 'Ключи', pct: 30, month: 12}
+  ]);
+  
+  const [lines, setLines] = useState([]);
+  const [catalog, setCatalog] = useState([
+    {
+      projectId: 'project1',
+      projectName: 'Проект 1',
+      villas: [
+        {
+          villaId: 'villa1',
+          name: 'Вилла А',
+          area: 150,
+          ppsm: 2500,
+          baseUSD: 375000,
+          leaseTotalYears: 30,
+          leaseholdEndDate: new Date(2055, 7, 1),
+          dailyRateUSD: 150,
+          rentalPriceIndexPct: 5
+        }
+      ]
+    }
+  ]);
+
+  // ===== ВЫЧИСЛЕНИЯ =====
+  const stagesSumPct = useMemo(() => stages.reduce((sum, s) => sum + s.pct, 0), [stages]);
+  
+  const linesData = useMemo(() => lines.map(line => {
+    const villa = catalog.flatMap(p => p.villas).find(v => v.villaId === line.villaId);
+    if (!villa) return null;
+    
+    const base = (line.snapshot?.baseUSD || villa.baseUSD) * (line.qty || 1);
+    const discount = (line.discountPct || 0) / 100;
+    const discounted = base * (1 - discount);
+    const prePct = (line.prePct || 70) / 100;
+    const pre = discounted * prePct;
+    const after = discounted - pre;
+    
+    const vMonths = line.ownTerms ? (line.months || months) : months;
+    const vRate = line.ownTerms ? (line.monthlyRatePct || monthlyRatePct) : monthlyRatePct;
+    
+    const monthly = after / vMonths;
+    const interest = monthly * vRate / 100 * vMonths;
+    const lineTotal = pre + after + interest;
+    
+    return { line, base, discount, discounted, prePct, pre, after, vMonths, vRate, monthly, interest, lineTotal };
+  }).filter(Boolean), [lines, catalog, months, monthlyRatePct]);
+
+  // ===== ПРОЕКТ И КЭШФЛОУ =====
+  const project = useMemo(() => {
+    if (linesData.length === 0) return { cashflow: [], totals: { baseUSD: 0, preUSD: 0, afterUSD: 0, interestUSD: 0, finalUSD: 0 } };
+    
+    const baseUSD = linesData.reduce((sum, ld) => sum + ld.base, 0);
+    const preUSD = linesData.reduce((sum, ld) => sum + ld.pre, 0);
+    const afterUSD = linesData.reduce((sum, ld) => sum + ld.after, 0);
+    const interestUSD = linesData.reduce((sum, ld) => sum + ld.interest, 0);
+    const finalUSD = baseUSD + interestUSD;
+    
+    // Генерация кэшфлоу с учетом новых параметров ценообразования
+    const cashflow = [];
+    const maxMonth = Math.max(...stages.map(s => s.month), handoverMonth + 60); // Увеличиваем для учета лизинга
+    
+    for (let month = 1; month <= maxMonth; month++) {
+      const items = [];
+      let amountUSD = 0;
+      
+      // Платежи по этапам
+      stages.forEach(stage => {
+        if (stage.month === month) {
+          const stageAmount = (stage.pct / 100) * preUSD;
+          items.push(`${stage.label}: ${fmtMoney(stageAmount, 'USD')}`);
+          amountUSD += stageAmount;
+        }
+      });
+      
+      // Платежи после ключей
+      if (month > handoverMonth) {
+        const postKeyMonth = month - handoverMonth;
+        const monthlyPayment = afterUSD / months;
+        items.push(`После ключей: ${fmtMoney(monthlyPayment, 'USD')}`);
+        amountUSD += monthlyPayment;
+      }
+      
+      // Доход от аренды (начинается через 3 месяца после ключей)
+      let rentalIncome = 0;
+      if (month > handoverMonth + 3) {
+        const rentalMonth = month - handoverMonth - 3;
+        const year = Math.floor(rentalMonth / 12);
+        
+        linesData.forEach(ld => {
+          const villa = catalog.flatMap(p => p.villas).find(v => v.villaId === ld.line.villaId);
+          if (villa) {
+            const daysInMonth = getDaysInMonth(startMonth.getFullYear() + Math.floor(month / 12), (month % 12) + 1);
+            const indexedDailyRate = getIndexedRentalPrice(villa.dailyRateUSD || 150, villa.rentalPriceIndexPct || 5, year);
+            const monthlyRental = indexedDailyRate * 0.55 * (ld.line.occupancyPct || 75) / 100 * daysInMonth;
+            rentalIncome += monthlyRental * ld.qty;
+          }
+        });
+      }
+      
+      // Чистый платеж/доход
+      const netPayment = amountUSD - rentalIncome;
+      
+      // Остаток долга
+      let balanceUSD = 0;
+      if (month <= handoverMonth) {
+        balanceUSD = preUSD - stages.filter(s => s.month <= month).reduce((sum, s) => sum + s.pct / 100 * preUSD, 0);
+      } else {
+        const paidAfterKeys = (month - handoverMonth) * (afterUSD / months);
+        balanceUSD = Math.max(0, afterUSD - paidAfterKeys);
+      }
+      
+      if (items.length > 0 || rentalIncome > 0) {
+        cashflow.push({
+          month,
+          items,
+          amountUSD,
+          rentalIncome,
+          netPayment,
+          balanceUSD
+        });
+      }
+    }
+    
+    return {
+      cashflow,
+      totals: { baseUSD, preUSD, afterUSD, interestUSD, finalUSD }
+    };
+  }, [linesData, stages, handoverMonth, months, startMonth, catalog]);
+
+  // ===== УТИЛИТЫ =====
+  function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+  }
+
+  function fmtMoney(amount, currency) {
+    if (currency === 'USD') return `$${Math.round(amount).toLocaleString()}`;
+    if (currency === 'IDR') return `Rp${Math.round(amount).toLocaleString()}`;
+    if (currency === 'EUR') return `€${Math.round(amount).toLocaleString()}`;
+    return amount.toLocaleString();
+  }
+
+  function formatMonth(month) {
     const date = new Date(startMonth);
-    date.setMonth(date.getMonth() + monthOffset);
+    date.setMonth(date.getMonth() + month - 1);
     return date.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { 
-      month: 'long', 
+      month: 'short', 
       year: 'numeric' 
     });
-  };
+  }
 
-  // НОВАЯ ФУНКЦИЯ: Расчет количества дней в месяце для аренды
-  const getDaysInMonth = (monthOffset) => {
-    const date = new Date(startMonth);
-    date.setMonth(date.getMonth() + monthOffset);
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  };
+  function getDaysInMonth(year, month) {
+    return new Date(year, month, 0).getDate();
+  }
 
-  // НОВАЯ ФУНКЦИЯ: Расчет чистого срока лизхолда
-  const getCleanLeaseholdTerm = (leaseholdEndDate) => {
-    if (!leaseholdEndDate) return { years: 0, months: 0 };
+  function getCleanLeaseholdTerm(villa) {
+    if (!villa.leaseholdEndDate) return { years: 0, months: 0 };
     
     const handoverDate = new Date(startMonth);
     handoverDate.setMonth(handoverDate.getMonth() + handoverMonth);
     
-    const diffTime = leaseholdEndDate.getTime() - handoverDate.getTime();
+    const diffTime = villa.leaseholdEndDate.getTime() - handoverDate.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays <= 0) return { years: 0, months: 0 };
     
     const years = Math.floor(diffDays / 365);
     const months = Math.floor((diffDays % 365) / 30);
     
     return { years, months };
-  };
+  }
 
-  // НОВАЯ ФУНКЦИЯ: Расчет индексированной цены аренды для конкретного года
-  const getIndexedRentalPrice = (basePrice, indexPct, yearOffset) => {
-    if (yearOffset <= 0) return basePrice;
-    return basePrice * Math.pow(1 + indexPct / 100, yearOffset);
-  };
+  function getIndexedRentalPrice(dailyRate, indexPct, years) {
+    return dailyRate * Math.pow(1 + indexPct / 100, years);
+  }
 
-  // НОВАЯ ФУНКЦИЯ: Расчет годового дохода от аренды с индексацией
-  const getYearlyRentalIncome = (line, yearOffset) => {
-    if (yearOffset <= 0) return 0;
-    
-    const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, yearOffset);
-    const daysInYear = 365;
-    const occupancyDays = daysInYear * (line.occupancyPct / 100);
-    
-    return indexedPrice * 0.55 * occupancyDays * line.qty;
-  };
+  function getYearlyRentalIncome(villa, year) {
+    const dailyRate = getIndexedRentalPrice(villa.dailyRateUSD || 150, villa.rentalPriceIndexPct || 5, year);
+    const monthlyIncome = dailyRate * 0.55 * (75 / 100) * 30.44; // Среднее дней в месяце
+    return monthlyIncome * 12;
+  }
 
-  // НОВАЯ ФУНКЦИЯ: Расчет накопительного дохода по годам
-  const getCumulativeRentalIncome = (lines) => {
-    const maxYears = Math.max(...lines.map(line => {
-      if (!line.snapshot?.leaseholdEndDate) return 0;
-      const term = getCleanLeaseholdTerm(line.snapshot.leaseholdEndDate);
-      return term.years;
-    }));
-    
-    const yearlyIncome = [];
+  function getCumulativeRentalIncome(villa, maxYear) {
+    let cumulative = 0;
+    for (let year = 0; year <= maxYear; year++) {
+      cumulative += getYearlyRentalIncome(villa, year);
+    }
+    return cumulative;
+  }
+
+  // Данные для графика доходности от аренды
+  const yearlyRentalData = useMemo(() => {
+    const data = [];
     let cumulative = 0;
     
-    for (let year = 0; year <= maxYears; year++) {
-      const yearIncome = lines.reduce((total, line) => {
-        return total + getYearlyRentalIncome(line, year);
+    for (let year = 0; year <= 20; year++) {
+      const yearIncome = linesData.reduce((sum, ld) => {
+        const villa = catalog.flatMap(p => p.villas).find(v => v.villaId === ld.line.villaId);
+        if (villa) {
+          return sum + getYearlyRentalIncome(villa, year) * ld.qty;
+        }
+        return sum;
       }, 0);
       
       cumulative += yearIncome;
-      yearlyIncome.push({
-        year: year,
-        yearIncome: yearIncome,
-        cumulativeIncome: cumulative
-      });
+      data.push({ year, yearIncome, cumulativeIncome: cumulative });
     }
     
-    return yearlyIncome;
-  };
+    return data;
+  }, [linesData, catalog]);
 
-  // Функции для работы с проектами (ВОССТАНОВЛЕНЫ СТАРЫЕ)
-  const addProject = () => {
-    setNewProjectForm({
-      projectId: '',
-      projectName: '',
-      villas: []
-    });
-    setShowAddProjectModal(true);
-  };
-
-  const saveProject = () => {
-    if (!newProjectForm.projectName) {
-      alert(t.projectNameRequired);
-      return;
-    }
-    
-    // Auto-generate projectId
-    const newProjectId = newProjectForm.projectName.toLowerCase().replace(/\s/g, '-').replace(/[^a-z0-9-]/g, '');
-    const projectExists = catalog.find(p => p.projectId === newProjectId);
-    if (projectExists) {
-      alert(t.projectExists);
-      return;
-    }
-
-    const newProject = {
-      projectId: newProjectId, // Auto-generated
-      projectName: newProjectForm.projectName,
-      villas: newProjectForm.villas
-    };
-
-    setCatalog(prev => [...prev, newProject]);
-    setShowAddProjectModal(false);
-    setNewProjectForm({ projectId: '', projectName: '', villas: [] });
-  };
-
-  // Функции для работы с виллами (ОБНОВЛЕНЫ С НОВЫМИ ПОЛЯМИ)
-  const addVilla = (projectId) => {
-    setNewVillaForm({
-      villaId: '',
-      name: '',
-      area: 100,
-      ppsm: 2500,
-      baseUSD: 250000,
-      // НОВЫЕ ПОЛЯ ДЛЯ ЛИЗХОЛДА И АРЕНДЫ:
-      leaseholdEndDate: new Date(2030, 11, 31),
-      dailyRateUSD: 150,
-      rentalPriceIndexPct: 5
-    });
-    setEditingProject(projectId);
-    setShowAddVillaModal(true);
-  };
-
-  const saveVilla = () => {
-    if (!newVillaForm.name) {
-      alert(t.villaNameRequired);
-      return;
-    }
-
-    const project = catalog.find(p => p.projectId === editingProject);
-    if (!project) return;
-
-    // Auto-generate villaId
-    const newVillaId = `${editingProject}-${newVillaForm.name.toLowerCase().replace(/\s/g, '-').replace(/[^a-z0-9-]/g, '')}`;
-    const villaExists = project.villas.find(v => v.villaId === newVillaId);
-    if (villaExists) {
-      alert(t.villaExists);
-      return;
-    }
-
-    const newVilla = {
-      villaId: newVillaId, // Auto-generated
-      name: newVillaForm.name,
-      area: newVillaForm.area,
-      ppsm: newVillaForm.ppsm,
-      baseUSD: newVillaForm.baseUSD,
-      // НОВЫЕ ПОЛЯ ДЛЯ ЛИЗХОЛДА И АРЕНДЫ:
-      leaseholdEndDate: newVillaForm.leaseholdEndDate,
-      dailyRateUSD: newVillaForm.dailyRateUSD,
-      rentalPriceIndexPct: newVillaForm.rentalPriceIndexPct
-    };
-
-    setCatalog(prev => prev.map(p => 
-      p.projectId === editingProject 
-        ? { ...p, villas: [...p.villas, newVilla] }
-        : p
-    ));
-
-    setShowAddVillaModal(false);
-    setEditingProject(null);
-    setNewVillaForm({ 
-      villaId: '', 
-      name: '', 
-      area: 100, 
-      ppsm: 2500, 
-      baseUSD: 250000,
-      leaseholdEndDate: new Date(2030, 11, 31),
-      dailyRateUSD: 150,
-      rentalPriceIndexPct: 5
-    });
-  };
-
-  // Расчет данных по строкам (ОБНОВЛЕН С НОВОЙ ЛОГИКОЙ АРЕНДЫ)
-  const linesData = useMemo(() => lines.map(line => {
-    const base0 = line.snapshot?.baseUSD ?? ((line.snapshot?.area || 0) * (line.snapshot?.ppsm || 0));
-    const disc = clamp(+line.discountPct || 0, 0, 20);
-    const base = base0 * (1 - disc / 100);
-    const prePct = clamp(line.prePct ?? 0, 50, 100);
-    const k = stagesSumPct === 0 ? 0 : prePct / stagesSumPct;
-    const preSchedule = stages.map(s => ({
-      month: Math.max(0, Math.min(handoverMonth, Math.round(+s.month || 0))),
-      label: s.label,
-      amountUSD: base * (((+s.pct || 0) * k) / 100),
-    })).filter(r => r.amountUSD > 0).sort((a, b) => a.month - b.month);
-    const preTotalOne = preSchedule.reduce((s, r) => s + r.amountUSD, 0);
-
-    const vMonths = line.ownTerms && line.months ? line.months : months;
-    const rate = (line.ownTerms && line.monthlyRatePct != null) ? (line.monthlyRatePct / 100) : (monthlyRatePct / 100);
-    const firstPostUSD = Math.max(0, +line.firstPostUSD || 0);
-    const principalBase = Math.max(0, base - preTotalOne - firstPostUSD);
-
-    let bal = principalBase, totalInterest = 0;
-    const principalShare = vMonths > 0 ? principalBase / vMonths : 0;
-    const postRows = [];
-    for (let i = 1; i <= vMonths; i++) {
-      const interest = bal * rate;
-      totalInterest += interest;
-      const payment = principalShare + interest;
-      postRows.push({
-        month: handoverMonth + i,
-        label: `${t.month} ${i}`,
-        principalUSD: principalShare,
-        interestUSD: interest,
-        paymentUSD: payment,
-        balanceAfterUSD: Math.max(0, bal - principalShare)
-      });
-      bal -= principalShare;
-    }
-    const lineTotalOne = base + totalInterest;
-
-    const qty = Math.max(1, parseInt(line.qty || 1, 10));
-    const preScheduleQ = preSchedule.map(r => ({...r, amountUSD: r.amountUSD * qty}));
-    const postRowsQ = postRows.map(r => ({
-      ...r,
-      principalUSD: r.principalUSD * qty,
-      interestUSD: r.interestUSD * qty,
-      paymentUSD: r.paymentUSD * qty
-    }));
-    const preTotal = preTotalOne * qty;
-    const firstPostQ = firstPostUSD * qty;
-    const baseQ = base * qty;
-    const lineTotal = lineTotalOne * qty;
-
-    return {
-      line, qty, baseOne: base, base: baseQ, preSchedule: preScheduleQ, preTotal,
-      firstPostUSD: firstPostQ, postRows: postRowsQ, lineTotal, vMonths, rate,
-      discountPct: disc, prePct: prePct
-    };
-  }), [lines, stages, stagesSumPct, handoverMonth, months, monthlyRatePct, t.month]);
-
-  // Расчет проекта (ОБНОВЛЕН С НОВОЙ ЛОГИКОЙ АРЕНДЫ С ИНДЕКСАЦИЕЙ)
-  const project = useMemo(() => {
-    const totals = {
-      baseUSD: linesData.reduce((s, x) => s + x.base, 0),
-      preUSD: linesData.reduce((s, x) => s + x.preTotal, 0),
-      finalUSD: linesData.reduce((s, x) => s + x.lineTotal, 0),
-    };
-    totals.interestUSD = totals.finalUSD - totals.baseUSD;
-    totals.afterUSD = totals.finalUSD - totals.preUSD;
-
-    const m = new Map();
-    const push = (month, amt, desc) => {
-      if (amt <= 0) return;
-      const prev = m.get(month) || {month, items: [], amountUSD: 0};
-      prev.items.push(desc);
-      prev.amountUSD += amt;
-      m.set(month, prev);
-    };
-
-    linesData.forEach(ld => {
-      ld.preSchedule.forEach(r => push(r.month, r.amountUSD, `${ld.line.snapshot?.name || 'Villa'} ×${ld.qty}: ${r.label}`));
-      if (ld.firstPostUSD > 0) push(handoverMonth + 1, ld.firstPostUSD, `${ld.line.snapshot?.name || 'Villa'} ×${ld.qty}: ${t.firstPayment}`);
-      ld.postRows.forEach(r => push(r.month, r.paymentUSD, `${ld.line.snapshot?.name || 'Villa'} ×${ld.qty}: ${r.label}`));
-    });
-
-    // ОБНОВЛЕНО: Расчет арендного дохода с индексацией по годам
-    const rentalIncomeMap = new Map();
-    linesData.forEach(ld => {
-      // Арендный доход начинается через 3 месяца после получения ключей
-      const startRentalMonth = handoverMonth + 3;
-      
-      for (let month = startRentalMonth; month <= handoverMonth + months; month++) {
-        const yearOffset = Math.floor((month - handoverMonth) / 12);
-        const indexedPrice = getIndexedRentalPrice(ld.line.dailyRateUSD, ld.line.rentalPriceIndexPct, yearOffset);
-        const daysInMonth = getDaysInMonth(month);
-        const rentalIncome = indexedPrice * 0.55 * ld.line.occupancyPct / 100 * daysInMonth * ld.qty;
-        
-        if (rentalIncome > 0) {
-          const prev = rentalIncomeMap.get(month) || 0;
-          rentalIncomeMap.set(month, prev + rentalIncome);
-        }
-      }
-    });
-
-    // Объединяем платежи и арендный доход
-    const raw = [...m.values()].sort((a, b) => a.month - b.month);
-    let cumulative = 0;
-    const cashflow = raw.map(row => {
-      cumulative += row.amountUSD;
-      const balanceUSD = Math.max(0, totals.finalUSD - cumulative);
-      
-      // Добавляем арендный доход для этого месяца
-      const rentalIncome = rentalIncomeMap.get(row.month) || 0;
-      const netPayment = row.amountUSD - rentalIncome;
-      
-      return {
-        ...row, 
-        cumulativeUSD: cumulative, 
-        balanceUSD,
-        rentalIncome, // НОВОЕ ПОЛЕ
-        netPayment    // НОВОЕ ПОЛЕ
-      };
-    });
-
-    return {totals, cashflow};
-  }, [linesData, handoverMonth, months, t.firstPayment, startMonth]);
-
-  // НОВЫЙ РАСЧЕТ: Годовая доходность от аренды
-  const yearlyRentalData = useMemo(() => {
-    return getCumulativeRentalIncome(lines);
-  }, [lines, startMonth, handoverMonth]);
-
-  // НОВЫЙ РАСЧЕТ: Общий чистый срок лизхолда
+  // Общий чистый срок лизхолда для KPI
   const totalLeaseholdTerm = useMemo(() => {
-    const allTerms = lines.map(line => {
-      if (!line.snapshot?.leaseholdEndDate) return { years: 0, months: 0 };
-      return getCleanLeaseholdTerm(line.snapshot.leaseholdEndDate);
-    });
+    if (linesData.length === 0) return { years: 0, months: 0 };
     
-    const maxYears = Math.max(...allTerms.map(t => t.years));
-    const maxMonths = Math.max(...allTerms.map(t => t.months));
+    const allVillas = linesData.map(ld => 
+      catalog.flatMap(p => p.villas).find(v => v.villaId === ld.line.villaId)
+    ).filter(Boolean);
     
-    return { years: maxYears, months: maxMonths };
-  }, [lines, startMonth, handoverMonth]);
+    if (allVillas.length === 0) return { years: 0, months: 0 };
+    
+    const avgTerm = allVillas.reduce((sum, villa) => {
+      const term = getCleanLeaseholdTerm(villa);
+      return sum + term.years * 12 + term.months;
+    }, 0) / allVillas.length;
+    
+    return {
+      years: Math.floor(avgTerm / 12),
+      months: Math.floor(avgTerm % 12)
+    };
+  }, [linesData, catalog, startMonth, handoverMonth]);
 
-// ... existing code ...
-
-  // ... existing code ...
-
-  // Функции для работы с линиями (ВОССТАНОВЛЕНЫ СТАРЫЕ)
+  // ===== ФУНКЦИИ ДЛЯ РАБОТЫ С ЛИНИЯМИ =====
   const updLine = (id, patch) => setLines(prev => prev.map(l => l.id === id ? {...l, ...patch} : l));
   const delLine = (id) => setLines(prev => prev.filter(l => l.id !== id));
 
@@ -727,7 +671,6 @@ function App() {
       monthlyRatePct: null,
       firstPostUSD: 0,
       discountPct: 0,
-      // ОБНОВЛЕНО: Новые поля для аренды с индексацией
       dailyRateUSD: villa.dailyRateUSD || 150,
       occupancyPct: 75,
       rentalPriceIndexPct: villa.rentalPriceIndexPct || 5,
@@ -736,14 +679,15 @@ function App() {
         area: villa.area, 
         ppsm: villa.ppsm, 
         baseUSD: villa.baseUSD,
-        leaseholdEndDate: villa.leaseholdEndDate
+        leaseholdEndDate: villa.leaseholdEndDate,
+        leaseTotalYears: villa.leaseTotalYears || 30
       }
     };
     setLines(prev => [...prev, newLine]);
     setModalOpen(false);
   };
 
-  // Функции экспорта (ОБНОВЛЕНЫ С НОВЫМИ ПОЛЯМИ)
+  // ===== ФУНКЦИИ ЭКСПОРТА =====
   const exportCSV = () => {
     const rows = [
       [t.month, t.description, t.amountDue, t.rentalIncome, t.netPayment, t.remainingBalance],
@@ -885,7 +829,7 @@ function App() {
       });
   };
 
-  // Функция переключения режима (ВОССТАНОВЛЕНА СТАРАЯ)
+  // ===== ФУНКЦИЯ ПЕРЕКЛЮЧЕНИЯ РЕЖИМА =====
   const toggleMode = () => {
     if (isClient) {
       const pin = prompt(t.enterPin);
@@ -901,7 +845,7 @@ function App() {
     }
   };
 
-  // Функции для работы с этапами (ВОССТАНОВЛЕНЫ СТАРЫЕ)
+  // ===== ФУНКЦИИ ДЛЯ РАБОТЫ С ЭТАПАМИ =====
   const addStage = () => {
     const newId = stages.length + 1;
     setStages(prev => [...prev, {id: newId, label: lang === 'ru' ? 'Новый этап' : 'New stage', pct: 5, month: 0}]);
@@ -911,11 +855,104 @@ function App() {
 
   const updStage = (id, patch) => setStages(prev => prev.map(s => s.id === id ? {...s, ...patch} : s));
 
+  // ===== СОСТОЯНИЕ ДЛЯ МОДАЛЬНЫХ ОКОН =====
+  const [modalOpen, setModalOpen] = useState(false);
+  const [showAddProjectModal, setShowAddProjectModal] = useState(false);
+  const [showAddVillaModal, setShowAddVillaModal] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
+  const [newProjectForm, setNewProjectForm] = useState({
+    projectName: '',
+    projectId: ''
+  });
+  const [newVillaForm, setNewVillaForm] = useState({
+    name: '',
+    area: 0,
+    ppsm: 0,
+    baseUSD: 0,
+    leaseTotalYears: 30,
+    leaseholdEndDate: null,
+    dailyRateUSD: 150,
+    rentalPriceIndexPct: 5
+  });
+
+  // ===== ФУНКЦИИ ДЛЯ РАБОТЫ С КАТАЛОГОМ =====
+  const addProject = () => {
+    const newId = 'project' + Date.now();
+    const newProject = {
+      projectId: newId,
+      projectName: newProjectForm.projectName,
+      villas: []
+    };
+    setCatalog(prev => [...prev, newProject]);
+    setNewProjectForm({ projectName: '', projectId: '' });
+    setShowAddProjectModal(false);
+  };
+
+  const saveProject = () => {
+    if (editingProject) {
+      setCatalog(prev => prev.map(p => 
+        p.projectId === editingProject.projectId ? editingProject : p
+      ));
+      setEditingProject(null);
+    } else {
+      addProject();
+    }
+  };
+
+  const addVilla = (projectId) => {
+    const newId = 'villa' + Date.now();
+    const newVilla = {
+      villaId: newId,
+      name: newVillaForm.name,
+      area: newVillaForm.area,
+      ppsm: newVillaForm.ppsm,
+      baseUSD: newVillaForm.baseUSD,
+      leaseTotalYears: newVillaForm.leaseTotalYears,
+      leaseholdEndDate: newVillaForm.leaseholdEndDate,
+      dailyRateUSD: newVillaForm.dailyRateUSD,
+      rentalPriceIndexPct: newVillaForm.rentalPriceIndexPct
+    };
+    
+    setCatalog(prev => prev.map(p => 
+      p.projectId === projectId 
+        ? { ...p, villas: [...p.villas, newVilla] }
+        : p
+    ));
+    
+    setNewVillaForm({
+      name: '',
+      area: 0,
+      ppsm: 0,
+      baseUSD: 0,
+      leaseTotalYears: 30,
+      leaseholdEndDate: null,
+      dailyRateUSD: 150,
+      rentalPriceIndexPct: 5
+    });
+    setShowAddVillaModal(false);
+  };
+
+  const saveVilla = () => {
+    if (editingProject) {
+      addVilla(editingProject.projectId);
+    } else {
+      // Если не выбран проект, добавляем в первый доступный
+      if (catalog.length > 0) {
+        addVilla(catalog[0].projectId);
+      }
+    }
+  };
+
+  // ===== PIN КОД =====
+  const PIN_CODE = '1234';
+
+  // ... existing code ...
+
   return (
     <>
       {/* Внизу по порядку: */}
       
-      {/* 1. Настройки (ВОССТАНОВЛЕН СТАРЫЙ ДИЗАЙН) */}
+      {/* 1. Настройки */}
       <div className="card">
         {/* Ряд 1: Все настройки в один ряд */}
         <div className="row">
@@ -936,7 +973,7 @@ function App() {
             </select>
           </div>
 
-          {/* Курсы валют (только для редактора) - ВОССТАНОВЛЕНО СТАРОЕ ПОВЕДЕНИЕ */}
+          {/* Курсы валют (только для редактора) */}
           {!isClient && (
             <>
               <div className="field compact">
@@ -1022,15 +1059,22 @@ function App() {
           )}
         </div>
 
-        {/* Ряд 2: Кнопка переключения режима */}
+        {/* Ряд 2: Кнопки управления */}
         <div className="row">
           <button className="btn" onClick={toggleMode}>
             {isClient ? t.toggleToEditor : t.toggleToClient}
           </button>
+          
+          {/* НОВАЯ КНОПКА: Параметры ценообразования (только для редактора) */}
+          {!isClient && (
+            <button className="btn primary" onClick={() => setShowPricingConfigModal(true)}>
+              {t.pricingConfig}
+            </button>
+          )}
         </div>
       </div>
 
-      {/* 2. Расчёт (позиции) - ОБНОВЛЕН С НОВЫМИ ПОЛЯМИ ДЛЯ АРЕНДЫ */}
+      {/* 2. Расчёт (позиции) - ОБНОВЛЕН С НОВЫМИ ПОЛЯМИ ДЛЯ ЦЕНООБРАЗОВАНИЯ */}
       <div className="card">
         <div className="calculation-header">
           <h3 style={{margin: '6px 0'}}>{t.villasTitle}</h3>
@@ -1053,10 +1097,12 @@ function App() {
                 <th className="col-pre">{t.prePct}</th>
                 {!isClient && <th className="col-months">{t.months}</th>}
                 {!isClient && <th className="col-rate">{t.rate}</th>}
-                {/* ОБНОВЛЕНО: Новые колонки для аренды с индексацией */}
                 <th className="col-dailyRate">{t.dailyRate}</th>
                 <th className="col-occupancyRate">{t.occupancyRate}</th>
                 <th className="col-rentalIndex">{t.rentalPriceIndex}</th>
+                {/* НОВЫЕ КОЛОНКИ ДЛЯ ЦЕНООБРАЗОВАНИЯ */}
+                <th className="col-leaseYears">Срок лизинга</th>
+                <th className="col-pricing">Ценообразование</th>
                 <th className="col-lineTotal">{t.lineTotal}</th>
                 <th className="col-actions"></th>
               </tr>
@@ -1105,7 +1151,6 @@ function App() {
                     </td>
                   )}
                   <td className="col-pre">
-                    {/* ВОССТАНОВЛЕН СТАРЫЙ ПОЛЗУНОК "До ключей, %" */}
                     <input 
                       type="range" 
                       min="50" 
@@ -1153,7 +1198,6 @@ function App() {
                     </td>
                   )}
                   
-                  {/* ОБНОВЛЕНО: Новые поля для аренды с индексацией */}
                   <td className="col-dailyRate">
                     <input 
                       type="number" 
@@ -1187,6 +1231,25 @@ function App() {
                     />
                   </td>
                   
+                  {/* НОВЫЕ КОЛОНКИ ДЛЯ ЦЕНООБРАЗОВАНИЯ */}
+                  <td className="col-leaseYears">
+                    <div className="lease-years-display">
+                      {ld.line.snapshot?.leaseTotalYears || 30} {t.years}
+                    </div>
+                  </td>
+                  <td className="col-pricing">
+                    <button 
+                      className="btn small pricing-btn" 
+                      onClick={() => {
+                        // Показать модальное окно с графиком ценообразования для конкретной виллы
+                        setSelectedVillaForPricing(ld.line);
+                        setShowVillaPricingModal(true);
+                      }}
+                    >
+                      📊 График
+                    </button>
+                  </td>
+                  
                   <td className="col-lineTotal line-total">
                     {fmtMoney(ld.lineTotal, currency)}
                   </td>
@@ -1202,7 +1265,7 @@ function App() {
         </div>
       </div>
 
-      {/* 3. KPI показатели - ОБНОВЛЕН С НОВЫМ ПАРАМЕТРОМ ЛИЗХОЛДА */}
+      {/* 3. KPI показатели */}
       <div className="card">
         <div className="row" style={{justifyContent: 'space-between', alignItems: 'baseline'}}>
           <div className="row">
@@ -1213,7 +1276,6 @@ function App() {
           <div className="muted">{isClient ? t.client : t.editor}</div>
         </div>
 
-        {/* KPI блок - ОБНОВЛЕН С НОВЫМ ПАРАМЕТРОМ */}
         <div className="kpis">
           {!isClient && (
             <div className="kpi">
@@ -1239,7 +1301,6 @@ function App() {
             <div className="muted">{t.finalPrice}</div>
             <div className="v">{fmtMoney(project.totals.finalUSD, currency)}</div>
           </div>
-          {/* НОВЫЙ ПАРАМЕТР: Чистый срок лизхолда */}
           <div className="kpi">
             <div className="muted">{t.cleanLeaseholdTerm}</div>
             <div className="v">{totalLeaseholdTerm.years} {t.years} {totalLeaseholdTerm.months} {t.months}</div>
@@ -1247,12 +1308,11 @@ function App() {
         </div>
       </div>
 
-      {/* 4. Базовая рассрочка - ВОССТАНОВЛЕН СТАРЫЙ ДИЗАЙН (БЕЗ БЕЛЫХ ПРЯМОУГОЛЬНИКОВ) */}
+      {/* 4. Базовая рассрочка */}
       <div className="card">
         <div className="stages-section">
           <h3>{t.stagesTitle}</h3>
           
-          {/* ПРОСТАЯ ТАБЛИЦА БЕЗ БЕЛЫХ ПРЯМОУГОЛЬНИКОВ - ВОССТАНОВЛЕНО СТАРОЕ */}
           <table className="stages-table">
             <thead>
               <tr>
@@ -1316,7 +1376,7 @@ function App() {
         </div>
       </div>
 
-      {/* 5. Сводный кэшфлоу по месяцам - ОБНОВЛЕН С НОВЫМИ КОЛОНКАМИ */}
+      {/* 5. Сводный кэшфлоу по месяцам */}
       <div className="cashflow-block">
         <div className="card">
           <div className="card-header">
@@ -1335,10 +1395,8 @@ function App() {
                   <th>{t.month}</th>
                   <th style={{textAlign: 'left'}}>{t.description}</th>
                   <th>{t.amountDue}</th>
-                  {/* НОВЫЕ КОЛОНКИ ДЛЯ АРЕНДЫ (ДОБАВЛЕНО) */}
                   <th>{t.rentalIncome}</th>
                   <th>{t.netPayment}</th>
-                  {/* ОСТАТОК ДОЛГА ПЕРЕМЕЩЕН В ПОСЛЕДНЮЮ КОЛОНКУ */}
                   <th>{t.remainingBalance}</th>
                 </tr>
               </thead>
@@ -1348,13 +1406,10 @@ function App() {
                     <td>{formatMonth(c.month)}</td>
                     <td style={{textAlign: 'left'}}>{(c.items || []).join(' + ')}</td>
                     <td>{fmtMoney(c.amountUSD, currency)}</td>
-                    {/* НОВЫЕ КОЛОНКИ ДЛЯ АРЕНДЫ (ДОБАВЛЕНО) */}
                     <td>{fmtMoney(c.rentalIncome || 0, currency)}</td>
-                    {/* ИСПРАВЛЕНО: Красный для положительных, зеленый для отрицательных */}
                     <td className={c.netPayment >= 0 ? 'positive' : 'negative'}>
                       {fmtMoney(c.netPayment || 0, currency)}
                     </td>
-                    {/* ОСТАТОК ДОЛГА ПЕРЕМЕЩЕН В ПОСЛЕДНЮЮ КОЛОНКУ */}
                     <td>{fmtMoney(c.balanceUSD, currency)}</td>
                   </tr>
                 ))}
@@ -1364,7 +1419,7 @@ function App() {
         </div>
       </div>
 
-      {/* 6. НОВЫЙ БЛОК: График общей доходности от сдачи в аренду */}
+      {/* 6. График общей доходности от сдачи в аренду */}
       <div className="card">
         <h3>{t.rentalIncomeChart}</h3>
         <div className="rental-chart">
@@ -1401,7 +1456,7 @@ function App() {
         </div>
       </div>
 
-      {/* 7. Каталог проектов и вилл (только для редактора) - ОБНОВЛЕН С НОВЫМИ ПОЛЯМИ */}
+      {/* 7. Каталог проектов и вилл (только для редактора) */}
       {!isClient && (
         <div className="editor-mode">
           <h2>{t.catalogTitle}</h2>
@@ -1429,7 +1484,36 @@ function App() {
         </div>
       )}
 
-      {/* Модальные окна - ОБНОВЛЕНЫ С НОВЫМИ ПОЛЯМИ */}
+      {/* ===== НОВЫЕ МОДАЛЬНЫЕ ОКНА ДЛЯ ЦЕНООБРАЗОВАНИЯ ===== */}
+      
+      {/* Модальное окно конфигурации ценообразования */}
+      {showPricingConfigModal && (
+        <PricingConfigModal 
+          config={pricingConfig}
+          onSave={savePricingConfig}
+          onReset={resetPricingConfig}
+          onClose={() => setShowPricingConfigModal(false)}
+          t={t}
+          lang={lang}
+        />
+      )}
+
+      {/* Модальное окно графика ценообразования для конкретной виллы */}
+      {showVillaPricingModal && selectedVillaForPricing && (
+        <VillaPricingModal 
+          villa={selectedVillaForPricing}
+          pricingConfig={pricingConfig}
+          onClose={() => {
+            setShowVillaPricingModal(false);
+            setSelectedVillaForPricing(null);
+          }}
+          t={t}
+          lang={lang}
+          fmtMoney={fmtMoney}
+        />
+      )}
+
+      {/* Существующие модальные окна */}
       {modalOpen && (
         <div className="modal-overlay" onClick={() => setModalOpen(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -1456,114 +1540,336 @@ function App() {
         </div>
       )}
 
-      {showAddProjectModal && (
-        <div className="modal-overlay" onClick={() => setShowAddProjectModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3>{t.addProject}</h3>
-            <div className="form-group">
-              <label>{t.projectName}:</label>
-              <input 
-                type="text" 
-                value={newProjectForm.projectName} 
-                onChange={e => setNewProjectForm(prev => ({...prev, projectName: e.target.value}))}
-                placeholder="Название проекта"
-                className="input"
-              />
-            </div>
-            <div className="modal-actions">
-              <button onClick={saveProject} className="btn primary">{t.save}</button>
-              <button onClick={() => setShowAddProjectModal(false)} className="btn">{t.cancel}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showAddVillaModal && (
-        <div className="modal-overlay" onClick={() => setShowAddVillaModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3>{t.addVilla}</h3>
-            <div className="form-group">
-              <label>{t.villaName}:</label>
-              <input 
-                type="text" 
-                value={newVillaForm.name} 
-                onChange={e => setNewVillaForm(prev => ({...prev, name: e.target.value}))}
-                placeholder="Название виллы"
-                className="input"
-              />
-            </div>
-            <div className="form-group">
-              <label>{t.villaArea}:</label>
-              <input 
-                type="number" 
-                value={newVillaForm.area} 
-                onChange={e => setNewVillaForm(prev => ({...prev, area: +e.target.value}))}
-                placeholder="Площадь"
-                className="input"
-              />
-            </div>
-            <div className="form-group">
-              <label>{t.villaPpsm}:</label>
-              <input 
-                type="number" 
-                value={newVillaForm.ppsm} 
-                onChange={e => setNewVillaForm(prev => ({...prev, ppsm: +e.target.value}))}
-                placeholder="Цена за м²"
-                className="input"
-              />
-            </div>
-            <div className="form-group">
-              <label>{t.villaBasePrice}:</label>
-              <input 
-                type="number" 
-                value={newVillaForm.baseUSD} 
-                onChange={e => setNewVillaForm(prev => ({...prev, baseUSD: +e.target.value}))}
-                placeholder="Базовая цена"
-                className="input"
-              />
-            </div>
-            {/* НОВЫЕ ПОЛЯ ДЛЯ ЛИЗХОЛДА И АРЕНДЫ */}
-            <div className="form-group">
-              <label>{t.leaseholdEndDate}:</label>
-              <input 
-                type="date" 
-                value={newVillaForm.leaseholdEndDate ? newVillaForm.leaseholdEndDate.toISOString().split('T')[0] : ''} 
-                onChange={e => setNewVillaForm(prev => ({...prev, leaseholdEndDate: new Date(e.target.value)}))}
-                className="input"
-              />
-            </div>
-            <div className="form-group">
-              <label>{t.dailyRate}:</label>
-              <input 
-                type="number" 
-                value={newVillaForm.dailyRateUSD} 
-                onChange={e => setNewVillaForm(prev => ({...prev, dailyRateUSD: +e.target.value}))}
-                placeholder="Стоимость ночи"
-                className="input"
-              />
-            </div>
-            <div className="form-group">
-              <label>{t.rentalPriceIndex}:</label>
-              <input 
-                type="number" 
-                value={newVillaForm.rentalPriceIndexPct} 
-                onChange={e => setNewVillaForm(prev => ({...prev, rentalPriceIndexPct: +e.target.value}))}
-                placeholder="Индексация в год (%)"
-                className="input"
-              />
-            </div>
-            <div className="modal-actions">
-              <button onClick={saveVilla} className="btn primary">{t.save}</button>
-              <button onClick={() => setShowAddVillaModal(false)} className="btn">{t.cancel}</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Остальные модальные окна... */}
     </>
   );
 }
 
-// ===== КОМПОНЕНТ КАТАЛОГА - ОБНОВЛЕН С НОВЫМИ ПОЛЯМИ =====
+// ===== НОВЫЕ КОМПОНЕНТЫ ДЛЯ ЦЕНООБРАЗОВАНИЯ =====
+
+// Модальное окно конфигурации ценообразования
+function PricingConfigModal({ config, onSave, onReset, onClose, t, lang }) {
+  const [localConfig, setLocalConfig] = useState(config);
+
+  const handleSave = () => {
+    onSave(localConfig);
+  };
+
+  const handleReset = () => {
+    setLocalConfig(DEFAULT_PRICING_CONFIG);
+    onReset();
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content pricing-config-modal" onClick={e => e.stopPropagation()}>
+        <h3>{t.pricingConfig}</h3>
+        
+        <div className="pricing-sections">
+          {/* Инфляция */}
+          <div className="pricing-section">
+            <h4>{t.inflation}</h4>
+            <div className="form-group">
+              <label>{t.inflationRatePct}:</label>
+              <input 
+                type="number" 
+                min="0" 
+                max="100" 
+                step="0.1" 
+                value={localConfig.inflationRatePct} 
+                onChange={e => setLocalConfig(prev => ({...prev, inflationRatePct: parseFloat(e.target.value) || 0}))}
+                className="input"
+              />
+              <span className="unit">%</span>
+            </div>
+          </div>
+
+          {/* Убывание ценности lease */}
+          <div className="pricing-section">
+            <h4>{t.leaseDecay}</h4>
+            <div className="form-group">
+              <label>{t.leaseAlpha}:</label>
+              <input 
+                type="number" 
+                min="0.1" 
+                max="5" 
+                step="0.1" 
+                value={localConfig.leaseAlpha} 
+                onChange={e => setLocalConfig(prev => ({...prev, leaseAlpha: parseFloat(e.target.value) || 1}))}
+                className="input"
+              />
+              <div className="hint">{t.leaseAlphaHint}</div>
+            </div>
+          </div>
+
+          {/* Старение */}
+          <div className="pricing-section">
+            <h4>{t.aging}</h4>
+            <div className="form-group">
+              <label>{t.agingBeta}:</label>
+              <input 
+                type="number" 
+                min="0" 
+                max="0.2" 
+                step="0.001" 
+                value={localConfig.agingBeta} 
+                onChange={e => setLocalConfig(prev => ({...prev, agingBeta: parseFloat(e.target.value) || 0}))}
+                className="input"
+              />
+              <div className="hint">{t.agingBetaHint}</div>
+            </div>
+          </div>
+
+          {/* Бренд/популярность */}
+          <div className="pricing-section">
+            <h4>{t.brand}</h4>
+            <div className="brand-params">
+              <div className="form-group">
+                <label>{t.brandPeak}:</label>
+                <input 
+                  type="number" 
+                  min="1.0" 
+                  max="1.5" 
+                  step="0.01" 
+                  value={localConfig.brandPeak} 
+                  onChange={e => setLocalConfig(prev => ({...prev, brandPeak: parseFloat(e.target.value) || 1.2}))}
+                  className="input"
+                />
+              </div>
+              <div className="form-group">
+                <label>{t.brandRampYears}:</label>
+                <input 
+                  type="number" 
+                  min="0" 
+                  step="1" 
+                  value={localConfig.brandRampYears} 
+                  onChange={e => setLocalConfig(prev => ({...prev, brandRampYears: parseInt(e.target.value) || 0}))}
+                  className="input"
+                />
+              </div>
+              <div className="form-group">
+                <label>{t.brandPlateauYears}:</label>
+                <input 
+                  type="number" 
+                  min="0" 
+                  step="1" 
+                  value={localConfig.brandPlateauYears} 
+                  onChange={e => setLocalConfig(prev => ({...prev, brandPlateauYears: parseInt(e.target.value) || 0}))}
+                  className="input"
+                />
+              </div>
+              <div className="form-group">
+                <label>{t.brandDecayYears}:</label>
+                <input 
+                  type="number" 
+                  min="0" 
+                  step="1" 
+                  value={localConfig.brandDecayYears} 
+                  onChange={e => setLocalConfig(prev => ({...prev, brandDecayYears: parseInt(e.target.value) || 0}))}
+                  className="input"
+                />
+              </div>
+              <div className="form-group">
+                <label>{t.brandTail}:</label>
+                <input 
+                  type="number" 
+                  min="0.8" 
+                  max="1.2" 
+                  step="0.01" 
+                  value={localConfig.brandTail} 
+                  onChange={e => setLocalConfig(prev => ({...prev, brandTail: parseFloat(e.target.value) || 1.0}))}
+                  className="input"
+                />
+              </div>
+            </div>
+            
+            {/* Мини-график профиля BrandFactor */}
+            <div className="brand-factor-preview">
+              <h5>Профиль BrandFactor(t):</h5>
+              <div className="brand-factor-chart">
+                {/* Здесь будет мини-график */}
+                <div className="brand-factor-info">
+                  <div>Рост: 1.0 → {localConfig.brandPeak} за {localConfig.brandRampYears} лет</div>
+                  <div>Плато: {localConfig.brandPeak} за {localConfig.brandPlateauYears} лет</div>
+                  <div>Спад: {localConfig.brandPeak} → {localConfig.brandTail} за {localConfig.brandDecayYears} лет</div>
+                  <div>Хвост: {localConfig.brandTail}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="modal-actions">
+          <button onClick={handleSave} className="btn primary">{t.saveConfig}</button>
+          <button onClick={handleReset} className="btn">{t.resetToDefault}</button>
+          <button onClick={onClose} className="btn">{t.cancel}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Модальное окно графика ценообразования для конкретной виллы
+function VillaPricingModal({ villa, pricingConfig, onClose, t, lang, fmtMoney }) {
+  const [selectedYear, setSelectedYear] = useState(0);
+  
+  // Генерация данных для графика
+  const chartData = useMemo(() => {
+    return generatePricingChartData(villa, pricingConfig);
+  }, [villa, pricingConfig]);
+
+  // Нахождение максимальной цены для масштабирования графика
+  const maxPrice = useMemo(() => {
+    return Math.max(...chartData.map(d => Math.max(d.marketPrice, d.finalPrice)));
+  }, [chartData]);
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content villa-pricing-modal" onClick={e => e.stopPropagation()}>
+        <h3>Ценообразование: {villa.snapshot?.name}</h3>
+        
+        {/* Параметры расчёта (read-only) */}
+        <div className="pricing-params-display">
+          <h4>Параметры расчёта:</h4>
+          <div className="params-grid">
+            <div className="param-item">
+              <span className="param-label">Инфляция:</span>
+              <span className="param-value">g = {pricingConfig.inflationRatePct}%</span>
+            </div>
+            <div className="param-item">
+              <span className="param-label">Старение:</span>
+              <span className="param-value">β = {pricingConfig.agingBeta}</span>
+            </div>
+            <div className="param-item">
+              <span className="param-label">Lease α:</span>
+              <span className="param-value">α = {pricingConfig.leaseAlpha}</span>
+            </div>
+            <div className="param-item">
+              <span className="param-label">Brand:</span>
+              <span className="param-value">peak={pricingConfig.brandPeak}, ramp={pricingConfig.brandRampYears}, plateau={pricingConfig.brandPlateauYears}, decay={pricingConfig.brandDecayYears}, tail={pricingConfig.brandTail}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* График ценообразования */}
+        <div className="pricing-chart-section">
+          <h4>График ценообразования:</h4>
+          <div className="pricing-chart">
+            <div className="chart-lines">
+              {chartData.map((data, index) => (
+                <div key={index} className="chart-line">
+                  <div className="line-points">
+                    <div 
+                      className="point market-point" 
+                      style={{
+                        left: `${(data.year / Math.max(...chartData.map(d => d.year))) * 100}%`,
+                        bottom: `${(data.marketPrice / maxPrice) * 100}%`
+                      }}
+                      title={`Год ${data.year}: Рыночная цена ${fmtMoney(data.marketPrice, 'USD')}`}
+                    ></div>
+                    <div 
+                      className="point final-point" 
+                      style={{
+                        left: `${(data.year / Math.max(...chartData.map(d => d.year))) * 100}%`,
+                        bottom: `${(data.finalPrice / maxPrice) * 100}%`
+                      }}
+                      title={`Год ${data.year}: Итоговая цена ${fmtMoney(data.finalPrice, 'USD')}`}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="chart-axes">
+              <div className="y-axis">
+                <span>{fmtMoney(maxPrice, 'USD')}</span>
+                <span>{fmtMoney(maxPrice * 0.5, 'USD')}</span>
+                <span>$0</span>
+              </div>
+              <div className="x-axis">
+                <span>0</span>
+                <span>{Math.floor(chartData.length / 4)}</span>
+                <span>{Math.floor(chartData.length / 2)}</span>
+                <span>{Math.floor(chartData.length * 3 / 4)}</span>
+                <span>{chartData.length - 1}</span>
+              </div>
+            </div>
+            <div className="chart-legend">
+              <div className="legend-item">
+                <div className="legend-color market-color"></div>
+                <span>Рыночная цена (без износа/lease/бренда)</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color final-color"></div>
+                <span>Итоговая цена по формуле</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Таблица факторов */}
+        <div className="pricing-table-section">
+          <h4>Таблица факторов:</h4>
+          <div className="pricing-table-scroll">
+            <table className="pricing-table">
+              <thead>
+                <tr>
+                  <th>Год (t)</th>
+                  <th>LeaseFactor</th>
+                  <th>AgeFactor</th>
+                  <th>BrandFactor</th>
+                  <th>Price(t)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {chartData.map((data, index) => (
+                  <tr key={index} className={selectedYear === data.year ? 'selected-row' : ''}>
+                    <td>{data.year}</td>
+                    <td>{data.leaseFactor.toFixed(4)}</td>
+                    <td>{data.ageFactor.toFixed(4)}</td>
+                    <td>{data.brandFactor.toFixed(4)}</td>
+                    <td className="price-cell">{fmtMoney(data.finalPrice, 'USD')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="modal-actions">
+          <button onClick={onClose} className="btn">{t.close}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===== КОМПОНЕНТ КАТАЛОГА =====
+function CatalogManager({ 
+  catalog, 
+  setCatalog, 
+  t, 
+  lang, 
+  fmtMoney,
+  showAddProjectModal,
+  setShowAddProjectModal,
+  showAddVillaModal,
+  setShowAddVillaModal,
+  editingProject,
+  setEditingProject,
+  newProjectForm,
+  setNewProjectForm,
+  newVillaForm,
+  setNewVillaForm,
+  addProject,
+  saveProject,
+  addVilla,
+  saveVilla
+}) {
+  // ... existing code ...
+<｜tool▁call▁end｜><｜tool▁calls▁end｜>
+  // ... existing code ...
+
+// ===== КОМПОНЕНТ КАТАЛОГА =====
 function CatalogManager({ 
   catalog, 
   setCatalog, 
@@ -1692,8 +1998,6 @@ function CatalogManager({
       reader.readAsText(file);
     }
   };
-
-  // ... existing code ...
 
   return (
     <div className="catalog-section">
@@ -1847,6 +2151,11 @@ function CatalogManager({
                       <span className="label">{t.rentalPriceIndex}:</span>
                       <span className="value">{villa.rentalPriceIndexPct || 5}%</span>
                     </div>
+                    {/* НОВОЕ ПОЛЕ: Срок лизинга */}
+                    <div className="detail-row">
+                      <span className="label">Срок лизинга:</span>
+                      <span className="value">{villa.leaseTotalYears || 30} {t.years}</span>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -1892,3 +2201,4 @@ function CatalogManager({
 // ===== РЕНДЕРИНГ ПРИЛОЖЕНИЯ =====
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
+            
