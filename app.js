@@ -1,4 +1,4 @@
-// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С ЛИЗХОЛДОМ, ИНДЕКСАЦИЕЙ И ЦЕНООБРАЗОВАНИЕМ) - ПОЛНОСТЬЮ ОБНОВЛЕННАЯ ВЕРСИЯ =====
+// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С ЛИЗХОЛДОМ, ИНДЕКСАЦИЕЙ И ЦЕНООБРАЗОВАНИЕМ) - ПОЛНОСТЬЮ ИСПРАВЛЕННАЯ ВЕРСИЯ =====
 
 const { useState, useEffect, useMemo, useRef } = React;
 
@@ -125,7 +125,9 @@ function App() {
   const [modalOpen, setModalOpen] = useState(false);
   const [showAddProjectModal, setShowAddProjectModal] = useState(false);
   const [showAddVillaModal, setShowAddVillaModal] = useState(false);
+  const [showEditVillaModal, setShowEditVillaModal] = useState(false); // НОВОЕ: модальное окно редактирования
   const [editingProject, setEditingProject] = useState(null);
+  const [editingVilla, setEditingVilla] = useState(null); // НОВОЕ: редактируемая вилла
   const [newProjectForm, setNewProjectForm] = useState({
     projectId: '',
     projectName: '',
@@ -186,6 +188,7 @@ function App() {
       catalogTitle: 'Каталог проектов и вилл (редактор)',
       addProject: 'Добавить проект',
       addVilla: 'Добавить виллу',
+      editVilla: 'Редактировать виллу', // НОВОЕ
       importJSON: 'Импорт JSON',
       exportJSON: 'Экспорт JSON',
       selectFromCatalog: 'Выбор из каталога',
@@ -256,7 +259,12 @@ function App() {
       months: 'месяцев',
       rentalIncomeChart: 'График общей доходности от сдачи в аренду',
       totalIncome: 'Общий доход за год',
-      cumulativeIncome: 'Накопительный доход'
+      cumulativeIncome: 'Накопительный доход',
+      // НОВЫЕ: переводы для параметров ценообразования
+      pricingParams: 'Параметры ценообразования',
+      currentFactors: 'Текущие коэффициенты',
+      totalMultiplier: 'Общий множитель цены',
+      priceChange: 'Изменение цены'
     },
     en: {
       title: 'Arconique / Installments Calculator',
@@ -299,6 +307,7 @@ function App() {
       catalogTitle: 'Projects & Villas Catalog (editor)',
       addProject: 'Add project',
       addVilla: 'Add villa',
+      editVilla: 'Edit villa', // НОВОЕ
       importJSON: 'Import JSON',
       exportJSON: 'Export JSON',
       selectFromCatalog: 'Select from catalog',
@@ -369,7 +378,12 @@ function App() {
       months: 'months',
       rentalIncomeChart: 'Chart of total rental income',
       totalIncome: 'Total income per year',
-      cumulativeIncome: 'Cumulative income'
+      cumulativeIncome: 'Cumulative income',
+      // НОВЫЕ: переводы для параметров ценообразования
+      pricingParams: 'Pricing Parameters',
+      currentFactors: 'Current Factors',
+      totalMultiplier: 'Total Price Multiplier',
+      priceChange: 'Price Change'
     }
   };
 
@@ -515,11 +529,12 @@ function App() {
     }
   };
 
+  // ИСПРАВЛЕНО: используем startMonth вместо new Date()
   const calculateVillaPrice = (villa, yearOffset) => {
     try {
       if (!villa || !villa.leaseholdEndDate) return 0;
       
-      const totalYears = Math.ceil((villa.leaseholdEndDate - new Date()) / (365 * 24 * 60 * 60 * 1000));
+      const totalYears = Math.ceil((villa.leaseholdEndDate - startMonth) / (365 * 24 * 60 * 60 * 1000));
       const basePrice = villa.baseUSD;
       
       const leaseF = leaseFactor(yearOffset, totalYears, pricingConfig.leaseAlpha);
@@ -534,12 +549,12 @@ function App() {
     }
   };
 
-  // ОБНОВЛЕНО: generatePricingData теперь возвращает правильные данные
+  // ИСПРАВЛЕНО: generatePricingData теперь возвращает правильные данные и использует startMonth
   const generatePricingData = (villa) => {
     try {
       if (!villa || !villa.leaseholdEndDate) return [];
       
-      const totalYears = Math.ceil((villa.leaseholdEndDate - new Date()) / (365 * 24 * 60 * 60 * 1000));
+      const totalYears = Math.ceil((villa.leaseholdEndDate - startMonth) / (365 * 24 * 60 * 60 * 1000));
       const data = [];
       
       for (let year = 0; year <= Math.min(totalYears, 20); year++) {
@@ -622,6 +637,13 @@ function App() {
     setShowAddVillaModal(true);
   };
 
+  // НОВАЯ ФУНКЦИЯ: Редактирование виллы
+  const editVilla = (villa, projectId) => {
+    setEditingVilla(villa);
+    setEditingProject(projectId);
+    setShowEditVillaModal(true);
+  };
+
   const saveVilla = () => {
     if (!newVillaForm.name) {
       alert(t.villaNameRequired);
@@ -669,6 +691,26 @@ function App() {
       dailyRateUSD: 150,
       rentalPriceIndexPct: 5
     });
+  };
+
+  // НОВАЯ ФУНКЦИЯ: Сохранение отредактированной виллы
+  const saveEditedVilla = () => {
+    if (!editingVilla || !editingProject) return;
+
+    setCatalog(prev => prev.map(p => 
+      p.projectId === editingProject 
+        ? { 
+            ...p, 
+            villas: p.villas.map(v => 
+              v.villaId === editingVilla.villaId ? editingVilla : v
+            )
+          }
+        : p
+    ));
+
+    setShowEditVillaModal(false);
+    setEditingVilla(null);
+    setEditingProject(null);
   };
 
   // Расчет данных по строкам (ОБНОВЛЕН С НОВОЙ ЛОГИКОЙ АРЕНДЫ)
@@ -883,9 +925,8 @@ function App() {
       [t.rentalIncome]: c.rentalIncome || 0,
       [t.netPayment]: c.netPayment || 0,
       [t.remainingBalance]: c.balanceUSD
-    })));
-    
-    const ws2 = XLSX.utils.json_to_sheet(linesData.map(ld => ({
+    })))
+        const ws2 = XLSX.utils.json_to_sheet(linesData.map(ld => ({
       [t.project]: catalog.find(p => p.projectId === ld.line.projectId)?.projectName || ld.line.projectId,
       [t.villa]: ld.line.snapshot?.name,
       [t.qty]: ld.qty,
@@ -921,7 +962,7 @@ function App() {
         <meta charset="UTF-8">
         <title>${t.reportTitle}</title>
         <style>
-                    body { font-family: Arial, sans-serif; margin: 20px; }
+          body { font-family: Arial, sans-serif; margin: 20px; }
           .header { text-align: center; margin-bottom: 30px; }
           .header h1 { color: #333; margin: 0; }
           .header .date { color: #666; margin-top: 10px; }
@@ -1463,7 +1504,7 @@ function App() {
         </div>
       </div>
 
-      {/* 6. График общей доходности от сдачи в аренду - УПРОЩЕННЫЙ */}
+      {/* 6. График общей доходности от сдачи в аренду - ИСПРАВЛЕННЫЙ */}
       <div className="card">
         <h3>{t.rentalIncomeChart}</h3>
         <div className="rental-chart">
@@ -1503,13 +1544,14 @@ function App() {
       {/* 7. Параметры расчёта и график ценообразования - ОБНОВЛЕННЫЙ */}
       {lines.length > 0 && (
         <div className="card">
-          <h3>📊 Параметры расчёта</h3>
+          <h3>📊 {t.pricingParams}</h3>
           
-          {/* Параметры расчёта - РЕДАКТИРУЕМЫЕ в редакторском режиме */}
-          <div className="calculation-params-editable">
-            <div className="param-item-editable">
-              <label className="param-label-editable">Инфляция (g):</label>
-              {!isClient ? (
+          {/* Параметры расчёта - РЕДАКТИРУЕМЫЕ в редакторском режиме, ПОКАЗЫВАЕМЫЕ в клиентском */}
+          {!isClient ? (
+            // РЕДАКТОРСКИЙ РЕЖИМ: Поля для редактирования
+            <div className="calculation-params-editable">
+              <div className="param-item-editable">
+                <label className="param-label-editable">Инфляция (g):</label>
                 <input 
                   type="number" 
                   min="0" 
@@ -1522,14 +1564,10 @@ function App() {
                   }))}
                   className="param-input-editable"
                 />
-              ) : (
-                <span className="param-value-display">{pricingConfig.inflationRatePct}%/год</span>
-              )}
-            </div>
-            
-            <div className="param-item-editable">
-              <label className="param-label-editable">Старение (β):</label>
-              {!isClient ? (
+              </div>
+              
+              <div className="param-item-editable">
+                <label className="param-label-editable">Старение (β):</label>
                 <input 
                   type="number" 
                   min="0" 
@@ -1542,14 +1580,10 @@ function App() {
                   }))}
                   className="param-input-editable"
                 />
-              ) : (
-                <span className="param-value-display">{pricingConfig.agingBeta}/год</span>
-              )}
-            </div>
-            
-            <div className="param-item-editable">
-              <label className="param-label-editable">Lease Decay (α):</label>
-              {!isClient ? (
+              </div>
+              
+              <div className="param-item-editable">
+                <label className="param-label-editable">Lease Decay (α):</label>
                 <input 
                   type="number" 
                   min="0" 
@@ -1562,14 +1596,10 @@ function App() {
                   }))}
                   className="param-input-editable"
                 />
-              ) : (
-                <span className="param-value-display">{pricingConfig.leaseAlpha}</span>
-              )}
-            </div>
-            
-            <div className="param-item-editable">
-              <label className="param-label-editable">Brand Peak:</label>
-              {!isClient ? (
+              </div>
+              
+              <div className="param-item-editable">
+                <label className="param-label-editable">Brand Peak:</label>
                 <input 
                   type="number" 
                   min="0.5" 
@@ -1582,14 +1612,10 @@ function App() {
                   }))}
                   className="param-input-editable"
                 />
-              ) : (
-                <span className="param-value-display">{pricingConfig.brandPeak}x</span>
-              )}
-            </div>
-            
-            <div className="param-item-editable">
-              <label className="param-label-editable">Brand Ramp (годы):</label>
-              {!isClient ? (
+              </div>
+              
+              <div className="param-item-editable">
+                <label className="param-label-editable">Brand Ramp (годы):</label>
                 <input 
                   type="number" 
                   min="1" 
@@ -1602,14 +1628,10 @@ function App() {
                   }))}
                   className="param-input-editable"
                 />
-              ) : (
-                <span className="param-value-display">{pricingConfig.brandRampYears} лет</span>
-              )}
-            </div>
-            
-            <div className="param-item-editable">
-              <label className="param-label-editable">Brand Plateau (годы):</label>
-              {!isClient ? (
+              </div>
+              
+              <div className="param-item-editable">
+                <label className="param-label-editable">Brand Plateau (годы):</label>
                 <input 
                   type="number" 
                   min="0" 
@@ -1622,14 +1644,10 @@ function App() {
                   }))}
                   className="param-input-editable"
                 />
-              ) : (
-                <span className="param-value-display">{pricingConfig.brandPlateauYears} лет</span>
-              )}
-            </div>
-            
-            <div className="param-item-editable">
-              <label className="param-label-editable">Brand Decay (годы):</label>
-              {!isClient ? (
+              </div>
+              
+              <div className="param-item-editable">
+                <label className="param-label-editable">Brand Decay (годы):</label>
                 <input 
                   type="number" 
                   min="1" 
@@ -1642,14 +1660,10 @@ function App() {
                   }))}
                   className="param-input-editable"
                 />
-              ) : (
-                <span className="param-value-display">{pricingConfig.brandDecayYears} лет</span>
-              )}
-            </div>
-            
-            <div className="param-item-editable">
-              <label className="param-label-editable">Brand Tail:</label>
-              {!isClient ? (
+              </div>
+              
+              <div className="param-item-editable">
+                <label className="param-label-editable">Brand Tail:</label>
                 <input 
                   type="number" 
                   min="0.1" 
@@ -1662,11 +1676,65 @@ function App() {
                   }))}
                   className="param-input-editable"
                 />
-              ) : (
-                <span className="param-value-display">{pricingConfig.brandTail}x</span>
-              )}
+              </div>
             </div>
-          </div>
+          ) : (
+            // КЛИЕНТСКИЙ РЕЖИМ: Показываем просчитанные коэффициенты
+            <div className="current-factors-display">
+              <h4>{t.currentFactors}</h4>
+              <div className="factors-grid">
+                {(() => {
+                  const selectedVilla = catalog
+                    .flatMap(p => p.villas)
+                    .find(v => v.villaId === lines[0]?.villaId);
+                  
+                  if (!selectedVilla || !selectedVilla.leaseholdEndDate) return null;
+                  
+                  const currentYear = 0; // Текущий год
+                  const totalYears = Math.ceil((selectedVilla.leaseholdEndDate - startMonth) / (365 * 24 * 60 * 60 * 1000));
+                  
+                  const leaseF = leaseFactor(currentYear, totalYears, pricingConfig.leaseAlpha);
+                  const ageF = ageFactor(currentYear, pricingConfig.agingBeta);
+                  const brandF = brandFactor(currentYear, pricingConfig);
+                  const inflationF = Math.pow(1 + pricingConfig.inflationRatePct / 100, currentYear);
+                  const totalMultiplier = leaseF * ageF * brandF * inflationF;
+                  
+                  return (
+                    <>
+                      <div className="factor-item">
+                        <span className="factor-label">Lease Factor:</span>
+                        <span className="factor-value">{leaseF.toFixed(3)}</span>
+                      </div>
+                      <div className="factor-item">
+                        <span className="factor-label">Age Factor:</span>
+                        <span className="factor-value">{ageF.toFixed(3)}</span>
+                      </div>
+                      <div className="factor-item">
+                        <span className="factor-label">Brand Factor:</span>
+                        <span className="factor-value">{brandF.toFixed(3)}</span>
+                      </div>
+                      <div className="factor-item">
+                        <span className="factor-label">Inflation Factor:</span>
+                        <span className="factor-value">{inflationF.toFixed(3)}</span>
+                      </div>
+                      <div className="factor-item total">
+                        <span className="factor-label">{t.totalMultiplier}:</span>
+                        <span className="factor-value">{totalMultiplier.toFixed(3)}</span>
+                      </div>
+                      <div className="factor-item price">
+                        <span className="factor-label">Базовая цена:</span>
+                        <span className="factor-value">{fmtMoney(selectedVilla.baseUSD)}</span>
+                      </div>
+                      <div className="factor-item price">
+                        <span className="factor-label">Текущая цена:</span>
+                        <span className="factor-value">{fmtMoney(selectedVilla.baseUSD * totalMultiplier)}</span>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
           
           {/* График ценообразования - ТОЛЬКО Final Price */}
           <div className="pricing-chart-container">
@@ -1783,8 +1851,12 @@ function App() {
             setShowAddProjectModal={setShowAddProjectModal}
             showAddVillaModal={showAddVillaModal}
             setShowAddVillaModal={setShowAddVillaModal}
+            showEditVillaModal={showEditVillaModal}
+            setShowEditVillaModal={setShowEditVillaModal}
             editingProject={editingProject}
             setEditingProject={setEditingProject}
+            editingVilla={editingVilla}
+            setEditingVilla={setEditingVilla}
             newProjectForm={newProjectForm}
             setNewProjectForm={setNewProjectForm}
             newVillaForm={newVillaForm}
@@ -1793,6 +1865,8 @@ function App() {
             saveProject={saveProject}
             addVilla={addVilla}
             saveVilla={saveVilla}
+            editVilla={editVilla}
+            saveEditedVilla={saveEditedVilla}
           />
         </div>
       )}
@@ -1846,10 +1920,11 @@ function App() {
         </div>
       )}
 
+      {/* УПРОЩЕННОЕ модальное окно "Добавить виллу" */}
       {showAddVillaModal && (
         <div className="modal-overlay" onClick={() => setShowAddVillaModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3>{t.addVilla}</h3>
+          <div className="modal-content compact" onClick={e => e.stopPropagation()}>
+                                <h3>{t.addVilla}</h3>
             <div className="form-group">
               <label>{t.villaName}:</label>
               <input 
@@ -1927,6 +2002,82 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* НОВОЕ модальное окно "Редактировать виллу" */}
+      {showEditVillaModal && editingVilla && (
+        <div className="modal-overlay" onClick={() => setShowEditVillaModal(false)}>
+          <div className="modal-content compact" onClick={e => e.stopPropagation()}>
+            <h3>{t.editVilla}</h3>
+            <div className="form-group">
+              <label>{t.villaName}:</label>
+              <input 
+                type="text" 
+                value={editingVilla.name} 
+                onChange={e => setEditingVilla(prev => ({...prev, name: e.target.value}))}
+                className="input"
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.villaArea}:</label>
+              <input 
+                type="number" 
+                value={editingVilla.area} 
+                onChange={e => setEditingVilla(prev => ({...prev, area: +e.target.value}))}
+                className="input"
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.villaPpsm}:</label>
+              <input 
+                type="number" 
+                value={editingVilla.ppsm} 
+                onChange={e => setEditingVilla(prev => ({...prev, ppsm: +e.target.value}))}
+                className="input"
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.villaBasePrice}:</label>
+              <input 
+                type="number" 
+                value={editingVilla.baseUSD} 
+                onChange={e => setEditingVilla(prev => ({...prev, baseUSD: +e.target.value}))}
+                className="input"
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.leaseholdEndDate}:</label>
+              <input 
+                type="date" 
+                value={editingVilla.leaseholdEndDate ? editingVilla.leaseholdEndDate.toISOString().split('T')[0] : ''} 
+                onChange={e => setEditingVilla(prev => ({...prev, leaseholdEndDate: new Date(e.target.value)}))}
+                className="input"
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.dailyRate}:</label>
+              <input 
+                type="number" 
+                value={editingVilla.dailyRateUSD || 150} 
+                onChange={e => setEditingVilla(prev => ({...prev, dailyRateUSD: +e.target.value}))}
+                className="input"
+              />
+            </div>
+            <div className="form-group">
+              <label>{t.rentalPriceIndex}:</label>
+              <input 
+                type="number" 
+                value={editingVilla.rentalPriceIndexPct || 5} 
+                onChange={e => setEditingVilla(prev => ({...prev, rentalPriceIndexPct: +e.target.value}))}
+                className="input"
+              />
+            </div>
+            <div className="modal-actions">
+              <button onClick={saveEditedVilla} className="btn primary">{t.save}</button>
+              <button onClick={() => setShowEditVillaModal(false)} className="btn">{t.cancel}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -1942,8 +2093,12 @@ function CatalogManager({
   setShowAddProjectModal,
   showAddVillaModal,
   setShowAddVillaModal,
+  showEditVillaModal,
+  setShowEditVillaModal,
   editingProject,
   setEditingProject,
+  editingVilla,
+  setEditingVilla,
   newProjectForm,
   setNewProjectForm,
   newVillaForm,
@@ -1951,9 +2106,11 @@ function CatalogManager({
   addProject,
   saveProject,
   addVilla,
-  saveVilla
+  saveVilla,
+  editVilla,
+  saveEditedVilla
 }) {
-    const deleteProject = (projectId) => {
+  const deleteProject = (projectId) => {
     if (confirm(t.deleteProjectConfirm)) {
       setCatalog(prev => prev.filter(p => p.projectId !== projectId));
     }
@@ -2060,7 +2217,7 @@ function CatalogManager({
                     <h4>{villa.name}</h4>
                     <div className="villa-actions">
                       <button 
-                        onClick={() => setNewVillaForm(villa)} 
+                        onClick={() => editVilla(villa, project.projectId)} 
                         className="btn small"
                       >
                         ✏️
@@ -2150,3 +2307,4 @@ function CatalogManager({
 // ===== РЕНДЕРИНГ ПРИЛОЖЕНИЯ =====
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
+            
