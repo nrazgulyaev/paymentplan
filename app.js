@@ -1,4 +1,4 @@
-// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С ЛИЗХОЛДОМ, ИНДЕКСАЦИЕЙ И ЦЕНООБРАЗОВАНИЕМ) =====
+// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С ЛИЗХОЛДОМ, ИНДЕКСАЦИЕЙ И ЦЕНООБРАЗОВАНИЕМ) - ИСПРАВЛЕННАЯ ВЕРСИЯ =====
 
 const { useState, useEffect, useMemo, useRef } = React;
 
@@ -141,7 +141,7 @@ function App() {
   // Состояние для выбора проекта и виллы
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [selectedVillaId, setSelectedVillaId] = useState('');
-  // ОБНОВЛЕНО: Переводы с новыми полями для ценообразования
+    // ОБНОВЛЕНО: Переводы с новыми полями для ценообразования
   const T = {
     ru: {
       title: 'Arconique / Калькулятор рассрочки для любимых клиентов',
@@ -152,7 +152,7 @@ function App() {
       handoverMonth: 'Месяц получения ключей',
       globalTerm: 'Глобальный срок post‑handover (6–24 мес)',
       globalRate: 'Глобальная ставка, %/мес',
-      clientTerm: 'Срок post‑handover (мес)',
+      clientTerm: 'Срок post-handover (мес)',
       startMonth: 'Начальный месяц',
       stagesTitle: 'Базовая рассрочка',
       stage: 'Этап',
@@ -376,7 +376,8 @@ function App() {
   };
   
   const t = T[lang];
-    // Форматирование месяца для кэшфлоу (ВОССТАНОВЛЕНО СТАРОЕ)
+
+  // Форматирование месяца для кэшфлоу (ВОССТАНОВЛЕНО СТАРОЕ)
   const formatMonth = (monthOffset) => {
     const date = new Date(startMonth);
     date.setMonth(date.getMonth() + monthOffset);
@@ -444,9 +445,9 @@ function App() {
     }
   };
 
-  // Функция расчета цены виллы в определенном году
+  // ИСПРАВЛЕННАЯ ФУНКЦИЯ: Расчет цены виллы в определенном году
   const calculateVillaPrice = (villa, yearOffset) => {
-    if (!villa || !villa.leaseholdEndDate) return 0;
+    if (!villa || !villa.leaseholdEndDate || !villa.baseUSD) return 0;
     
     const P0 = villa.baseUSD;
     const T = getCleanLeaseholdTerm(villa.leaseholdEndDate).years;
@@ -454,35 +455,49 @@ function App() {
     const alpha = pricingConfig.leaseAlpha;
     const beta = pricingConfig.agingBeta;
     
-    if (yearOffset >= T) return 0;
+    if (yearOffset >= T || T <= 0) return 0;
     
-    const inflationFactor = Math.pow(1 + g, yearOffset);
-    const leaseFactorValue = leaseFactor(yearOffset, T, alpha);
-    const ageFactorValue = ageFactor(yearOffset, beta);
-    const brandFactorValue = brandFactor(yearOffset, pricingConfig);
-    
-    return P0 * inflationFactor * leaseFactorValue * ageFactorValue * brandFactorValue;
+    try {
+      const inflationFactor = Math.pow(1 + g, yearOffset);
+      const leaseFactorValue = leaseFactor(yearOffset, T, alpha);
+      const ageFactorValue = ageFactor(yearOffset, beta);
+      const brandFactorValue = brandFactor(yearOffset, pricingConfig);
+      
+      const result = P0 * inflationFactor * leaseFactorValue * ageFactorValue * brandFactorValue;
+      return isNaN(result) ? 0 : result;
+    } catch (error) {
+      console.error('Ошибка расчета цены виллы:', error);
+      return 0;
+    }
   };
 
-  // Функция генерации данных для графика ценообразования
+  // ИСПРАВЛЕННАЯ ФУНКЦИЯ: Генерация данных для графика ценообразования
   const generatePricingData = (villa) => {
-    if (!villa || !villa.leaseholdEndDate) return [];
+    if (!villa || !villa.leaseholdEndDate || !villa.baseUSD) return [];
     
     const T = getCleanLeaseholdTerm(villa.leaseholdEndDate).years;
+    if (T <= 0) return [];
+    
     const data = [];
     
-    for (let year = 0; year <= T; year++) {
-      const marketPrice = villa.baseUSD * Math.pow(1 + pricingConfig.inflationRatePct / 100, year);
-      const finalPrice = calculateVillaPrice(villa, year);
-      
-      data.push({
-        year,
-        marketPrice,
-        finalPrice,
-        leaseFactor: leaseFactor(year, T, pricingConfig.leaseAlpha),
-        ageFactor: ageFactor(year, pricingConfig.agingBeta),
-        brandFactor: brandFactor(year, pricingConfig)
-      });
+    try {
+      for (let year = 0; year <= T; year++) {
+        const marketPrice = villa.baseUSD * Math.pow(1 + pricingConfig.inflationRatePct / 100, year);
+        const finalPrice = calculateVillaPrice(villa, year);
+        
+        if (!isNaN(marketPrice) && !isNaN(finalPrice)) {
+          data.push({
+            year,
+            marketPrice,
+            finalPrice,
+            leaseFactor: leaseFactor(year, T, pricingConfig.leaseAlpha),
+            ageFactor: ageFactor(year, pricingConfig.agingBeta),
+            brandFactor: brandFactor(year, pricingConfig)
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка генерации данных ценообразования:', error);
     }
     
     return data;
@@ -528,7 +543,8 @@ function App() {
     const investment = villa.baseUSD;
     return investment / monthlyIncome / 12; // в годах
   };
-    // Функции для работы с проектами (ВОССТАНОВЛЕНЫ СТАРЫЕ)
+
+  // Функции для работы с проектами (ВОССТАНОВЛЕНЫ СТАРЫЕ)
   const addProject = () => {
     setNewProjectForm({
       projectId: '',
@@ -715,12 +731,12 @@ function App() {
     }
   };
 
-    // Расчет проекта (ОБНОВЛЕН С НОВОЙ ЛОГИКОЙ АРЕНДЫ С ИНДЕКСАЦИЕЙ)
+  // ИСПРАВЛЕННЫЙ РАСЧЕТ ПРОЕКТА: Добавлена проверка на undefined
   const project = useMemo(() => {
     const totals = {
       baseUSD: (linesData || []).reduce((s, x) => s + x.base, 0),
-    preUSD: (linesData || []).reduce((s, x) => s + x.preTotal, 0),
-    finalUSD: (linesData || []).reduce((s, x) => s + x.lineTotal, 0),
+      preUSD: (linesData || []).reduce((s, x) => s + x.preTotal, 0),
+      finalUSD: (linesData || []).reduce((s, x) => s + x.lineTotal, 0),
     };
     totals.interestUSD = totals.finalUSD - totals.baseUSD;
     totals.afterUSD = totals.finalUSD - totals.preUSD;
@@ -743,7 +759,7 @@ function App() {
     });
 
     // Post-handover платежи
-    linesData.forEach(line => {
+    (linesData || []).forEach(line => {
       if (line.postTotal > 0) {
         const monthlyPayment = line.postTotal / line.months;
         for (let i = 0; i < line.months; i++) {
@@ -754,7 +770,7 @@ function App() {
     });
 
     // НОВАЯ ЛОГИКА: Арендный доход с индексацией
-    linesData.forEach(line => {
+    (linesData || []).forEach(line => {
       if (line.dailyRateUSD > 0) {
         // Расчет арендного дохода по месяцам
         for (let month = handoverMonth; month < handoverMonth + 60; month++) { // 5 лет прогноза
@@ -911,7 +927,7 @@ function App() {
     html2pdf().from(pdfContent).save('cashflow-report.pdf');
   };
 
-    // Функция переключения языка
+  // Функция переключения языка
   const toggleLang = () => {
     setLang(prev => prev === 'ru' ? 'en' : 'ru');
   };
@@ -987,7 +1003,7 @@ function App() {
             />
           </div>
           
-          <div className="field">
+                   <div className="field">
             <label>{t.globalTerm}</label>
             <input 
               type="number" 
@@ -1519,7 +1535,7 @@ function App() {
                 </div>
               )}
               
-              {/* Таблица факторов */}
+              {/* ИСПРАВЛЕННАЯ Таблица факторов */}
               {lines[0] && (
                 <div className="factors-table-container">
                   <h4>�� {t.tableTitle}</h4>
@@ -1535,15 +1551,18 @@ function App() {
                         </tr>
                       </thead>
                       <tbody>
-                        {generatePricingData(lines[0]).slice(0, 10).map((data, index) => (
-                          <tr key={index}>
-                            <td>{data.year}</td>
-                            <td>{data.leaseFactor.toFixed(3)}</td>
-                            <td>{data.ageFactor.toFixed(3)}</td>
-                            <td>{data.brandFactor.toFixed(3)}</td>
-                            <td className="price-cell">${data.finalPrice.toLocaleString()}</td>
-                          </tr>
-                        ))}
+                        {lines[0] && lines[0].leaseholdEndDate ? 
+                          generatePricingData(lines[0]).slice(0, 10).map((data, index) => (
+                            <tr key={index}>
+                              <td>{data.year}</td>
+                              <td>{data.leaseFactor.toFixed(3)}</td>
+                              <td>{data.ageFactor.toFixed(3)}</td>
+                              <td>{data.brandFactor.toFixed(3)}</td>
+                              <td className="price-cell">${data.finalPrice.toLocaleString()}</td>
+                            </tr>
+                          )) : 
+                          <tr><td colSpan="5">Выберите виллу с лизхолдом для отображения данных</td></tr>
+                        }
                       </tbody>
                     </table>
                   </div>
@@ -1816,7 +1835,7 @@ function App() {
         </div>
       )}
 
-      {/* Модальное окно конфигурации ценообразования */}
+      {/* ИСПРАВЛЕННОЕ Модальное окно конфигурации ценообразования */}
       {showPricingConfigModal && (
         <div className="modal-overlay" onClick={() => setShowPricingConfigModal(false)}>
           <div className="modal-content pricing-config-modal" onClick={e => e.stopPropagation()}>
@@ -1832,9 +1851,7 @@ function App() {
                 <div className="pricing-section">
                   <h4>�� Основные параметры</h4>
                   <div className="form-row">
-
-
-                                      <div className="form-group">
+                    <div className="form-group">
                       <label>{t.inflationRate}</label>
                       <input 
                         type="number" 
@@ -1993,7 +2010,7 @@ function App() {
         </div>
       )}
 
-      {/* Модальное окно графика ценообразования для виллы */}
+      {/* ИСПРАВЛЕННОЕ Модальное окно графика ценообразования для виллы */}
       {showVillaPricingModal && (
         <div className="modal-overlay" onClick={() => setShowVillaPricingModal(false)}>
           <div className="modal-content villa-pricing-modal" onClick={e => e.stopPropagation()}>
@@ -2067,7 +2084,7 @@ function App() {
                 </div>
               </div>
               
-              {/* Таблица факторов */}
+              {/* ИСПРАВЛЕННАЯ Таблица факторов */}
               <div className="pricing-table-section">
                 <h4>�� {t.tableTitle}</h4>
                 <div className="pricing-table-scroll">
@@ -2083,17 +2100,21 @@ function App() {
                       </tr>
                     </thead>
                     <tbody>
-                      {linesData.find(l => l.villaId === selectedVillaId) && 
-                       generatePricingData(linesData.find(l => l.villaId === selectedVillaId)).map((data, index) => (
-                        <tr key={index} className={index === 0 ? 'selected-row' : ''}>
-                          <td>{data.year}</td>
-                          <td>{data.leaseFactor.toFixed(3)}</td>
-                          <td>{data.ageFactor.toFixed(3)}</td>
-                          <td>{data.brandFactor.toFixed(3)}</td>
-                          <td className="price-cell">${data.marketPrice.toLocaleString()}</td>
-                          <td className="price-cell">${data.finalPrice.toLocaleString()}</td>
-                        </tr>
-                      ))}
+                      {(() => {
+                        const selectedVilla = linesData.find(l => l.villaId === selectedVillaId);
+                        return selectedVilla && selectedVilla.leaseholdEndDate ? 
+                          generatePricingData(selectedVilla).map((data, index) => (
+                            <tr key={index} className={index === 0 ? 'selected-row' : ''}>
+                              <td>{data.year}</td>
+                              <td>{data.leaseFactor.toFixed(3)}</td>
+                              <td>{data.ageFactor.toFixed(3)}</td>
+                              <td>{data.brandFactor.toFixed(3)}</td>
+                              <td className="price-cell">${data.marketPrice.toLocaleString()}</td>
+                              <td className="price-cell">${data.finalPrice.toLocaleString()}</td>
+                            </tr>
+                          )) : 
+                          <tr><td colSpan="6">Вилла не выбрана или не имеет лизхолда</td></tr>
+                      })()}
                     </tbody>
                   </table>
                 </div>
@@ -2113,4 +2134,3 @@ function App() {
 
 // Рендеринг приложения
 ReactDOM.render(<App />, document.getElementById('root'));
-
