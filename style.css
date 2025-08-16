@@ -2902,3 +2902,462 @@ h1 {
 .pricing-table-scroll::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* ===== СТИЛИ ДЛЯ ПАРАМЕТРОВ ЦЕНООБРАЗОВАНИЯ ===== */
+
+/* Компактная сетка параметров */
+.pricing-grid-compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.pricing-section-compact {
+  background: var(--card-hover);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  text-align: center;
+}
+
+.pricing-label {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 6px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pricing-input {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-size: 12px;
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  transition: all var(--transition-fast);
+}
+
+.pricing-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--card-hover);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.pricing-input:hover {
+  border-color: var(--line-hover);
+  background: var(--card-hover);
+}
+
+/* ===== СТИЛИ ДЛЯ ПАРАМЕТРОВ РАСЧЁТА ===== */
+
+/* Компактные параметры расчёта */
+.calculation-params-compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--card-hover);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.param-item-compact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.param-label-compact {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 4px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.param-value-compact {
+  font-size: 14px;
+  color: var(--ink);
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+/* ===== СТИЛИ ДЛЯ ГРАФИКА ЦЕНООБРАЗОВАНИЯ ===== */
+
+.pricing-chart-container {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.pricing-chart-svg {
+  width: 100%;
+  height: 250px;
+  background: var(--card-hover);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+}
+
+.chart-legend-compact {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.legend-item-compact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.legend-color-compact {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+}
+
+.legend-color-compact.market {
+  background: #ef4444;
+  border-color: #dc2626;
+}
+
+.legend-color-compact.final {
+  background: #3b82f6;
+  border-color: #2563eb;
+}
+
+/* ===== СТИЛИ ДЛЯ ТАБЛИЦЫ ФАКТОРОВ ===== */
+
+.factors-table-container {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.factors-table-scroll {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.factors-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.factors-table th {
+  background: var(--card-hover);
+  padding: 10px 8px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.factors-table td {
+  padding: 8px;
+  text-align: center;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-secondary);
+}
+
+.factors-table tr:hover {
+  background: var(--card-hover);
+}
+
+.factors-table tr:hover td {
+  color: var(--ink);
+}
+
+/* ===== СТИЛИ ДЛЯ КАТАЛОГА ПРОЕКТОВ ===== */
+
+/* Улучшенные стили для проектов */
+.project-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  transition: all var(--transition-normal);
+}
+
+.project-card:hover {
+  background: var(--card-hover);
+  border-color: var(--line-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.project-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--line);
+}
+
+.project-header h3 {
+  margin: 0;
+  color: var(--accent);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.project-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+/* Кнопка добавления виллы внутри проекта */
+.add-villa-btn {
+  background: var(--success);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.add-villa-btn:hover {
+  background: var(--success-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ===== СТИЛИ ДЛЯ МОДАЛЬНЫХ ОКОН ===== */
+
+/* Улучшенные стили для модальных окон */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: var(--z-modal);
+  animation: fadeInScale 0.3s ease-out;
+}
+
+.modal-content {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 0;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+  animation: fadeInUp 0.4s ease-out 0.1s both;
+  position: relative;
+}
+
+.modal-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--accent), var(--success));
+}
+
+.modal-header {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+/* ===== СТИЛИ ДЛЯ ФОРМ ===== */
+
+.form-section {
+  margin-bottom: 24px;
+}
+
+.form-section h4 {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-section h4::before {
+  content: '';
+  width: 3px;
+  height: 16px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-group {
+  display: grid;
+  gap: 6px;
+}
+
+.form-group label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-group label::before {
+  content: '';
+  width: 3px;
+  height: 3px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  font-size: 14px;
+  transition: all var(--transition-fast);
+  backdrop-filter: blur(10px);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--card-hover);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  transform: translateY(-1px);
+}
+
+.form-group input:hover,
+.form-group select:hover,
+.form-group textarea:hover {
+  border-color: var(--line-hover);
+  background: var(--card-hover);
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  margin-top: 24px;
+}
+
+/* ===== АДАПТИВНОСТЬ ===== */
+
+@media (max-width: 768px) {
+  .pricing-grid-compact {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+  }
+  
+  .calculation-params-compact {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+    padding: 12px;
+  }
+  
+  .pricing-chart-container {
+    padding: 16px;
+  }
+  
+  .pricing-chart-svg {
+    height: 200px;
+  }
+  
+  .chart-legend-compact {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+  
+  .factors-table {
+    font-size: 11px;
+  }
+  
+  .factors-table th,
+  .factors-table td {
+    padding: 6px 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pricing-grid-compact {
+    grid-template-columns: 1fr;
+  }
+  
+  .calculation-params-compact {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-content {
+    margin: 10px;
+    max-width: calc(100vw - 20px);
+  }
+}
