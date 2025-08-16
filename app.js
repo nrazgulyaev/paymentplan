@@ -141,7 +141,8 @@ function App() {
   // Состояние для выбора проекта и виллы
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [selectedVillaId, setSelectedVillaId] = useState('');
-    // ОБНОВЛЕНО: Переводы с новыми полями для ценообразования
+
+  // ОБНОВЛЕНО: Переводы с новыми полями для ценообразования
   const T = {
     ru: {
       title: 'Arconique / Калькулятор рассрочки для любимых клиентов',
@@ -445,9 +446,9 @@ function App() {
     }
   };
 
-  // ИСПРАВЛЕННАЯ ФУНКЦИЯ: Расчет цены виллы в определенном году
+  // Функция расчета цены виллы в определенном году
   const calculateVillaPrice = (villa, yearOffset) => {
-    if (!villa || !villa.leaseholdEndDate || !villa.baseUSD) return 0;
+    if (!villa || !villa.leaseholdEndDate) return 0;
     
     const P0 = villa.baseUSD;
     const T = getCleanLeaseholdTerm(villa.leaseholdEndDate).years;
@@ -455,49 +456,35 @@ function App() {
     const alpha = pricingConfig.leaseAlpha;
     const beta = pricingConfig.agingBeta;
     
-    if (yearOffset >= T || T <= 0) return 0;
+    if (yearOffset >= T) return 0;
     
-    try {
-      const inflationFactor = Math.pow(1 + g, yearOffset);
-      const leaseFactorValue = leaseFactor(yearOffset, T, alpha);
-      const ageFactorValue = ageFactor(yearOffset, beta);
-      const brandFactorValue = brandFactor(yearOffset, pricingConfig);
-      
-      const result = P0 * inflationFactor * leaseFactorValue * ageFactorValue * brandFactorValue;
-      return isNaN(result) ? 0 : result;
-    } catch (error) {
-      console.error('Ошибка расчета цены виллы:', error);
-      return 0;
-    }
+    const inflationFactor = Math.pow(1 + g, yearOffset);
+    const leaseFactorValue = leaseFactor(yearOffset, T, alpha);
+    const ageFactorValue = ageFactor(yearOffset, beta);
+    const brandFactorValue = brandFactor(yearOffset, pricingConfig);
+    
+    return P0 * inflationFactor * leaseFactorValue * ageFactorValue * brandFactorValue;
   };
 
-  // ИСПРАВЛЕННАЯ ФУНКЦИЯ: Генерация данных для графика ценообразования
+  // Функция генерации данных для графика ценообразования
   const generatePricingData = (villa) => {
-    if (!villa || !villa.leaseholdEndDate || !villa.baseUSD) return [];
+    if (!villa || !villa.leaseholdEndDate) return [];
     
     const T = getCleanLeaseholdTerm(villa.leaseholdEndDate).years;
-    if (T <= 0) return [];
-    
     const data = [];
     
-    try {
-      for (let year = 0; year <= T; year++) {
-        const marketPrice = villa.baseUSD * Math.pow(1 + pricingConfig.inflationRatePct / 100, year);
-        const finalPrice = calculateVillaPrice(villa, year);
-        
-        if (!isNaN(marketPrice) && !isNaN(finalPrice)) {
-          data.push({
-            year,
-            marketPrice,
-            finalPrice,
-            leaseFactor: leaseFactor(year, T, pricingConfig.leaseAlpha),
-            ageFactor: ageFactor(year, pricingConfig.agingBeta),
-            brandFactor: brandFactor(year, pricingConfig)
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Ошибка генерации данных ценообразования:', error);
+    for (let year = 0; year <= T; year++) {
+      const marketPrice = villa.baseUSD * Math.pow(1 + pricingConfig.inflationRatePct / 100, year);
+      const finalPrice = calculateVillaPrice(villa, year);
+      
+      data.push({
+        year,
+        marketPrice,
+        finalPrice,
+        leaseFactor: leaseFactor(year, T, pricingConfig.leaseAlpha),
+        ageFactor: ageFactor(year, pricingConfig.agingBeta),
+        brandFactor: brandFactor(year, pricingConfig)
+      });
     }
     
     return data;
@@ -951,7 +938,7 @@ function App() {
           <h3>⚙️ {t.lang}</h3>
           <div className="card-actions">
             <button className="btn" onClick={toggleLang}>
-              {lang === 'ru' ? '🇺🇸 EN' : '��🇺 RU'}
+              {lang === 'ru' ? '🇺🇸 EN' : '🇺 RU'}
             </button>
             <button className="btn" onClick={toggleMode}>
               {isClient ? '🔓' : '🔒'}
@@ -1003,7 +990,7 @@ function App() {
             />
           </div>
           
-                   <div className="field">
+          <div className="field">
             <label>{t.globalTerm}</label>
             <input 
               type="number" 
@@ -1028,7 +1015,7 @@ function App() {
             />
           </div>
           
-          <div className="field">
+                   <div className="field">
             <label>{t.startMonth}</label>
             <input 
               type="date" 
@@ -2010,7 +1997,7 @@ function App() {
         </div>
       )}
 
-      {/* ИСПРАВЛЕННОЕ Модальное окно графика ценообразования для виллы */}
+      {/* Модальное окно графика ценообразования для виллы */}
       {showVillaPricingModal && (
         <div className="modal-overlay" onClick={() => setShowVillaPricingModal(false)}>
           <div className="modal-content villa-pricing-modal" onClick={e => e.stopPropagation()}>
@@ -2084,7 +2071,7 @@ function App() {
                 </div>
               </div>
               
-              {/* ИСПРАВЛЕННАЯ Таблица факторов */}
+              {/* Таблица факторов */}
               <div className="pricing-table-section">
                 <h4>�� {t.tableTitle}</h4>
                 <div className="pricing-table-scroll">
@@ -2134,3 +2121,4 @@ function App() {
 
 // Рендеринг приложения
 ReactDOM.render(<App />, document.getElementById('root'));
+
