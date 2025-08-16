@@ -1664,7 +1664,7 @@ function App() {
   </div>
 </div>
 
-{/* Таблица факторов - ИСПРАВЛЕНА */}
+{/* Таблица факторов - БЕЗ ОГРАНИЧЕНИЙ */}
 <div className="factors-table-container">
   <h4>Таблица факторов</h4>
   <div className="factors-table-scroll">
@@ -1685,7 +1685,8 @@ function App() {
             .flatMap(p => p.villas)
             .find(v => v.villaId === lines[0]?.villaId);
           return selectedVilla && selectedVilla.leaseholdEndDate ? 
-            generatePricingData(selectedVilla).slice(0, 10).map((data, index) => (
+            // УБРАЛ .slice(0, 10) - теперь показываются ВСЕ годы
+            generatePricingData(selectedVilla).map((data, index) => (
               <tr key={index}>
                 <td>{data.year}</td>
                 <td>{data.leaseFactor.toFixed(3)}</td>
