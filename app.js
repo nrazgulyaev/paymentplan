@@ -1,1418 +1,2128 @@
-// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С ЛИЗХОЛДОМ, ИНДЕКСАЦИЕЙ И ЦЕНООБРАЗОВАНИЕМ) - ПОЛНОСТЬЮ ИСПРАВЛЕННАЯ И ПРОВЕРЕННАЯ ВЕРСИЯ =====
+// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С ЛИЗХОЛДОМ, ИНДЕКСАЦИЕЙ И ЦЕНООБРАЗОВАНИЕМ) - ПОЛНОСТЬЮ РАБОЧАЯ ВЕРСИЯ =====
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import './styles.css';
+const { useState, useEffect, useMemo, useRef } = React;
+const { createRoot } = ReactDOM;
 
-// ===== ПЕРЕВОДЫ =====
-const T = {
-  // Основные
-  title: 'Arconique - Калькулятор рассрочки',
-  subtitle: 'Расчет рассрочки для вилл в Дубае',
-  
-  // Режимы
-  clientMode: 'Клиентский режим',
-  editorMode: 'Редактор',
-  switchToEditor: 'Переключиться в редактор',
-  switchToClient: 'Переключиться в клиентский режим',
-  
-  // Основные блоки
-  kpi: 'Ключевые показатели',
-  installmentPlan: 'План рассрочки',
-  cashflow: 'Денежный поток',
-  rentalIncome: 'Доход от аренды',
-  positionCalculation: 'Расчет позиции',
-  pricingFactors: 'Факторы ценообразования',
-  catalog: 'Каталог проектов и вилл',
-  
-  // KPI
-  totalCost: 'Общая стоимость',
-  downPayment: 'Первый взнос',
-  monthlyPayment: 'Ежемесячный платеж',
-  totalInterest: 'Общий процент',
-  totalPayments: 'Общие платежи',
-  
-  // Рассрочка
-  stage: 'Этап',
-  amount: 'Сумма',
-  date: 'Дата',
-  percentage: 'Процент',
-  
-  // Аренда
-  rentalIncomeChart: 'График общей доходности от сдачи в аренду',
-  yearlyIncome: 'Годовой доход',
-  cumulativeIncome: 'Накопительный доход',
-  
-  // Ценообразование
-  pricingParameters: 'Параметры ценообразования',
-  inflationRate: 'Инфляция (g)',
-  agingFactor: 'Старение (β)',
-  leaseDecay: 'Lease Decay (α)',
-  brandPeak: 'Brand Peak',
-  brandRamp: 'Brand Ramp (годы)',
-  brandPlateau: 'Brand Plateau (годы)',
-  brandDecay: 'Brand Decay (годы)',
-  brandTail: 'Brand Tail',
-  
-  // Расчет
-  priceDynamics: 'Динамика цены виллы',
-  factorsTable: 'Таблица факторов',
-  year: 'Год',
-  leaseFactor: 'Lease Factor',
-  ageFactor: 'Age Factor',
-  brandFactor: 'Brand Factor',
-  inflationFactor: 'Коэффициент инфляции',
-  finalPrice: 'Final Price',
-  
-  // Коэффициенты
-  currentCoefficients: 'Текущие коэффициенты',
-  overallMultiplier: 'Общий множитель',
-  
-  // Каталог
-  addProject: 'Добавить проект',
-  addVilla: 'Добавить виллу',
-  editVilla: 'Редактировать виллу',
-  deleteVilla: 'Удалить виллу',
-  deleteProject: 'Удалить проект',
-  
-  // Формы
-  projectName: 'Название проекта',
-  villaName: 'Название виллы',
-  area: 'Площадь (кв.м)',
-  ppsm: 'Цена за кв.м (USD)',
-  leaseholdEnd: 'Дата окончания лизинга',
-  dailyRate: 'Дневная ставка (USD)',
-  rentalIndex: 'Индекс аренды (%)',
-  
-  // Действия
-  save: 'Сохранить',
-  cancel: 'Отмена',
-  delete: 'Удалить',
-  export: 'Экспорт',
-  exportCSV: 'Экспорт CSV',
-  exportExcel: 'Экспорт Excel',
-  exportPDF: 'Экспорт PDF',
-  
-  // PIN
-  enterPin: 'Введите PIN для переключения в режим редактора',
-  pin: 'PIN',
-  submit: 'Подтвердить',
-  
-  // Время
-  years: 'Годы',
-  months: 'Месяцы',
-  current: 'Текущий'
-};
+// PIN для редакторского режима
+const PIN_CODE = '334346';
 
-// ===== ОСНОВНОЕ ПРИЛОЖЕНИЕ =====
+// Основной компонент приложения
 function App() {
-  // ===== СОСТОЯНИЕ =====
-  const [isEditor, setIsEditor] = useState(false);
-  const [showPinModal, setShowPinModal] = useState(false);
-  const [pin, setPin] = useState('');
+  const [lang, setLang] = useState('ru');
+  const [isClient, setIsClient] = useState(true); // По умолчанию клиентский режим
+  const [currency, setCurrency] = useState('USD');
+  const [idrPerUsd, setIdrPerUsd] = useState(16500);
+  const [eurPerUsd, setEurPerUsd] = useState(0.92);
+  const [handoverMonth, setHandoverMonth] = useState(12);
+  const [months, setMonths] = useState(12);
+  const [monthlyRatePct, setMonthlyRatePct] = useState(8.33);
+  const [startMonth, setStartMonth] = useState(new Date());
   
-  // Параметры ценообразования
+  // НОВЫЕ ПАРАМЕТРЫ ЦЕНООБРАЗОВАНИЯ
   const [pricingConfig, setPricingConfig] = useState({
-    inflationRate: 0.05,        // 5% годовая инфляция
-    leaseAlpha: 0.3,            // Параметр затухания лизинга
-    agingBeta: 0.02,            // Параметр старения
-    brandPeak: 1.2,             // Пик бренда
-    brandRamp: 3,               // Годы роста бренда
-    brandPlateau: 5,            // Годы плато бренда
-    brandDecay: 3,              // Годы затухания бренда
-    brandTail: 0.8              // Хвост бренда
+    inflationRatePct: 10,      // 10% годовой рост
+    leaseAlpha: 1,             // линейное убывание
+    agingBeta: 0.025,          // 2.5% в год
+    brandPeak: 1.2,            // пик бренда 120%
+    brandRampYears: 3,         // рост за 3 года
+    brandPlateauYears: 4,      // плато 4 года
+    brandDecayYears: 8,        // спад за 8 лет
+    brandTail: 1.0             // финальное значение 100%
   });
   
-  // Каталог проектов и вилл
+  // ОБНОВЛЕНО: Правильная структура каталога с проектами и виллами + ЛИЗХОЛД
   const [catalog, setCatalog] = useState([
     {
-      id: 1,
-      name: 'Palm Jumeirah',
+      projectId: 'ahao',
+      projectName: 'AHAO Gardens',
       villas: [
         {
-          id: 1,
-          name: 'Villa Marina',
-          area: 450,
-          ppsm: 2500,
-          leaseholdEndDate: '2099-12-31',
-          dailyRateUSD: 800,
-          rentalPriceIndexPct: 3.5
+          villaId: 'ahao-2br', 
+          name: '2BR Garden Villa', 
+          area: 100, 
+          ppsm: 2500, 
+          baseUSD: 250000,
+          // НОВЫЕ ПОЛЯ ДЛЯ ЛИЗХОЛДА И АРЕНДЫ:
+          leaseholdEndDate: new Date(2030, 11, 31), // 31 декабря 2030
+          dailyRateUSD: 150,
+          rentalPriceIndexPct: 5 // 5% в год
         },
         {
-          id: 2,
-          name: 'Villa Ocean',
-          area: 520,
-          ppsm: 2800,
-          leaseholdEndDate: '2099-12-31',
-          dailyRateUSD: 950,
-          rentalPriceIndexPct: 4.0
+          villaId: 'ahao-3br', 
+          name: '3BR Garden Villa', 
+          area: 130, 
+          ppsm: 2450, 
+          baseUSD: 318500,
+          leaseholdEndDate: new Date(2030, 11, 31),
+          dailyRateUSD: 180,
+          rentalPriceIndexPct: 5
         }
       ]
     },
     {
-      id: 2,
-      name: 'Downtown Dubai',
+      projectId: 'enso',
+      projectName: 'Enso Villas',
       villas: [
         {
-          id: 3,
-          name: 'Villa Skyline',
-          area: 380,
-          ppsm: 3200,
-          leaseholdEndDate: '2099-12-31',
-          dailyRateUSD: 1200,
-          rentalPriceIndexPct: 5.0
+          villaId: 'enso-2br', 
+          name: 'Enso 2BR', 
+          area: 100, 
+          ppsm: 2500, 
+          baseUSD: 250000,
+          leaseholdEndDate: new Date(2030, 11, 31),
+          dailyRateUSD: 150,
+          rentalPriceIndexPct: 5
+        },
+        {
+          villaId: 'enso-3br', 
+          name: 'Enso 3BR', 
+          area: 120, 
+          ppsm: 2700, 
+          baseUSD: 324000,
+          leaseholdEndDate: new Date(2030, 11, 31),
+          dailyRateUSD: 170,
+          rentalPriceIndexPct: 5
         }
       ]
     }
   ]);
   
-  // План рассрочки
+  // Правильная структура этапов рассрочки
   const [stages, setStages] = useState([
-    { id: 1, name: 'Бронирование', amount: 50000, date: '2024-01-15', percentage: 10 },
-    { id: 2, name: 'Фундамент', amount: 100000, date: '2024-03-15', percentage: 20 },
-    { id: 3, name: 'Стены', amount: 150000, date: '2024-06-15', percentage: 30 },
-    { id: 4, name: 'Отделка', amount: 100000, date: '2024-09-15', percentage: 20 },
-    { id: 5, name: 'Ключи', amount: 100000, date: '2024-12-15', percentage: 20 }
+    {id: 1, label: 'Договор', pct: 30, month: 0},
+    {id: 2, label: '50% готовности', pct: 30, month: 6},
+    {id: 3, label: '70% готовности', pct: 20, month: 9},
+    {id: 4, label: '90% готовности', pct: 15, month: 11},
+    {id: 5, label: 'Ключи', pct: 5, month: 12},
   ]);
   
-  // Выбранные позиции
   const [lines, setLines] = useState([
     {
       id: 1,
-      projectId: 1,
-      villaId: 1,
+      projectId: 'enso',
+      villaId: 'enso-2br',
+      qty: 1,
+      prePct: 70,
+      ownTerms: false,
+      months: null,
+      monthlyRatePct: null,
+      firstPostUSD: 0,
+      discountPct: 0,
+      // ОБНОВЛЕНО: Новые поля для аренды с индексацией
+      dailyRateUSD: 150, // Стоимость проживания в сутки (USD)
+      occupancyPct: 75,  // Средняя заполняемость за месяц (%)
+      rentalPriceIndexPct: 5, // Индексация цены аренды в год (%)
       snapshot: {
-        name: 'Villa Marina',
-        area: 450,
-        ppsm: 2500,
-        leaseholdEndDate: '2099-12-31',
-        dailyRateUSD: 800,
-        rentalPriceIndexPct: 3.5
+        name: 'Enso 2BR', 
+        area: 100, 
+        ppsm: 2500, 
+        baseUSD: 250000,
+        leaseholdEndDate: new Date(2030, 11, 31) // Дата окончания лизхолда
       }
     }
   ]);
-  
-  // Модальные окна
+
+  // Состояния для модальных окон
+  const [modalOpen, setModalOpen] = useState(false);
   const [showAddProjectModal, setShowAddProjectModal] = useState(false);
   const [showAddVillaModal, setShowAddVillaModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
-  
-  // Формы
-  const [newProjectForm, setNewProjectForm] = useState({ name: '' });
-  const [newVillaForm, setNewVillaForm] = useState({
-    name: '',
-    area: '',
-    ppsm: '',
-    leaseholdEndDate: '',
-    dailyRateUSD: '',
-    rentalPriceIndexPct: ''
+  const [newProjectForm, setNewProjectForm] = useState({
+    projectId: '',
+    projectName: '',
+    villas: []
   });
-  
-  // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
-  const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
-  const fmtMoney = (amount) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-  
-  // Функции ценообразования
-  const leaseFactor = (year, totalYears, alpha) => {
-    if (totalYears <= 0) return 0;
-    return Math.pow((totalYears - year) / totalYears, alpha);
-  };
-  
-  const ageFactor = (year, beta) => {
-    return Math.exp(-beta * year);
-  };
-  
-  const brandFactor = (year, config) => {
-    const { brandPeak, brandRamp, brandPlateau, brandDecay, brandTail } = config;
-    
-    if (year <= brandRamp) {
-      // Фаза роста
-      return 1 + (brandPeak - 1) * (year / brandRamp);
-    } else if (year <= brandRamp + brandPlateau) {
-      // Фаза плато
-      return brandPeak;
-    } else if (year <= brandRamp + brandPlateau + brandDecay) {
-      // Фаза затухания
-      const decayProgress = (year - brandRamp - brandPlateau) / brandDecay;
-      return brandPeak + (brandTail - brandPeak) * decayProgress;
-    } else {
-      // Хвост
-      return brandTail;
+  const [newVillaForm, setNewVillaForm] = useState({
+    villaId: '',
+    name: '',
+    area: 100,
+    ppsm: 2500,
+    baseUSD: 250000,
+    // НОВЫЕ ПОЛЯ ДЛЯ ЛИЗХОЛДА И АРЕНДЫ:
+    leaseholdEndDate: new Date(2030, 11, 31),
+    dailyRateUSD: 150,
+    rentalPriceIndexPct: 5
+  });
+
+  // ОБНОВЛЕНО: Переводы с новыми полями
+  const T = {
+    ru: {
+      title: 'Arconique / Калькулятор рассрочки для любимых клиентов',
+      lang: 'Язык интерфейса',
+      currencyDisplay: 'Валюта отображения',
+      idrRate: 'IDR за 1 USD',
+      eurRate: 'EUR за 1 USD',
+      handoverMonth: 'Месяц получения ключей',
+      globalTerm: 'Глобальный срок post‑handover (6–24 мес)',
+      globalRate: 'Глобальная ставка, %/мес',
+      clientTerm: 'Срок post‑handover (мес)',
+      startMonth: 'Начальный месяц',
+      stagesTitle: 'Базовая рассрочка',
+      stage: 'Этап',
+      percent: '%',
+      month: 'Месяц',
+      addStage: 'Добавить этап',
+      delete: 'Удалить',
+      villasTitle: 'Расчёт (позиции)',
+      project: 'Проект',
+      villa: 'Вилла',
+      qty: 'Кол-во',
+      area: 'м²',
+      ppsm: '$ / м²',
+      price: 'Базовая стоимость (USD)',
+      discount: 'Скидка, %',
+      prePct: 'До ключей, %',
+      months: 'Срок рассрочки, мес',
+      rate: 'Ставка, %/мес',
+      lineTotal: 'Итоговая стоимость',
+      addFromCatalog: 'Добавить из каталога',
+      cashflowTitle: 'Сводный кэшфлоу по месяцам',
+      exportCSV: 'Экспорт CSV',
+      exportXLSX: 'Экспорт Excel',
+      exportPDF: 'Сохранить в PDF',
+      lines: 'Выбрано вилл',
+      keys: 'Ключи через',
+      client: 'Клиент',
+      editor: 'Редактор',
+      catalogTitle: 'Каталог проектов и вилл (редактор)',
+      addProject: 'Добавить проект',
+      addVilla: 'Добавить виллу',
+      importJSON: 'Импорт JSON',
+      exportJSON: 'Экспорт JSON',
+      selectFromCatalog: 'Выбор из каталога',
+      search: 'Поиск',
+      areaFrom: 'м² от',
+      areaTo: 'м² до',
+      priceFrom: 'Цена от',
+      priceTo: 'Цена до',
+      sort: 'Сортировать',
+      byPrice: 'по цене',
+      byArea: 'по площади',
+      byName: 'по названию',
+      addSelected: 'Добавить выбранные',
+      cancel: 'Отмена',
+      save: 'Сохранить',
+      edit: 'Редактировать',
+      remove: 'Удалить',
+      projectName: 'Название проекта',
+      villaName: 'Название виллы',
+      villaArea: 'Площадь (м²)',
+      villaPpsm: 'Цена за м² ($)',
+      villaBasePrice: 'Базовая цена ($)',
+      projectNameRequired: 'Введите название проекта',
+      villaNameRequired: 'Введите название виллы',
+      // Дополнительные переводы
+      toggleToEditor: 'Переключиться в редактор',
+      toggleToClient: 'Переключиться в клиент',
+      enterPin: 'Введите PIN для входа в редакторский режим:',
+      editorActivated: 'Режим редактора активирован',
+      wrongPin: 'Неверный PIN',
+      switchedToClient: 'Переключено в клиентский режим',
+      stagesSum: 'Сумма этапов:',
+      notEnough: '— не хватает',
+      exceeds: '— превышает',
+      projectExists: 'Проект с таким ID уже существует',
+      villaExists: 'Вилла с таким ID уже существует в этом проекте',
+      fillProjectId: 'Заполните ID и название проекта',
+      fillVillaId: 'Заполните ID и название виллы',
+      deleteProjectConfirm: 'Удалить проект и все его виллы?',
+      deleteVillaConfirm: 'Удалить виллу?',
+      catalogImported: 'Каталог успешно импортирован',
+      wrongFileFormat: 'Неверный формат файла',
+      importError: 'Ошибка при импорте файла',
+      xlsxNotLoaded: 'Библиотека XLSX не загружена',
+      html2pdfNotLoaded: 'Библиотека html2pdf не загружена',
+      reportTitle: 'Arconique - Отчет по рассрочке',
+      reportCreated: 'Отчет создан:',
+      projectSummary: 'Сводка проекта',
+      totalAmount: 'Общая сумма:',
+      finalPrice: 'Итоговая цена:',
+      interest: 'Проценты:',
+      monthlyCashflow: 'Денежный поток по месяцам',
+      month: 'Месяц',
+      description: 'Описание',
+      amountDue: 'Сумма к оплате',
+      remainingBalance: 'Остаток долга',
+      after: 'После ключей',
+      firstPayment: 'Первый платёж',
+      // ОБНОВЛЕНО: Новые переводы для лизхолда и индексации
+      dailyRate: 'Стоимость проживания в сутки (USD)',
+      occupancyRate: 'Средняя заполняемость за месяц (%)',
+      rentalIncome: 'Прогнозируемый доход от аренды в месяц',
+      netPayment: 'Чистый платеж/доход в месяц',
+      leaseholdEndDate: 'Дата окончания лизхолда',
+      rentalPriceIndex: 'Индексация цены аренды в год (%)',
+      cleanLeaseholdTerm: 'Чистый срок лизхолда',
+      years: 'лет',
+      months: 'месяцев',
+      rentalIncomeChart: 'График общей доходности от сдачи в аренду',
+      totalIncome: 'Общий доход за год',
+      cumulativeIncome: 'Накопительный доход',
+      actions: 'Действия'
+    },
+    en: {
+      title: 'Arconique / Installments Calculator',
+      lang: 'Language',
+      currencyDisplay: 'Display currency',
+      idrRate: 'IDR per 1 USD',
+      eurRate: 'EUR per 1 USD',
+      handoverMonth: 'Handover month',
+      globalTerm: 'Global post‑handover term (6–24 mo)',
+      globalRate: 'Global rate, %/month',
+      clientTerm: 'Post‑handover term (months)',
+      startMonth: 'Start month',
+      stagesTitle: 'Basic installments',
+      stage: 'Stage',
+      percent: '%',
+      month: 'Month',
+      addStage: 'Add stage',
+      delete: 'Delete',
+      villasTitle: 'Calculation (lines)',
+      project: 'Project',
+      villa: 'Villa',
+      qty: 'Qty',
+      area: 'sqm',
+      ppsm: '$ / sqm',
+      price: 'Base Price (USD)',
+      discount: 'Discount, %',
+      prePct: 'Pre‑handover, %',
+      months: 'Installment term, mo',
+      rate: 'Rate, %/mo',
+      lineTotal: 'Final price',
+      addFromCatalog: 'Add from catalog',
+      cashflowTitle: 'Monthly consolidated cashflow',
+      exportCSV: 'Export CSV',
+      exportXLSX: 'Export Excel',
+      exportPDF: 'Save to PDF',
+      lines: 'Selected villas',
+      keys: 'Keys in',
+      client: 'Client',
+      editor: 'Editor',
+      catalogTitle: 'Projects & Villas Catalog (editor)',
+      addProject: 'Add project',
+      addVilla: 'Add villa',
+      importJSON: 'Import JSON',
+      exportJSON: 'Export JSON',
+      selectFromCatalog: 'Select from catalog',
+      search: 'Search',
+      areaFrom: 'sqm from',
+      areaTo: 'sqm to',
+      priceFrom: 'Price from',
+      priceTo: 'Price to',
+      sort: 'Sort',
+      byPrice: 'by price',
+      byArea: 'by area',
+      byName: 'by name',
+      addSelected: 'Add selected',
+      cancel: 'Cancel',
+      save: 'Save',
+      edit: 'Edit',
+      remove: 'Remove',
+      projectName: 'Project Name',
+      villaName: 'Villa Name',
+      villaArea: 'Area (sqm)',
+      villaPpsm: 'Price per sqm ($)',
+      villaBasePrice: 'Base Price ($)',
+      projectNameRequired: 'Enter project name',
+      villaNameRequired: 'Enter villa name',
+      // Additional translations
+      toggleToEditor: 'Switch to Editor',
+      toggleToClient: 'Switch to Client',
+      enterPin: 'Enter PIN to access editor mode:',
+      editorActivated: 'Editor mode activated',
+      wrongPin: 'Wrong PIN',
+      switchedToClient: 'Switched to client mode',
+      stagesSum: 'Stages sum:',
+      notEnough: '— not enough',
+      exceeds: '— exceeds',
+      projectExists: 'Project with this ID already exists',
+      villaExists: 'Villa with this ID already exists in this project',
+      fillProjectId: 'Fill in project ID and name',
+      fillVillaId: 'Fill in villa ID and name',
+      deleteProjectConfirm: 'Delete project and all its villas?',
+      deleteVillaConfirm: 'Delete villa?',
+      catalogImported: 'Catalog successfully imported',
+      wrongFileFormat: 'Wrong file format',
+      importError: 'Error importing file',
+      xlsxNotLoaded: 'XLSX library not loaded',
+      html2pdfNotLoaded: 'html2pdf library not loaded',
+      reportTitle: 'Arconique - Installment Report',
+      reportCreated: 'Report created:',
+      projectSummary: 'Project Summary',
+      totalAmount: 'Total amount:',
+      finalPrice: 'Final price:',
+      interest: 'Interest:',
+      monthlyCashflow: 'Monthly cashflow',
+      month: 'Month',
+      description: 'Description',
+      amountDue: 'Amount due',
+      remainingBalance: 'Remaining balance',
+      after: 'After keys',
+      firstPayment: 'First payment',
+      // ОБНОВЛЕНО: Новые переводы для лизхолда и индексации
+      dailyRate: 'Daily accommodation rate (USD)',
+      occupancyRate: 'Average monthly occupancy (%)',
+      rentalIncome: 'Projected monthly rental income',
+      netPayment: 'Net payment/income per month',
+      leaseholdEndDate: 'Leasehold end date',
+      rentalPriceIndex: 'Rental price indexation per year (%)',
+      cleanLeaseholdTerm: 'Clean leasehold term',
+      years: 'years',
+      months: 'months',
+      rentalIncomeChart: 'Chart of total rental income',
+      totalIncome: 'Total income per year',
+      cumulativeIncome: 'Cumulative income',
+      actions: 'Actions'
     }
   };
-  
-  const calculateVillaPrice = (villa, yearOffset) => {
-    if (!villa || !villa.leaseholdEndDate) return 0;
-    
-    const startMonth = new Date();
-    const endDate = new Date(villa.leaseholdEndDate);
-    const totalYears = Math.ceil((endDate - startMonth) / (1000 * 60 * 60 * 24 * 365));
-    
-    const basePrice = villa.area * villa.ppsm;
-    const leaseF = leaseFactor(yearOffset, totalYears, pricingConfig.leaseAlpha);
-    const ageF = ageFactor(yearOffset, pricingConfig.agingBeta);
-    const brandF = brandFactor(yearOffset, pricingConfig);
-    const inflationF = Math.pow(1 + pricingConfig.inflationRate, yearOffset);
-    
-    return basePrice * leaseF * ageF * brandF * inflationF;
-  };
-  
-  const generatePricingData = (villa) => {
-    if (!villa || !villa.leaseholdEndDate) return [];
-    
-    const startMonth = new Date();
-    const endDate = new Date(villa.leaseholdEndDate);
-    const totalYears = Math.ceil((endDate - startMonth) / (1000 * 60 * 60 * 24 * 365));
-    
-    const data = [];
-    for (let year = 0; year <= Math.min(totalYears, 20); year++) {
-      const leaseF = leaseFactor(year, totalYears, pricingConfig.leaseAlpha);
-      const ageF = ageFactor(year, pricingConfig.agingBeta);
-      const brandF = brandFactor(year, pricingConfig);
-      const inflationF = Math.pow(1 + pricingConfig.inflationRate, year);
-      const finalPrice = calculateVillaPrice(villa, year);
-      
-      data.push({
-        year: startMonth.getFullYear() + year,
-        leaseFactor: leaseF,
-        ageFactor: ageF,
-        brandFactor: brandF,
-        inflationFactor: inflationF,
-        finalPrice: finalPrice
-      });
+
+  // Получаем переводы для текущего языка
+  const t = T[lang] || T.ru; // fallback на русский
+
+  // Обновление заголовка страницы
+  useEffect(() => {
+    // Проверяем, существует ли элемент перед изменением
+    const appTitleElement = document.getElementById('app-title');
+    if (appTitleElement) {
+      appTitleElement.textContent = t.title;
     }
-    
-    return data;
+    document.title = t.title;
+  }, [t.title]);
+
+  // ИСПРАВЛЕНИЕ: Добавить недостающие функции и переменные
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const fmtMoney = (n, c = 'USD') => new Intl.NumberFormat('en-US', {style: 'currency', currency: c, maximumFractionDigits: 2}).format(n || 0);
+  const stagesSumPct = stages.reduce((s, x) => s + (+x.pct || 0), 0);
+
+  // Форматирование месяца для кэшфлоу (ВОССТАНОВЛЕНО СТАРОЕ)
+  const formatMonth = (monthOffset) => {
+    const date = new Date(startMonth);
+    date.setMonth(date.getMonth() + monthOffset);
+    return date.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { 
+      month: 'long', 
+      year: 'numeric' 
+    });
   };
-  
-  // Функции аренды
-  const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
-  
+
+  // НОВАЯ ФУНКЦИЯ: Расчет количества дней в месяце для аренды
+  const getDaysInMonth = (monthOffset) => {
+    const date = new Date(startMonth);
+    date.setMonth(date.getMonth() + monthOffset);
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
+
+  // НОВАЯ ФУНКЦИЯ: Расчет чистого срока лизхолда
   const getCleanLeaseholdTerm = (leaseholdEndDate) => {
-    const endDate = new Date(leaseholdEndDate);
-    const now = new Date();
-    const diffTime = endDate - now;
+    if (!leaseholdEndDate) return { years: 0, months: 0 };
+    
+    const handoverDate = new Date(startMonth);
+    handoverDate.setMonth(handoverDate.getMonth() + handoverMonth);
+    
+    const diffTime = leaseholdEndDate.getTime() - handoverDate.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return Math.max(0, diffDays);
-  };
-  
-  const getIndexedRentalPrice = (dailyRate, rentalPriceIndexPct, yearOffset) => {
-    return dailyRate * Math.pow(1 + rentalPriceIndexPct / 100, yearOffset);
-  };
-  
-  const getYearlyRentalIncome = (villa, yearOffset) => {
-    if (!villa || !villa.dailyRateUSD) return 0;
     
-    const indexedDailyRate = getIndexedRentalPrice(villa.dailyRateUSD, villa.rentalPriceIndexPct, yearOffset);
-    const occupancyRate = 0.7; // 70% загрузка
+    if (diffDays <= 0) return { years: 0, months: 0 };
+    
+    const years = Math.floor(diffDays / 365);
+    const months = Math.floor((diffDays % 365) / 30);
+    
+    return { years, months };
+  };
+
+  // НОВАЯ ФУНКЦИЯ: Расчет индексированной цены аренды для конкретного года
+  const getIndexedRentalPrice = (basePrice, indexPct, yearOffset) => {
+    if (yearOffset <= 0) return basePrice;
+    return basePrice * Math.pow(1 + indexPct / 100, yearOffset);
+  };
+
+  // НОВАЯ ФУНКЦИЯ: Расчет годового дохода от аренды с индексацией
+  const getYearlyRentalIncome = (line, yearOffset) => {
+    if (yearOffset <= 0) return 0;
+    
+    const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, yearOffset);
     const daysInYear = 365;
+    const occupancyDays = daysInYear * (line.occupancyPct / 100);
     
-    return indexedDailyRate * occupancyRate * daysInYear;
+    return indexedPrice * 0.55 * occupancyDays * line.qty;
   };
-  
-  const getCumulativeRentalIncome = (villa, yearOffset) => {
-    if (!villa || !villa.dailyRateUSD) return 0;
+
+  // НОВАЯ ФУНКЦИЯ: Расчет накопительного дохода по годам
+  const getCumulativeRentalIncome = (lines) => {
+    const maxYears = Math.max(...lines.map(line => {
+      if (!line.snapshot?.leaseholdEndDate) return 0;
+      const term = getCleanLeaseholdTerm(line.snapshot.leaseholdEndDate);
+      return term.years;
+    }));
     
+    const yearlyIncome = [];
     let cumulative = 0;
-    for (let year = 0; year <= yearOffset; year++) {
-      cumulative += getYearlyRentalIncome(villa, year);
-    }
-    return cumulative;
-  };
-  
-  // ===== ВЫЧИСЛЕНИЯ =====
-  const startMonth = useMemo(() => new Date(), []);
-  
-  const linesData = useMemo(() => {
-    if (!lines || lines.length === 0) return null;
-    return lines[0];
-  }, [lines]);
-  
-  const project = useMemo(() => {
-    if (!linesData) return null;
     
-    const totalCost = linesData.snapshot.area * linesData.snapshot.ppsm;
-    const downPayment = totalCost * 0.1;
-    const monthlyPayment = (totalCost - downPayment) / 12;
-    const totalInterest = totalCost * 0.08;
-    const totalPayments = totalCost + totalInterest;
-    
-    // Прогноз арендного дохода на 5 лет
-    const rentalForecast = [];
-    for (let year = 0; year <= 5; year++) {
-      rentalForecast.push({
-        year: year === 0 ? 'Текущий' : year.toString(),
-        yearlyIncome: getYearlyRentalIncome(linesData.snapshot, year),
-        cumulativeIncome: getCumulativeRentalIncome(linesData.snapshot, year)
+    for (let year = 0; year <= maxYears; year++) {
+      const yearIncome = lines.reduce((total, line) => {
+        return total + getYearlyRentalIncome(line, year);
+      }, 0);
+      
+      cumulative += yearIncome;
+      yearlyIncome.push({
+        year: year,
+        yearIncome: yearIncome,
+        cumulativeIncome: cumulative
       });
     }
     
-    return {
-      totalCost,
-      downPayment,
-      monthlyPayment,
-      totalInterest,
-      totalPayments,
-      rentalForecast
+    return yearlyIncome;
+  };
+
+  // НОВЫЕ ФУНКЦИИ ЦЕНООБРАЗОВАНИЯ
+  const leaseFactor = (year, totalYears, alpha) => {
+    try {
+      if (totalYears <= 0 || year < 0) return 1;
+      return Math.pow((totalYears - year) / totalYears, alpha);
+    } catch (error) {
+      console.error('Ошибка в leaseFactor:', error);
+      return 1;
+    }
+  };
+
+  const ageFactor = (year, beta) => {
+    try {
+      if (year < 0 || beta < 0) return 1;
+      return Math.exp(-beta * year);
+    } catch (error) {
+      console.error('Ошибка в ageFactor:', error);
+      return 1;
+    }
+  };
+
+  const brandFactor = (year, config) => {
+    try {
+      const { brandPeak, brandRampYears, brandPlateauYears, brandDecayYears, brandTail } = config;
+      
+      if (year <= brandRampYears) {
+        // Рост до пика
+        return 1 + (brandPeak - 1) * (year / brandRampYears);
+      } else if (year <= brandRampYears + brandPlateauYears) {
+        // Плато
+        return brandPeak;
+      } else if (year <= brandRampYears + brandPlateauYears + brandDecayYears) {
+        // Спад
+        const decayProgress = (year - brandRampYears - brandPlateauYears) / brandDecayYears;
+        return brandPeak - (brandPeak - brandTail) * decayProgress;
+      } else {
+        // Хвост
+        return brandTail;
+      }
+    } catch (error) {
+      console.error('Ошибка в brandFactor:', error);
+      return 1;
+    }
+  };
+
+  const calculateVillaPrice = (villa, yearOffset) => {
+    try {
+      if (!villa || !villa.leaseholdEndDate) return 0;
+      
+      const totalYears = Math.ceil((villa.leaseholdEndDate - new Date()) / (365 * 24 * 60 * 60 * 1000));
+      const basePrice = villa.baseUSD;
+      
+      const leaseF = leaseFactor(yearOffset, totalYears, pricingConfig.leaseAlpha);
+      const ageF = ageFactor(yearOffset, pricingConfig.agingBeta);
+      const brandF = brandFactor(yearOffset, pricingConfig);
+      const inflationF = Math.pow(1 + pricingConfig.inflationRatePct / 100, yearOffset);
+      
+      return basePrice * inflationF * leaseF * ageF * brandF;
+    } catch (error) {
+      console.error('Ошибка в calculateVillaPrice:', error);
+      return 0;
+    }
+  };
+
+  const generatePricingData = (villa) => {
+    try {
+      if (!villa || !villa.leaseholdEndDate) return [];
+      
+      const totalYears = Math.ceil((villa.leaseholdEndDate - new Date()) / (365 * 24 * 60 * 60 * 1000));
+      const data = [];
+      
+      for (let year = 0; year <= Math.min(totalYears, 20); year++) {
+        const marketPrice = villa.baseUSD * Math.pow(1 + pricingConfig.inflationRatePct / 100, year);
+        const finalPrice = calculateVillaPrice(villa, year);
+        
+        data.push({
+          year,
+          marketPrice,
+          finalPrice,
+          leaseFactor: leaseFactor(year, totalYears, pricingConfig.leaseAlpha),
+          ageFactor: ageFactor(year, pricingConfig.agingBeta),
+          brandFactor: brandFactor(year, pricingConfig)
+        });
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Ошибка в generatePricingData:', error);
+      return [];
+    }
+  };
+
+  // Функции для работы с проектами (ВОССТАНОВЛЕНЫ СТАРЫЕ)
+  const addProject = () => {
+    setNewProjectForm({
+      projectId: '',
+      projectName: '',
+      villas: []
+    });
+    setShowAddProjectModal(true);
+  };
+
+  const saveProject = () => {
+    if (!newProjectForm.projectName) {
+      alert(t.projectNameRequired);
+      return;
+    }
+    
+    // Auto-generate projectId
+    const newProjectId = newProjectForm.projectName.toLowerCase().replace(/\s/g, '-').replace(/[^a-z0-9-]/g, '');
+    const projectExists = catalog.find(p => p.projectId === newProjectId);
+    if (projectExists) {
+      alert(t.projectExists);
+      return;
+    }
+
+    const newProject = {
+      projectId: newProjectId, // Auto-generated
+      projectName: newProjectForm.projectName,
+      villas: newProjectForm.villas
     };
-  }, [linesData, startMonth]);
-  
-  const yearlyRentalData = useMemo(() => {
-    if (!linesData || !linesData.snapshot) return [];
-    
-    const currentYear = startMonth.getFullYear();
-    const data = [];
-    
-    // Текущий год (аренда начинается через 3 месяца)
-    data.push({
-      year: 'Текущий',
-      yearlyIncome: getYearlyRentalIncome(linesData.snapshot, 0),
-      cumulativeIncome: getCumulativeRentalIncome(linesData.snapshot, 0)
-    });
-    
-    // Прогноз на 5 лет
-    for (let i = 1; i <= 5; i++) {
-      data.push({
-        year: i.toString(),
-        yearlyIncome: getYearlyRentalIncome(linesData.snapshot, i),
-        cumulativeIncome: getCumulativeRentalIncome(linesData.snapshot, i)
-      });
-    }
-    
-    return data;
-  }, [linesData, startMonth]);
-  
-  const selectedVilla = useMemo(() => {
-    if (!linesData || !linesData.villaId) return null;
-    
-    for (const project of catalog) {
-      const villa = project.villas.find(v => v.id === linesData.villaId);
-      if (villa) return villa;
-    }
-    return null;
-  }, [linesData, catalog]);
-  
-  const pricingData = useMemo(() => {
-    if (!selectedVilla) return [];
-    return generatePricingData(selectedVilla);
-  }, [selectedVilla, pricingConfig]);
-  
-  // ===== ОБРАБОТЧИКИ =====
-  const handlePinSubmit = () => {
-    if (pin === '1234') {
-      setIsEditor(true);
-      setShowPinModal(false);
-      setPin('');
-    } else {
-      alert('Неверный PIN');
-    }
+
+    setCatalog(prev => [...prev, newProject]);
+    setShowAddProjectModal(false);
+    setNewProjectForm({ projectId: '', projectName: '', villas: [] });
   };
-  
-  const handleAddProject = () => {
-    if (newProjectForm.name.trim()) {
-      const newProject = {
-        id: Date.now(),
-        name: newProjectForm.name.trim(),
-        villas: []
-      };
-      setCatalog([...catalog, newProject]);
-      setNewProjectForm({ name: '' });
-      setShowAddProjectModal(false);
-    }
-  };
-  
-  const handleAddVilla = () => {
-    if (editingProject && newVillaForm.name && newVillaForm.area && newVillaForm.ppsm) {
-      const newVilla = {
-        id: Date.now(),
-        name: newVillaForm.name,
-        area: parseFloat(newVillaForm.area),
-        ppsm: parseFloat(newVillaForm.ppsm),
-        leaseholdEndDate: newVillaForm.leaseholdEndDate || '2099-12-31',
-        dailyRateUSD: parseFloat(newVillaForm.dailyRateUSD) || 0,
-        rentalPriceIndexPct: parseFloat(newVillaForm.rentalPriceIndexPct) || 0
-      };
-      
-      const updatedCatalog = catalog.map(project => {
-        if (project.id === editingProject.id) {
-          return {
-            ...project,
-            villas: [...project.villas, newVilla]
-          };
-        }
-        return project;
-      });
-      
-      setCatalog(updatedCatalog);
-      setNewVillaForm({
-        name: '',
-        area: '',
-        ppsm: '',
-        leaseholdEndDate: '',
-        dailyRateUSD: '',
-        rentalPriceIndexPct: ''
-      });
-      setShowAddVillaModal(false);
-      setEditingProject(null);
-    }
-  };
-  
-  const handleEditVilla = (villa, project) => {
-    setEditingProject(project);
+
+  // Функции для работы с виллами (ОБНОВЛЕНЫ С НОВЫМИ ПОЛЯМИ)
+  const addVilla = (projectId) => {
     setNewVillaForm({
-      name: villa.name,
-      area: villa.area.toString(),
-      ppsm: villa.ppsm.toString(),
-      leaseholdEndDate: villa.leaseholdEndDate,
-      dailyRateUSD: villa.dailyRateUSD.toString(),
-      rentalPriceIndexPct: villa.rentalPriceIndexPct.toString()
+      villaId: '',
+      name: '',
+      area: 100,
+      ppsm: 2500,
+      baseUSD: 250000,
+      // НОВЫЕ ПОЛЯ ДЛЯ ЛИЗХОЛДА И АРЕНДЫ:
+      leaseholdEndDate: new Date(2030, 11, 31),
+      dailyRateUSD: 150,
+      rentalPriceIndexPct: 5
     });
+    setEditingProject(projectId);
     setShowAddVillaModal(true);
   };
-  
-  const handleSaveVilla = () => {
-    if (!editingProject) {
-      alert('Ошибка: проект не выбран для редактирования');
+
+  const saveVilla = () => {
+    if (!newVillaForm.name) {
+      alert(t.villaNameRequired);
       return;
     }
-    
-    const updatedCatalog = catalog.map(project => {
-      if (project.id === editingProject.id) {
-        return {
-          ...project,
-          villas: project.villas.map(villa => {
-            if (villa.name === newVillaForm.name) {
-              const updatedVilla = {
-                ...villa,
-                name: newVillaForm.name,
-                area: parseFloat(newVillaForm.area),
-                ppsm: parseFloat(newVillaForm.ppsm),
-                leaseholdEndDate: newVillaForm.leaseholdEndDate,
-                dailyRateUSD: parseFloat(newVillaForm.dailyRateUSD),
-                rentalPriceIndexPct: parseFloat(newVillaForm.rentalPriceIndexPct)
-              };
-              
-              // Обновляем snapshot в lines если эта вилла выбрана
-              setLines(prevLines => 
-                prevLines.map(line => 
-                  line.villaId === villa.id 
-                    ? { ...line, snapshot: updatedVilla }
-                    : line
-                )
-              );
-              
-              return updatedVilla;
-            }
-            return villa;
-          })
-        };
-      }
-      return project;
-    });
-    
-    setCatalog(updatedCatalog);
-    setNewVillaForm({
-      name: '',
-      area: '',
-      ppsm: '',
-      leaseholdEndDate: '',
-      dailyRateUSD: '',
-      rentalPriceIndexPct: ''
-    });
+
+    const project = catalog.find(p => p.projectId === editingProject);
+    if (!project) return;
+
+    // Auto-generate villaId
+    const newVillaId = `${editingProject}-${newVillaForm.name.toLowerCase().replace(/\s/g, '-').replace(/[^a-z0-9-]/g, '')}`;
+    const villaExists = project.villas.find(v => v.villaId === newVillaId);
+    if (villaExists) {
+      alert(t.villaExists);
+      return;
+    }
+
+    const newVilla = {
+      villaId: newVillaId, // Auto-generated
+      name: newVillaForm.name,
+      area: newVillaForm.area,
+      ppsm: newVillaForm.ppsm,
+      baseUSD: newVillaForm.baseUSD,
+      // НОВЫЕ ПОЛЯ ДЛЯ ЛИЗХОЛДА И АРЕНДЫ:
+      leaseholdEndDate: newVillaForm.leaseholdEndDate,
+      dailyRateUSD: newVillaForm.dailyRateUSD,
+      rentalPriceIndexPct: newVillaForm.rentalPriceIndexPct
+    };
+
+    setCatalog(prev => prev.map(p => 
+      p.projectId === editingProject 
+        ? { ...p, villas: [...p.villas, newVilla] }
+        : p
+    ));
+
     setShowAddVillaModal(false);
     setEditingProject(null);
+    setNewVillaForm({ 
+      villaId: '', 
+      name: '', 
+      area: 100, 
+      ppsm: 2500, 
+      baseUSD: 250000,
+      leaseholdEndDate: new Date(2030, 11, 31),
+      dailyRateUSD: 150,
+      rentalPriceIndexPct: 5
+    });
   };
-  
-  const handleDeleteProject = (projectId) => {
-    if (window.confirm('Удалить проект и все его виллы?')) {
-      setCatalog(catalog.filter(p => p.id !== projectId));
-      setLines(lines.filter(line => line.projectId !== projectId));
-    }
-  };
-  
-  const handleDeleteVilla = (villaId, projectId) => {
-    if (window.confirm('Удалить виллу?')) {
-      const updatedCatalog = catalog.map(project => {
-        if (project.id === projectId) {
-          return {
-            ...project,
-            villas: project.villas.filter(v => v.id !== villaId)
-          };
-        }
-        return project;
+
+  // Расчет данных по строкам (ОБНОВЛЕН С НОВОЙ ЛОГИКОЙ АРЕНДЫ)
+  const linesData = useMemo(() => lines.map(line => {
+    const base0 = line.snapshot?.baseUSD ?? ((line.snapshot?.area || 0) * (line.snapshot?.ppsm || 0));
+    const disc = clamp(+line.discountPct || 0, 0, 20);
+    const base = base0 * (1 - disc / 100);
+    const prePct = clamp(line.prePct ?? 0, 50, 100);
+    const k = stagesSumPct === 0 ? 0 : prePct / stagesSumPct;
+    const preSchedule = stages.map(s => ({
+      month: Math.max(0, Math.min(handoverMonth, Math.round(+s.month || 0))),
+      label: s.label,
+      amountUSD: base * (((+s.pct || 0) * k) / 100),
+    })).filter(r => r.amountUSD > 0).sort((a, b) => a.month - b.month);
+    const preTotalOne = preSchedule.reduce((s, r) => s + r.amountUSD, 0);
+
+    const vMonths = line.ownTerms && line.months ? line.months : months;
+    const rate = (line.ownTerms && line.monthlyRatePct != null) ? (line.monthlyRatePct / 100) : (monthlyRatePct / 100);
+    const firstPostUSD = Math.max(0, +line.firstPostUSD || 0);
+    const principalBase = Math.max(0, base - preTotalOne - firstPostUSD);
+
+    let bal = principalBase, totalInterest = 0;
+    const principalShare = vMonths > 0 ? principalBase / vMonths : 0;
+    const postRows = [];
+    for (let i = 1; i <= vMonths; i++) {
+      const interest = bal * rate;
+      totalInterest += interest;
+      const payment = principalShare + interest;
+      postRows.push({
+        month: handoverMonth + i,
+        label: `${t.month} ${i}`,
+        principalUSD: principalShare,
+        interestUSD: interest,
+        paymentUSD: payment,
+        balanceAfterUSD: Math.max(0, bal - principalShare)
       });
-      setCatalog(updatedCatalog);
-      setLines(lines.filter(line => line.villaId !== villaId));
+      bal -= principalShare;
     }
-  };
-  
-  const addFromCatalog = (villa, project) => {
-    const newLine = {
-      id: Date.now(),
-      projectId: project.id,
-      villaId: villa.id,
-      snapshot: { ...villa }
+    const lineTotalOne = base + totalInterest;
+
+    const qty = Math.max(1, parseInt(line.qty || 1, 10));
+    const preScheduleQ = preSchedule.map(r => ({...r, amountUSD: r.amountUSD * qty}));
+    const postRowsQ = postRows.map(r => ({
+      ...r,
+      principalUSD: r.principalUSD * qty,
+      interestUSD: r.interestUSD * qty,
+      paymentUSD: r.paymentUSD * qty
+    }));
+    const preTotal = preTotalOne * qty;
+    const firstPostQ = firstPostUSD * qty;
+    const baseQ = base * qty;
+    const lineTotal = lineTotalOne * qty;
+
+    return {
+      line, qty, baseOne: base, base: baseQ, preSchedule: preScheduleQ, preTotal,
+      firstPostUSD: firstPostQ, postRows: postRowsQ, lineTotal, vMonths, rate,
+      discountPct: disc, prePct: prePct
     };
-    setLines([newLine]);
+  }), [lines, stages, stagesSumPct, handoverMonth, months, monthlyRatePct, t.month]);
+
+  // Расчет проекта (ОБНОВЛЕН С НОВОЙ ЛОГИКОЙ АРЕНДЫ С ИНДЕКСАЦИЕЙ)
+  const project = useMemo(() => {
+    const totals = {
+      baseUSD: linesData.reduce((s, x) => s + x.base, 0),
+      preUSD: linesData.reduce((s, x) => s + x.preTotal, 0),
+      finalUSD: linesData.reduce((s, x) => s + x.lineTotal, 0),
+    };
+    totals.interestUSD = totals.finalUSD - totals.baseUSD;
+    totals.afterUSD = totals.finalUSD - totals.preUSD;
+
+    const m = new Map();
+    const push = (month, amt, desc) => {
+      if (amt <= 0) return;
+      const prev = m.get(month) || {month, items: [], amountUSD: 0};
+      prev.items.push(desc);
+      prev.amountUSD += amt;
+      m.set(month, prev);
+    };
+
+    linesData.forEach(ld => {
+      ld.preSchedule.forEach(r => push(r.month, r.amountUSD, `${ld.line.snapshot?.name || 'Villa'} ×${ld.qty}: ${r.label}`));
+      if (ld.firstPostUSD > 0) push(handoverMonth + 1, ld.firstPostUSD, `${ld.line.snapshot?.name || 'Villa'} ×${ld.qty}: ${t.firstPayment}`);
+      ld.postRows.forEach(r => push(r.month, r.paymentUSD, `${ld.line.snapshot?.name || 'Villa'} ×${ld.qty}: ${r.label}`));
+    });
+
+    // ОБНОВЛЕНО: Расчет арендного дохода с индексацией по годам
+    const rentalIncomeMap = new Map();
+    linesData.forEach(ld => {
+      // Арендный доход начинается через 3 месяца после получения ключей
+      const startRentalMonth = handoverMonth + 3;
+      
+      for (let month = startRentalMonth; month <= handoverMonth + months; month++) {
+        const yearOffset = Math.floor((month - handoverMonth) / 12);
+        const indexedPrice = getIndexedRentalPrice(ld.line.dailyRateUSD, ld.line.rentalPriceIndexPct, yearOffset);
+        const daysInMonth = getDaysInMonth(month);
+        const rentalIncome = indexedPrice * 0.55 * ld.line.occupancyPct / 100 * daysInMonth * ld.qty;
+        
+        if (rentalIncome > 0) {
+          const prev = rentalIncomeMap.get(month) || 0;
+          rentalIncomeMap.set(month, prev + rentalIncome);
+        }
+      }
+    });
+
+    // Объединяем платежи и арендный доход
+    const raw = [...m.values()].sort((a, b) => a.month - b.month);
+    let cumulative = 0;
+    const cashflow = raw.map(row => {
+      cumulative += row.amountUSD;
+      const balanceUSD = Math.max(0, totals.finalUSD - cumulative);
+      
+      // Добавляем арендный доход для этого месяца
+      const rentalIncome = rentalIncomeMap.get(row.month) || 0;
+      const netPayment = row.amountUSD - rentalIncome;
+      
+      return {
+        ...row, 
+        cumulativeUSD: cumulative, 
+        balanceUSD,
+        rentalIncome, // НОВОЕ ПОЛЕ
+        netPayment    // НОВОЕ ПОЛЕ
+      };
+    });
+
+    return {totals, cashflow};
+  }, [linesData, handoverMonth, months, t.firstPayment, startMonth]);
+
+  // НОВЫЙ РАСЧЕТ: Годовая доходность от аренды
+  const yearlyRentalData = useMemo(() => {
+    return getCumulativeRentalIncome(lines);
+  }, [lines, startMonth, handoverMonth]);
+
+  // НОВЫЙ РАСЧЕТ: Общий чистый срок лизхолда
+  const totalLeaseholdTerm = useMemo(() => {
+    const allTerms = lines.map(line => {
+      if (!line.snapshot?.leaseholdEndDate) return { years: 0, months: 0 };
+      return getCleanLeaseholdTerm(line.snapshot.leaseholdEndDate);
+    });
+    
+    const maxYears = Math.max(...allTerms.map(t => t.years));
+    const maxMonths = Math.max(...allTerms.map(t => t.months));
+    
+    return { years: maxYears, months: maxMonths };
+  }, [lines, startMonth, handoverMonth]);
+
+  // Функции для работы с линиями (ВОССТАНОВЛЕНЫ СТАРЫЕ)
+  const updLine = (id, patch) => setLines(prev => prev.map(l => l.id === id ? {...l, ...patch} : l));
+  const delLine = (id) => setLines(prev => prev.filter(l => l.id !== id));
+
+  const addFromCatalog = () => setModalOpen(true);
+  const addFromCatalogLine = (villa, projectId) => {
+    const nid = (lines[lines.length - 1]?.id || 0) + 1;
+    const newLine = {
+      id: nid,
+      projectId: projectId,
+      villaId: villa.villaId,
+      qty: 1,
+      prePct: 70,
+      ownTerms: false,
+      months: null,
+      monthlyRatePct: null,
+      firstPostUSD: 0,
+      discountPct: 0,
+      // ОБНОВЛЕНО: Новые поля для аренды с индексацией
+      dailyRateUSD: villa.dailyRateUSD || 150,
+      occupancyPct: 75,
+      rentalPriceIndexPct: villa.rentalPriceIndexPct || 5,
+      snapshot: {
+        name: villa.name, 
+        area: villa.area, 
+        ppsm: villa.ppsm, 
+        baseUSD: villa.baseUSD,
+        leaseholdEndDate: villa.leaseholdEndDate
+      }
+    };
+    setLines(prev => [...prev, newLine]);
+    setModalOpen(false);
   };
-  
+
+  // Функции экспорта (ОБНОВЛЕНЫ С НОВЫМИ ПОЛЯМИ)
   const exportCSV = () => {
-    if (!project) return;
-    
-    const csvContent = [
-      ['Показатель', 'Значение'],
-      ['Общая стоимость', project.totalCost],
-      ['Первый взнос', project.downPayment],
-      ['Ежемесячный платеж', project.monthlyPayment],
-      ['Общий процент', project.totalInterest],
-      ['Общие платежи', project.totalPayments]
-    ].map(row => row.join(',')).join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
+    const rows = [
+      [t.month, t.description, t.amountDue, t.rentalIncome, t.netPayment, t.remainingBalance],
+      ...project.cashflow.map(c => [
+        formatMonth(c.month),
+        (c.items || []).join(' + '),
+        fmtMoney(c.amountUSD, currency),
+        fmtMoney(c.rentalIncome || 0, currency),
+        fmtMoney(c.netPayment || 0, currency),
+        fmtMoney(c.balanceUSD, currency)
+      ])
+    ];
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
     const a = document.createElement('a');
-    a.href = url;
-    a.download = 'arconique_data.csv';
+    a.href = URL.createObjectURL(blob);
+    a.download = `arconique_cashflow_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
-    window.URL.revokeObjectURL(url);
+    URL.revokeObjectURL(a.href);
   };
-  
+
   const exportXLSX = () => {
     if (typeof XLSX === 'undefined') {
-      alert('Библиотека XLSX не загружена. Пожалуйста, подключите XLSX.js');
+      alert(t.xlsxNotLoaded);
       return;
     }
     
-    if (!project) return;
+    const ws1 = XLSX.utils.json_to_sheet(project.cashflow.map(c => ({
+      [t.month]: formatMonth(c.month),
+      [t.description]: (c.items || []).join(' + '),
+      [t.amountDue]: c.amountUSD,
+      [t.rentalIncome]: c.rentalIncome || 0,
+      [t.netPayment]: c.netPayment || 0,
+      [t.remainingBalance]: c.balanceUSD
+    })));
     
-    const data = [
-      ['Показатель', 'Значение'],
-      ['Общая стоимость', project.totalCost],
-      ['Первый взнос', project.downPayment],
-      ['Ежемесячный платеж', project.monthlyPayment],
-      ['Общий процент', project.totalInterest],
-      ['Общие платежи', project.totalPayments]
-    ];
+    const ws2 = XLSX.utils.json_to_sheet(linesData.map(ld => ({
+      [t.project]: catalog.find(p => p.projectId === ld.line.projectId)?.projectName || ld.line.projectId,
+      [t.villa]: ld.line.snapshot?.name,
+      [t.qty]: ld.qty,
+      [t.area]: ld.line.snapshot?.area,
+      [t.ppsm]: ld.line.snapshot?.ppsm,
+      [t.price]: ld.base,
+      [t.discount]: (ld.discountPct || 0) + '%',
+      [t.prePct]: ld.prePct,
+      [t.months]: ld.vMonths,
+      [t.lineTotal]: ld.lineTotal,
+      [t.dailyRate]: ld.line.dailyRateUSD || 0,
+      [t.occupancyRate]: ld.line.occupancyPct || 0,
+      [t.rentalPriceIndex]: ld.line.rentalPriceIndexPct || 0,
+      [t.leaseholdEndDate]: ld.line.snapshot?.leaseholdEndDate ? ld.line.snapshot.leaseholdEndDate.toLocaleDateString() : ''
+    })));
     
-    const ws = XLSX.utils.aoa_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Arconique Data');
-    XLSX.writeFile(wb, 'arconique_data.xlsx');
+    XLSX.utils.book_append_sheet(wb, ws1, 'Cashflow');
+    XLSX.utils.book_append_sheet(wb, ws2, 'Lines');
+    XLSX.writeFile(wb, `arconique_installments_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
-  
+
   const exportPDF = () => {
     if (typeof html2pdf === 'undefined') {
-      alert('Библиотека html2pdf не загружена. Пожалуйста, подключите html2pdf.js');
+      alert(t.html2pdfNotLoaded);
       return;
     }
     
-    const element = document.getElementById('app-content');
-    if (element) {
-      html2pdf().from(element).save('arconique_report.pdf');
+    const pdfContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>${t.reportTitle}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .header h1 { color: #333; margin: 0; }
+          .header .date { color: #666; margin-top: 10px; }
+                    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+          th { background-color: #f5f5f5; font-weight: bold; }
+          .summary { margin: 20px 0; padding: 20px; background: #f9f9f9; }
+          .summary h3 { margin-top: 0; }
+          .amount { font-weight: bold; color: #2c5aa0; }
+          .positive { color: #dc3545; font-weight: bold; }
+          .negative { color: #28a745; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${t.reportTitle}</h1>
+          <div class="date">${t.reportCreated} ${new Date().toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US')}</div>
+        </div>
+        
+        <div class="summary">
+          <h3>${t.projectSummary}</h3>
+          <p><strong>${t.totalAmount}</strong> <span class="amount">${fmtMoney(project.totals.baseUSD, 'USD')}</span></p>
+          <p><strong>${t.finalPrice}</strong> <span class="amount">${fmtMoney(project.totals.finalUSD, 'USD')}</span></p>
+          <p><strong>${t.interest}</strong> <span class="amount">${fmtMoney(project.totals.interestUSD, 'USD')}</span></p>
+          <p><strong>${t.cleanLeaseholdTerm}</strong> <span class="amount">${totalLeaseholdTerm.years} ${t.years} ${totalLeaseholdTerm.months} ${t.months}</span></p>
+        </div>
+        
+        <h3>${t.monthlyCashflow}</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>${t.month}</th>
+              <th>${t.description}</th>
+              <th>${t.amountDue}</th>
+              <th>${t.rentalIncome}</th>
+              <th>${t.netPayment}</th>
+              <th>${t.remainingBalance}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${project.cashflow.map(c => `
+              <tr>
+                <td>${formatMonth(c.month)}</td>
+                <td>${(c.items || []).join(' + ')}</td>
+                <td class="amount">${fmtMoney(c.amountUSD, 'USD')}</td>
+                <td class="amount">${fmtMoney(c.rentalIncome || 0, 'USD')}</td>
+                <td class="amount ${c.netPayment >= 0 ? 'positive' : 'negative'}">${fmtMoney(c.netPayment || 0, 'USD')}</td>
+                <td class="amount">${fmtMoney(c.balanceUSD, 'USD')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+    
+    const element = document.createElement('div');
+    element.innerHTML = pdfContent;
+    document.body.appendChild(element);
+    
+    html2pdf()
+      .from(element)
+      .save(`arconique-cashflow-${new Date().toISOString().slice(0, 10)}.pdf`)
+      .then(() => {
+        document.body.removeChild(element);
+      });
+  };
+
+  // Функция переключения режима (ВОССТАНОВЛЕНА СТАРАЯ)
+  const toggleMode = () => {
+    if (isClient) {
+      const pin = prompt(t.enterPin);
+      if (pin === PIN_CODE) {
+        setIsClient(false);
+        alert(t.editorActivated);
+      } else if (pin !== null) {
+        alert(t.wrongPin);
+      }
+    } else {
+      setIsClient(true);
+      alert(t.switchedToClient);
     }
   };
-  
-  // ===== РЕНДЕР =====
-  if (!project) {
-    return (
-      <div className="app">
-        <div className="header">
-          <h1>{T.title}</h1>
-          <p>{T.subtitle}</p>
-        </div>
-        <div className="no-data">
-          <p>Выберите виллу из каталога для начала работы</p>
-        </div>
-      </div>
-    );
-  }
-  
+
+  // Функции для работы с этапами (ВОССТАНОВЛЕНЫ СТАРЫЕ)
+  const addStage = () => {
+    const newId = stages.length + 1;
+    setStages(prev => [...prev, {id: newId, label: lang === 'ru' ? 'Новый этап' : 'New stage', pct: 5, month: 0}]);
+  };
+
+  const delStage = (id) => setStages(prev => prev.filter(s => s.id !== id));
+
+  const updStage = (id, patch) => setStages(prev => prev.map(s => s.id === id ? {...s, ...patch} : s));
+
   return (
-    <div className="app" id="app-content">
-      {/* Заголовок */}
-      <div className="header">
-        <h1>{T.title}</h1>
-        <p>{T.subtitle}</p>
-        <div className="mode-switcher">
-          {isEditor ? (
+    <>
+      {/* Внизу по порядку: */}
+      
+      {/* 1. Настройки (ВОССТАНОВЛЕН СТАРЫЙ ДИЗАЙН) */}
+      <div className="card">
+        {/* Ряд 1: Все настройки в один ряд */}
+        <div className="row">
+          <div className="field compact">
+            <label>{t.lang}</label>
+            <select value={lang} onChange={e => setLang(e.target.value)}>
+              <option value="ru">Русский</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+          
+          <div className="field compact">
+            <label>{t.currencyDisplay}</label>
+            <select value={currency} onChange={e => setCurrency(e.target.value)}>
+              <option>USD</option>
+              <option>IDR</option>
+              <option>EUR</option>
+            </select>
+          </div>
+
+          {/* Курсы валют (только для редактора) - ВОССТАНОВЛЕНО СТАРОЕ ПОВЕДЕНИЕ */}
+          {!isClient && (
             <>
-              <span className="mode-badge editor">{T.editorMode}</span>
-              <button onClick={() => setIsEditor(false)} className="btn btn-secondary">
-                {T.switchToClient}
-              </button>
-            </>
-          ) : (
-            <>
-              <span className="mode-badge client">{T.clientMode}</span>
-              <button onClick={() => setShowPinModal(true)} className="btn btn-primary">
-                {T.switchToEditor}
-              </button>
+              <div className="field compact">
+                <label>{t.idrRate}</label>
+                <input 
+                  type="number" 
+                  min="1" 
+                  step="1" 
+                  value={idrPerUsd} 
+                  onChange={e => setIdrPerUsd(clamp(parseFloat(e.target.value || 0), 1, 1e9))}
+                />
+              </div>
+              <div className="field compact">
+                <label>{t.eurRate}</label>
+                <input 
+                  type="number" 
+                  min="0.01" 
+                  step="0.01" 
+                  value={eurPerUsd} 
+                  onChange={e => setEurPerUsd(clamp(parseFloat(e.target.value || 0), 0.01, 100))}
+                />
+              </div>
             </>
           )}
+
+          <div className="field compact">
+            <label>{t.startMonth}</label>
+            <div className="info-display">
+              {startMonth.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { 
+                month: 'long', 
+                year: 'numeric' 
+              })}
+            </div>
+          </div>
+
+          <div className="field compact">
+            <label>{t.handoverMonth}</label>
+            <input 
+              type="number" 
+              min="1" 
+              step="1" 
+              value={handoverMonth} 
+              onChange={e => setHandoverMonth(clamp(parseInt(e.target.value || 0, 10), 1, 120))}
+            />
+          </div>
+
+          {!isClient ? (
+            <>
+              <div className="field compact">
+                <label>{t.globalRate}</label>
+                <input 
+                  type="number" 
+                  min="0" 
+                  step="0.01" 
+                  value={monthlyRatePct} 
+                  onChange={e => setMonthlyRatePct(clamp(parseFloat(e.target.value || 0), 0, 1000))}
+                />
+              </div>
+              <div className="field compact">
+                <label>{t.globalTerm}</label>
+                <input 
+                  type="range" 
+                  min="6" 
+                  max="24" 
+                  step="1" 
+                  value={months} 
+                  onChange={e => setMonths(parseInt(e.target.value, 10))}
+                />
+                <div className="pill">{t.months}: {months}</div>
+              </div>
+            </>
+          ) : (
+            <div className="field compact">
+              <label>{t.clientTerm}</label>
+              <input 
+                type="number" 
+                min="6" 
+                step="1" 
+                value={months} 
+                onChange={e => setMonths(clamp(parseInt(e.target.value || 0, 10), 6, 120))}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Ряд 2: Кнопка переключения режима */}
+        <div className="row">
+          <button className="btn" onClick={toggleMode}>
+            {isClient ? t.toggleToEditor : t.toggleToClient}
+          </button>
         </div>
       </div>
-      
-      {/* Основной контент */}
-      <div className="main-content">
-        {/* 1. Ключевые показатели */}
-        <div className="card">
-          <h3>{T.kpi}</h3>
-          <div className="kpi-grid">
-            <div className="kpi-item">
-              <span className="kpi-label">{T.totalCost}</span>
-              <span className="kpi-value">{fmtMoney(project.totalCost)}</span>
+
+      {/* 2. Расчёт (позиции) - ОБНОВЛЕН С НОВЫМИ ПОЛЯМИ ДЛЯ АРЕНДЫ */}
+      <div className="card">
+        <div className="calculation-header">
+          <h3 style={{margin: '6px 0'}}>{t.villasTitle}</h3>
+          <button className="btn success" onClick={addFromCatalog}>
+            {t.addFromCatalog}
+          </button>
+        </div>
+
+        <div className="calc-scroll">
+          <table className="calc-table">
+            <thead>
+              <tr>
+                <th className="col-project">{t.project}</th>
+                <th className="col-villa">{t.villa}</th>
+                <th className="col-qty">{t.qty}</th>
+                <th className="col-area">{t.area}</th>
+                <th className="col-ppsm">{t.ppsm}</th>
+                <th className="col-base">{t.price}</th>
+                {!isClient && <th className="col-disc">{t.discount}</th>}
+                <th className="col-pre">{t.prePct}</th>
+                {!isClient && <th className="col-months">{t.months}</th>}
+                {!isClient && <th className="col-rate">{t.rate}</th>}
+                {/* ОБНОВЛЕНО: Новые колонки для аренды с индексацией */}
+                <th className="col-dailyRate">{t.dailyRate}</th>
+                <th className="col-occupancyRate">{t.occupancyRate}</th>
+                <th className="col-rentalIndex">{t.rentalPriceIndex}</th>
+                <th className="col-lineTotal">{t.lineTotal}</th>
+                <th className="col-actions"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {linesData.map(ld => (
+                <tr key={ld.line.id}>
+                  <td className="col-project" style={{textAlign: 'left'}}>
+                    <div className="project-name-display">
+                      {catalog.find(p => p.projectId === ld.line.projectId)?.projectName || ld.line.projectId}
+                    </div>
+                  </td>
+                  <td className="col-villa" style={{textAlign: 'left'}}>
+                    <div className="villa-name-display">{ld.line.snapshot?.name}</div>
+                  </td>
+                  <td className="col-qty">
+                    <input 
+                      type="number" 
+                      min="1" 
+                      step="1" 
+                      value={ld.line.qty} 
+                      onChange={e => updLine(ld.line.id, {qty: clamp(parseInt(e.target.value || 0, 10), 1, 9999)})}
+                      style={{width: '100%', minWidth: '50px'}}
+                    />
+                  </td>
+                  <td className="col-area">
+                    <div className="area-display">{ld.line.snapshot?.area || 0}</div>
+                  </td>
+                  <td className="col-ppsm">
+                    <div className="ppsm-display">{ld.line.snapshot?.ppsm || 0}</div>
+                  </td>
+                  <td className="col-base base-strong">
+                    {fmtMoney(ld.base, currency)}
+                  </td>
+                  {!isClient && (
+                    <td className="col-disc">
+                      <input 
+                        type="number" 
+                        min="0" 
+                        max="20" 
+                        step="0.1" 
+                        value={ld.line.discountPct || 0} 
+                        onChange={e => updLine(ld.line.id, {discountPct: clamp(parseFloat(e.target.value || 0), 0, 20)})}
+                        style={{width: '100%', minWidth: '50px'}}
+                      />
+                    </td>
+                  )}
+                  <td className="col-pre">
+                    {/* ВОССТАНОВЛЕН СТАРЫЙ ПОЛЗУНОК "До ключей, %" */}
+                    <input 
+                      type="range" 
+                      min="50" 
+                      max="100" 
+                      step="1" 
+                      value={Math.max(50, Math.min(100, ld.prePct || 0))} 
+                      onChange={e => {
+                        const value = parseInt(e.target.value, 10);
+                        const clampedValue = Math.max(50, Math.min(100, value));
+                        updLine(ld.line.id, { prePct: clampedValue });
+                      }}
+                      style={{width: '100%', minWidth: '80px'}}
+                    />
+                    <div className="pill">{Math.max(50, Math.min(100, ld.prePct || 0))}%</div>
+                  </td>
+                  {!isClient && (
+                    <td className="col-months">
+                      <input 
+                        type="checkbox" 
+                        checked={ld.line.ownTerms || false} 
+                        onChange={e => updLine(ld.line.id, {ownTerms: e.target.checked})}
+                      />
+                      <input 
+                        type="number" 
+                        min="6" 
+                        step="1" 
+                        value={ld.line.months || months} 
+                        onChange={e => updLine(ld.line.id, {months: clamp(parseInt(e.target.value || 0, 10), 6, 120)})}
+                        disabled={!ld.line.ownTerms}
+                        style={{width: '100%', minWidth: '50px'}}
+                      />
+                    </td>
+                  )}
+                  {!isClient && (
+                    <td className="col-rate">
+                      <input 
+                        type="number" 
+                        min="0" 
+                        step="0.01" 
+                        value={ld.line.monthlyRatePct || monthlyRatePct} 
+                        onChange={e => updLine(ld.line.id, {monthlyRatePct: clamp(parseFloat(e.target.value || 0), 0, 1000)})}
+                        disabled={!ld.line.ownTerms}
+                        style={{width: '100%', minWidth: '60px'}}
+                      />
+                    </td>
+                  )}
+                  
+                  {/* ОБНОВЛЕНО: Новые поля для аренды с индексацией */}
+                  <td className="col-dailyRate">
+                    <input 
+                      type="number" 
+                      min="0" 
+                      step="1" 
+                      value={ld.line.dailyRateUSD || 150} 
+                      onChange={e => updLine(ld.line.id, {dailyRateUSD: clamp(parseFloat(e.target.value || 0), 0, 10000)})}
+                      style={{width: '100%', minWidth: '60px'}}
+                    />
+                  </td>
+                  <td className="col-occupancyRate">
+                    <input 
+                      type="number" 
+                      min="0" 
+                      max="100" 
+                      step="1" 
+                      value={ld.line.occupancyPct || 75} 
+                      onChange={e => updLine(ld.line.id, {occupancyPct: clamp(parseFloat(e.target.value || 0), 0, 100)})}
+                      style={{width: '100%', minWidth: '50px'}}
+                    />
+                  </td>
+                  <td className="col-rentalIndex">
+                    <input 
+                      type="number" 
+                      min="0" 
+                      max="50" 
+                      step="0.1" 
+                      value={ld.line.rentalPriceIndexPct || 5} 
+                      onChange={e => updLine(ld.line.id, {rentalPriceIndexPct: clamp(parseFloat(e.target.value || 0), 0, 50)})}
+                      style={{width: '100%', minWidth: '50px'}}
+                    />
+                  </td>
+                  
+                  <td className="col-lineTotal line-total">
+                    {fmtMoney(ld.lineTotal, currency)}
+                  </td>
+                  <td className="col-actions">
+                    <div className="row" style={{gap: 4}}>
+                      <button className="btn danger icon" onClick={() => delLine(ld.line.id)}>🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 3. KPI показатели - ОБНОВЛЕН С НОВЫМ ПАРАМЕТРОМ ЛИЗХОЛДА */}
+      <div className="card">
+        <div className="row" style={{justifyContent: 'space-between', alignItems: 'baseline'}}>
+          <div className="row">
+            <span className="badge">{t.lines}: {lines.length}</span>
+            <span className="badge">{t.keys} {handoverMonth} {lang === 'ru' ? 'мес.' : 'mo.'}</span>
+            <span className="badge">{lang === 'ru' ? 'Срок:' : 'Term:'} {months} {lang === 'ru' ? 'мес.' : 'mo.'}</span>
+          </div>
+          <div className="muted">{isClient ? t.client : t.editor}</div>
+        </div>
+
+        {/* KPI блок - ОБНОВЛЕН С НОВЫМ ПАРАМЕТРОМ */}
+        <div className="kpis">
+          {!isClient && (
+            <div className="kpi">
+              <div className="muted">{t.totalAmount}</div>
+              <div className="v">{fmtMoney(project.totals.baseUSD, currency)}</div>
             </div>
-            <div className="kpi-item">
-              <span className="kpi-label">{T.downPayment}</span>
-              <span className="kpi-value">{fmtMoney(project.downPayment)}</span>
+          )}
+          <div className="kpi">
+            <div className="muted">{t.amountDue}</div>
+            <div className="v">{fmtMoney(project.totals.preUSD, currency)}</div>
+          </div>
+          <div className="kpi">
+            <div className="muted">{t.after}</div>
+            <div className="v">{fmtMoney(project.totals.afterUSD, currency)}</div>
+          </div>
+          {!isClient && (
+            <div className="kpi">
+              <div className="muted">{t.interest}</div>
+              <div className="v">{fmtMoney(project.totals.interestUSD, currency)}</div>
             </div>
-            <div className="kpi-item">
-              <span className="kpi-label">{T.monthlyPayment}</span>
-              <span className="kpi-value">{fmtMoney(project.monthlyPayment)}</span>
-            </div>
-            <div className="kpi-item">
-              <span className="kpi-label">{T.totalInterest}</span>
-              <span className="kpi-value">{fmtMoney(project.totalInterest)}</span>
-            </div>
-            <div className="kpi-item">
-              <span className="kpi-label">{T.totalPayments}</span>
-              <span className="kpi-value">{fmtMoney(project.totalPayments)}</span>
+          )}
+          <div className="kpi">
+            <div className="muted">{t.finalPrice}</div>
+            <div className="v">{fmtMoney(project.totals.finalUSD, currency)}</div>
+          </div>
+          {/* НОВЫЙ ПАРАМЕТР: Чистый срок лизхолда */}
+          <div className="kpi">
+            <div className="muted">{t.cleanLeaseholdTerm}</div>
+            <div className="v">{totalLeaseholdTerm.years} {t.years} {totalLeaseholdTerm.months} {t.months}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Базовая рассрочка - ВОССТАНОВЛЕН СТАРЫЙ ДИЗАЙН (БЕЗ БЕЛЫХ ПРЯМОУГОЛЬНИКОВ) */}
+      <div className="card">
+        <div className="stages-section">
+          <h3>{t.stagesTitle}</h3>
+          
+          {/* ПРОСТАЯ ТАБЛИЦА БЕЗ БЕЛЫХ ПРЯМОУГОЛЬНИКОВ - ВОССТАНОВЛЕНО СТАРОЕ */}
+          <table className="stages-table">
+            <thead>
+              <tr>
+                <th>{t.stage}</th>
+                <th>{t.percent}</th>
+                <th>{t.month}</th>
+                <th>{t.actions}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stages.map(stage => (
+                <tr key={stage.id}>
+                  <td>
+                    <input 
+                      type="text" 
+                      value={stage.label} 
+                      onChange={e => updStage(stage.id, {label: e.target.value})}
+                      placeholder="Название этапа"
+                      className="stage-input"
+                    />
+                  </td>
+                  <td>
+                    <input 
+                      type="number" 
+                      value={stage.pct} 
+                      onChange={e => updStage(stage.id, {pct: +e.target.value})}
+                      placeholder="%"
+                      className="stage-input-small"
+                    />
+                  </td>
+                  <td>
+                    <input 
+                      type="number" 
+                      value={stage.month} 
+                      onChange={e => updStage(stage.id, {month: +e.target.value})}
+                      placeholder="Месяц"
+                      className="stage-input-small"
+                    />
+                  </td>
+                  <td>
+                    <button onClick={() => delStage(stage.id)} className="btn danger small">
+                      {t.delete}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          
+          <div className="row" style={{marginTop: 8, alignItems: 'center', justifyContent: 'space-between'}}>
+            <button className="btn primary" onClick={addStage}>{t.addStage}</button>
+            <div className="pill">
+              {t.stagesSum} {Math.round(stagesSumPct * 100) / 100}%
+              {stagesSumPct !== 100 && (
+                <span className="warning">
+                  {stagesSumPct < 100 ? t.notEnough : t.exceeds} 100%
+                </span>
+              )}
             </div>
           </div>
         </div>
-        
-        {/* 2. План рассрочки */}
+      </div>
+
+      {/* 5. Сводный кэшфлоу по месяцам - ОБНОВЛЕН С НОВЫМИ КОЛОНКАМИ */}
+      <div className="cashflow-block">
         <div className="card">
-          <h3>{T.installmentPlan}</h3>
-          <div className="stages-table">
-            <table>
+          <div className="card-header">
+            <h2>{t.cashflowTitle}</h2>
+            <div className="export-buttons">
+              <button className="btn" onClick={exportCSV}>{t.exportCSV}</button>
+              <button className="btn" onClick={exportXLSX}>{t.exportXLSX}</button>
+              <button className="btn" onClick={exportPDF}>{t.exportPDF}</button>
+            </div>
+          </div>
+          
+          <div className="cashflow-scroll">
+            <table className="cashflow-table">
               <thead>
                 <tr>
-                  <th>{T.stage}</th>
-                  <th>{T.amount}</th>
-                  <th>{T.date}</th>
-                  <th>{T.percentage}</th>
+                  <th>{t.month}</th>
+                  <th style={{textAlign: 'left'}}>{t.description}</th>
+                  <th>{t.amountDue}</th>
+                  {/* НОВЫЕ КОЛОНКИ ДЛЯ АРЕНДЫ (ДОБАВЛЕНО) */}
+                  <th>{t.rentalIncome}</th>
+                  <th>{t.netPayment}</th>
+                  {/* ОСТАТОК ДОЛГА ПЕРЕМЕЩЕН В ПОСЛЕДНЮЮ КОЛОНКУ */}
+                  <th>{t.remainingBalance}</th>
                 </tr>
               </thead>
               <tbody>
-                {stages.map(stage => (
-                  <tr key={stage.id}>
-                    <td>{stage.name}</td>
-                    <td>{fmtMoney(stage.amount)}</td>
-                    <td>{stage.date}</td>
-                    <td>{stage.percentage}%</td>
+                {project.cashflow.map(c => (
+                  <tr key={c.month}>
+                    <td>{formatMonth(c.month)}</td>
+                    <td style={{textAlign: 'left'}}>{(c.items || []).join(' + ')}</td>
+                    <td>{fmtMoney(c.amountUSD, currency)}</td>
+                    {/* НОВЫЕ КОЛОНКИ ДЛЯ АРЕНДЫ (ДОБАВЛЕНО) */}
+                    <td>{fmtMoney(c.rentalIncome || 0, currency)}</td>
+                    {/* ИСПРАВЛЕНО: Красный для положительных, зеленый для отрицательных */}
+                    <td className={c.netPayment >= 0 ? 'positive' : 'negative'}>
+                      {fmtMoney(c.netPayment || 0, currency)}
+                    </td>
+                    {/* ОСТАТОК ДОЛГА ПЕРЕМЕЩЕН В ПОСЛЕДНЮЮ КОЛОНКУ */}
+                    <td>{fmtMoney(c.balanceUSD, currency)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
-        
-        {/* 3. Денежный поток */}
-        <div className="card">
-          <h3>{T.cashflow}</h3>
-          <div className="cashflow-chart">
-            <h4>Динамика платежей по этапам</h4>
-            <div className="cashflow-bars">
-              {stages.map((stage, index) => (
-                <div key={stage.id} className="cashflow-bar">
-                  <div className="bar-label">{stage.name}</div>
-                  <div className="bar-container">
-                    <div 
-                      className="bar-fill" 
-                      style={{ 
-                        height: `${(stage.amount / Math.max(...stages.map(s => s.amount))) * 200}px`,
-                        backgroundColor: `hsl(${index * 60}, 70%, 60%)`
-                      }}
-                    ></div>
-                  </div>
-                  <div className="bar-value">{fmtMoney(stage.amount)}</div>
+      </div>
+
+      {/* 6. НОВЫЙ БЛОК: График общей доходности от сдачи в аренду */}
+      <div className="card">
+        <h3>{t.rentalIncomeChart}</h3>
+        <div className="rental-chart">
+          <div className="chart-container">
+            {yearlyRentalData.map((yearData, index) => (
+              <div key={index} className="chart-bar">
+                <div className="bar-label">{yearData.year === 0 ? t.keys : `${yearData.year} ${t.years}`}</div>
+                <div className="bar-container">
+                  <div 
+                    className="bar-fill" 
+                    style={{
+                      height: `${Math.max(10, (yearData.yearIncome / Math.max(...yearlyRentalData.map(y => y.yearIncome))) * 200)}px`,
+                      backgroundColor: yearData.year === 0 ? '#e2e8f0' : '#3b82f6'
+                    }}
+                  ></div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        
-        {/* 4. Доход от аренды */}
-        <div className="card">
-          <h3>{T.rentalIncome}</h3>
-          <div className="rental-summary">
-            <h4>Прогноз арендного дохода на 5 лет</h4>
-            <div className="rental-grid">
-              {project.rentalForecast.map((forecast, index) => (
-                <div key={index} className="rental-item">
-                  <span className="rental-year">{forecast.year}</span>
-                  <span className="rental-income">{fmtMoney(forecast.yearlyIncome)}</span>
-                  <span className="rental-cumulative">{fmtMoney(forecast.cumulativeIncome)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        
-        {/* 5. График общей доходности от сдачи в аренду - ПОЛНОСТЬЮ ИСПРАВЛЕННАЯ ВЕРСИЯ */}
-        <div className="card">
-          <h3>{T.rentalIncomeChart}</h3>
-          <div className="rental-chart-container">
-            <h4>Динамика накопленного дохода от аренды</h4>
-            <p className="chart-subtitle">Накопительный доход по годам (аренда начинается через 3 месяца после получения ключей)</p>
-            
-            {/* ИСПРАВЛЕНО: Добавляем проверку данных */}
-            {yearlyRentalData && Array.isArray(yearlyRentalData) && yearlyRentalData.length > 0 ? (
-              <div className="rental-chart-svg" id="rental-chart-svg">
-                <svg width="100%" height="300" viewBox="0 0 800 300">
-                  <g className="chart-lines">
-                    {(() => {
-                      const maxIncome = Math.max(...yearlyRentalData.map(d => d.cumulativeIncome));
-                      const minIncome = Math.min(...yearlyRentalData.map(d => d.cumulativeIncome));
-                      const incomeRange = maxIncome - minIncome;
-                      const chartWidth = 700;
-                      const chartHeight = 250;
-                      const padding = 50;
-                      
-                      return yearlyRentalData.map((point, index) => {
-                        const x = padding + (index / (yearlyRentalData.length - 1)) * (chartWidth - 2 * padding);
-                        const y = padding + ((maxIncome - point.cumulativeIncome) / incomeRange) * (chartHeight - 2 * padding);
-                        
-                        return (
-                          <g key={index}>
-                            <circle 
-                              cx={x} 
-                              cy={y} 
-                              r="3" 
-                              fill="#28a745" 
-                              stroke="none"
-                            />
-                            {index > 0 && (
-                              <line 
-                                x1={padding + ((index - 1) / (yearlyRentalData.length - 1)) * (chartWidth - 2 * padding)}
-                                y1={padding + ((maxIncome - yearlyRentalData[index - 1].cumulativeIncome) / incomeRange) * (chartHeight - 2 * padding)}
-                                x2={x}
-                                y2={y}
-                                stroke="#28a745"
-                                strokeWidth="2"
-                              />
-                            )}
-                          </g>
-                        );
-                      });
-                    })()}
-                  </g>
-                  
-                  {/* Оси графика */}
-                  <g className="chart-axes">
-                    <line x1="50" y1="50" x2="50" y2="300" stroke="#ccc" strokeWidth="1" />
-                    <line x1="50" y1="300" x2="750" y2="300" stroke="#ccc" strokeWidth="1" />
-                    
-                    {/* Подписи осей */}
-                    <text x="400" y="320" textAnchor="middle" fontSize="12" fill="#666">
-                      Годы
-                    </text>
-                    <text x="15" y="175" textAnchor="middle" fontSize="12" fill="#666" transform="rotate(-90, 15, 175)">
-                      Накопительный доход (USD)
-                    </text>
-                    
-                    {/* Подписи по оси X (КОНКРЕТНЫЕ ГОДЫ АРЕНДЫ) */}
-                    {(() => {
-                      const currentYear = startMonth.getFullYear();
-                      
-                      return yearlyRentalData.map((point, index) => {
-                        const x = 50 + (index / (yearlyRentalData.length - 1)) * 700;
-                        
-                        // ИСПРАВЛЕНО: Вычисляем конкретный год аренды
-                        let rentalYear;
-                        
-                        if (point.year === 'Текущий') {
-                          // Текущий год - аренда начинается через 3 месяца
-                          rentalYear = currentYear;
-                        } else {
-                          // Последующие годы аренды
-                          rentalYear = currentYear + parseInt(point.year);
-                        }
-                        
-                        return (
-                          <text key={index} x={x} y="315" textAnchor="middle" fontSize="10" fill="#666">
-                            {rentalYear}
-                          </text>
-                        );
-                      });
-                    })()}
-                    
-                    {/* Подписи по оси Y (доход) */}
-                    {(() => {
-                      const maxIncome = Math.max(...yearlyRentalData.map(d => d.cumulativeIncome));
-                      const minIncome = Math.min(...yearlyRentalData.map(d => d.cumulativeIncome));
-                      const incomeRange = maxIncome - minIncome;
-                      
-                      return [0, 0.25, 0.5, 0.75, 1].map((ratio, index) => {
-                        const income = minIncome + ratio * incomeRange;
-                        const y = 50 + (1 - ratio) * 250;
-                        
-                        return (
-                          <g key={index}>
-                            <line x1="45" y1={y} x2="50" y2={y} stroke="#ccc" strokeWidth="1" />
-                            <text x="40" y={y + 3} textAnchor="end" fontSize="10" fill="#666">
-                              {fmtMoney(income)}
-                            </text>
-                          </g>
-                        );
-                      });
-                    })()}
-                  </g>
-                </svg>
-              </div>
-            ) : (
-              // ИСПРАВЛЕНО: Показываем сообщение если данных нет
-              <div className="no-data-message">
-                <p>Данные для графика аренды недоступны. Выберите виллу с параметрами аренды.</p>
-              </div>
-            )}
-          </div>
-        </div>
-        
-        {/* 6. Расчет позиции - Параметры ценообразования и график */}
-        <div className="card">
-          <h3>{T.positionCalculation}</h3>
-          
-          {/* Параметры ценообразования - редактируемые в редакторском режиме */}
-          {isEditor ? (
-            <div className="pricing-params-editor">
-              <h4>{T.pricingParameters}</h4>
-              <div className="pricing-grid">
-                <div className="form-group">
-                  <label>{T.inflationRate}:</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={pricingConfig.inflationRate}
-                    onChange={(e) => setPricingConfig(prev => ({
-                      ...prev,
-                      inflationRate: parseFloat(e.target.value) || 0
-                    }))}
-                  />
-                  <small>Годовая ставка инфляции (например: 0.05 = 5%)</small>
-                </div>
-                
-                <div className="form-group">
-                  <label>{T.agingFactor}:</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={pricingConfig.agingBeta}
-                    onChange={(e) => setPricingConfig(prev => ({
-                      ...prev,
-                      agingBeta: parseFloat(e.target.value) || 0
-                    }))}
-                  />
-                  <small>Коэффициент старения виллы (например: 0.02 = 2% в год)</small>
-                </div>
-                
-                <div className="form-group">
-                  <label>{T.leaseDecay}:</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={pricingConfig.leaseAlpha}
-                    onChange={(e) => setPricingConfig(prev => ({
-                      ...prev,
-                      leaseAlpha: parseFloat(e.target.value) || 0
-                    }))}
-                  />
-                  <small>Коэффициент затухания лизинга (например: 0.3)</small>
-                </div>
-                
-                <div className="form-group">
-                  <label>{T.brandPeak}:</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={pricingConfig.brandPeak}
-                    onChange={(e) => setPricingConfig(prev => ({
-                      ...prev,
-                      brandPeak: parseFloat(e.target.value) || 1
-                    }))}
-                  />
-                  <small>Пиковое значение бренд-фактора</small>
-                </div>
-                
-                <div className="form-group">
-                  <label>{T.brandRamp}:</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={pricingConfig.brandRamp}
-                    onChange={(e) => setPricingConfig(prev => ({
-                      ...prev,
-                      brandRamp: parseFloat(e.target.value) || 0
-                    }))}
-                  />
-                  <small>Годы роста бренда</small>
-                </div>
-                
-                <div className="form-group">
-                  <label>{T.brandPlateau}:</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={pricingConfig.brandPlateau}
-                    onChange={(e) => setPricingConfig(prev => ({
-                      ...prev,
-                      brandPlateau: parseFloat(e.target.value) || 0
-                    }))}
-                  />
-                  <small>Годы плато бренда</small>
-                </div>
-                
-                <div className="form-group">
-                  <label>{T.brandDecay}:</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={pricingConfig.brandDecay}
-                    onChange={(e) => setPricingConfig(prev => ({
-                      ...prev,
-                      brandDecay: parseFloat(e.target.value) || 0
-                    }))}
-                  />
-                  <small>Годы затухания бренда</small>
-                </div>
-                
-                <div className="form-group">
-                  <label>{T.brandTail}:</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={pricingConfig.brandTail}
-                    onChange={(e) => setPricingConfig(prev => ({
-                      ...prev,
-                      brandTail: parseFloat(e.target.value) || 1
-                    }))}
-                  />
-                  <small>Хвостовое значение бренд-фактора</small>
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* В клиентском режиме показываем текущие коэффициенты */
-            <div className="current-coefficients-display">
-              <h4>{T.currentCoefficients}</h4>
-              <div className="coefficients-grid">
-                {(() => {
-                  if (!selectedVilla) return null;
-                  
-                  const currentYear = 0;
-                  const leaseF = leaseFactor(currentYear, 100, pricingConfig.leaseAlpha);
-                  const ageF = ageFactor(currentYear, pricingConfig.agingBeta);
-                  const brandF = brandFactor(currentYear, pricingConfig);
-                  const inflationF = Math.pow(1 + pricingConfig.inflationRate, currentYear);
-                  const overallMultiplier = leaseF * ageF * brandF * inflationF;
-                  
-                  return (
-                    <>
-                      <div className="coefficient-item">
-                        <span className="coefficient-label">{T.leaseFactor}:</span>
-                        <span className="coefficient-value">{leaseF.toFixed(1)}</span>
-                      </div>
-                      <div className="coefficient-item">
-                        <span className="coefficient-label">{T.ageFactor}:</span>
-                        <span className="coefficient-value">{ageF.toFixed(1)}</span>
-                      </div>
-                      <div className="coefficient-item">
-                        <span className="coefficient-label">{T.brandFactor}:</span>
-                        <span className="coefficient-value">{brandF.toFixed(1)}</span>
-                      </div>
-                      <div className="coefficient-item">
-                        <span className="coefficient-label">{T.inflationFactor}:</span>
-                        <span className="coefficient-value">{inflationF.toFixed(1)}</span>
-                      </div>
-                      <div className="coefficient-item">
-                        <span className="coefficient-label">{T.overallMultiplier}:</span>
-                        <span className="coefficient-value">{overallMultiplier.toFixed(1)}</span>
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
-          )}
-          
-          {/* График динамики цены виллы */}
-          <div className="pricing-chart">
-            <h4>{T.priceDynamics}</h4>
-            <p className="chart-subtitle">Влияние факторов на цену виллы по годам</p>
-            
-            {pricingData && pricingData.length > 0 ? (
-              <div className="pricing-chart-svg" id="pricing-chart-svg">
-                <svg width="100%" height="300" viewBox="0 0 800 300">
-                  <g className="chart-lines">
-                    {(() => {
-                      const maxPrice = Math.max(...pricingData.map(d => d.finalPrice));
-                      const minPrice = Math.min(...pricingData.map(d => d.finalPrice));
-                      const priceRange = maxPrice - minPrice;
-                      const chartWidth = 700;
-                      const chartHeight = 250;
-                      const padding = 50;
-                      
-                      return pricingData.map((point, index) => {
-                        const x = padding + (index / (pricingData.length - 1)) * (chartWidth - 2 * padding);
-                        const y = padding + ((maxPrice - point.finalPrice) / priceRange) * (chartHeight - 2 * padding);
-                        
-                        return (
-                          <g key={index}>
-                            <circle 
-                              cx={x} 
-                              cy={y} 
-                              r="3" 
-                              fill="#007bff" 
-                              stroke="none"
-                            />
-                            {index > 0 && (
-                              <line 
-                                x1={padding + ((index - 1) / (pricingData.length - 1)) * (chartWidth - 2 * padding)}
-                                y1={padding + ((maxPrice - pricingData[index - 1].finalPrice) / priceRange) * (chartHeight - 2 * padding)}
-                                x2={x}
-                                y2={y}
-                                stroke="#007bff"
-                                strokeWidth="2"
-                              />
-                            )}
-                          </g>
-                        );
-                      });
-                    })()}
-                  </g>
-                  
-                  {/* Оси графика */}
-                  <g className="chart-axes">
-                    <line x1="50" y1="50" x2="50" y2="300" stroke="#ccc" strokeWidth="1" />
-                    <line x1="50" y1="300" x2="750" y2="300" stroke="#ccc" strokeWidth="1" />
-                    
-                    {/* Подписи осей */}
-                    <text x="400" y="320" textAnchor="middle" fontSize="12" fill="#666">
-                      Годы
-                    </text>
-                    <text x="15" y="175" textAnchor="middle" fontSize="12" fill="#666" transform="rotate(-90, 15, 175)">
-                      Цена виллы (USD)
-                    </text>
-                    
-                    {/* Подписи по оси X (КОНКРЕТНЫЕ ГОДЫ) */}
-                    {/* Подписи по оси X (КОНКРЕТНЫЕ ГОДЫ) */}
-                    {pricingData.map((point, index) => {
-                      const x = 50 + (index / (pricingData.length - 1)) * 700;
-                      return (
-                        <text key={index} x={x} y="315" textAnchor="middle" fontSize="10" fill="#666">
-                          {point.year}
-                        </text>
-                      );
-                    })}
-                    
-                    {/* Подписи по оси Y (цена) */}
-                    {(() => {
-                      const maxPrice = Math.max(...pricingData.map(d => d.finalPrice));
-                      const minPrice = Math.min(...pricingData.map(d => d.finalPrice));
-                      const priceRange = maxPrice - minPrice;
-                      
-                      return [0, 0.25, 0.5, 0.75, 1].map((ratio, index) => {
-                        const price = minPrice + ratio * priceRange;
-                        const y = 50 + (1 - ratio) * 250;
-                        
-                        return (
-                          <g key={index}>
-                            <line x1="45" y1={y} x2="50" y2={y} stroke="#ccc" strokeWidth="1" />
-                            <text x="40" y={y + 3} textAnchor="end" fontSize="10" fill="#666">
-                              {fmtMoney(price)}
-                            </text>
-                          </g>
-                        );
-                      });
-                    })()}
-                  </g>
-                </svg>
-              </div>
-            ) : (
-              <div className="no-data-message">
-                <p>Данные для графика ценообразования недоступны.</p>
-              </div>
-            )}
-          </div>
-          
-          {/* Таблица факторов */}
-          <div className="factors-table">
-            <h4>{T.factorsTable}</h4>
-            {pricingData && pricingData.length > 0 ? (
-              <div className="factors-table-scroll">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>{T.year}</th>
-                      <th>{T.leaseFactor}</th>
-                      <th>{T.ageFactor}</th>
-                      <th>{T.brandFactor}</th>
-                      <th>{T.inflationFactor}</th>
-                      <th>{T.finalPrice}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pricingData.map((point, index) => (
-                      <tr key={index}>
-                        <td>{point.year}</td>
-                        <td>{point.leaseFactor.toFixed(3)}</td>
-                        <td>{point.ageFactor.toFixed(3)}</td>
-                        <td>{point.brandFactor.toFixed(3)}</td>
-                        <td>{point.inflationFactor.toFixed(3)}</td>
-                        <td>{fmtMoney(point.finalPrice)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="no-data-message">
-                <p>Данные для таблицы факторов недоступны.</p>
-              </div>
-            )}
-          </div>
-        </div>
-        
-        {/* 7. Каталог проектов и вилл */}
-        <div className="card">
-          <h3>{T.catalog}</h3>
-          
-          {isEditor && (
-            <div className="catalog-actions">
-              <button onClick={() => setShowAddProjectModal(true)} className="btn btn-primary">
-                {T.addProject}
-              </button>
-            </div>
-          )}
-          
-          <div className="catalog-grid">
-            {catalog.map(project => (
-              <div key={project.id} className="project-block">
-                <div className="project-header">
-                  <h4>{project.name}</h4>
-                  {isEditor && (
-                    <button 
-                      onClick={() => handleDeleteProject(project.id)}
-                      className="btn btn-danger btn-sm"
-                    >
-                      {T.deleteProject}
-                    </button>
-                  )}
-                </div>
-                
-                <div className="villas-list">
-                  {project.villas.map(villa => (
-                    <div key={villa.id} className="villa-item">
-                      <div className="villa-info">
-                        <span className="villa-name">{villa.name}</span>
-                        <span className="villa-details">
-                          {villa.area} кв.м • {fmtMoney(villa.ppsm)}/кв.м
-                        </span>
-                      </div>
-                      
-                      <div className="villa-actions">
-                        {isEditor ? (
-                          <>
-                            <button 
-                              onClick={() => handleEditVilla(villa, project)}
-                              className="btn btn-secondary btn-sm"
-                            >
-                              {T.editVilla}
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteVilla(villa.id, project.id)}
-                              className="btn btn-danger btn-sm"
-                            >
-                              {T.deleteVilla}
-                            </button>
-                          </>
-                        ) : (
-                          <button 
-                            onClick={() => addFromCatalog(villa, project)}
-                            className="btn btn-primary btn-sm"
-                          >
-                            Выбрать
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {/* Кнопка добавить виллу внутри проекта */}
-                  {isEditor && (
-                    <div className="add-villa-in-project">
-                      <button 
-                        onClick={() => {
-                          setEditingProject(project);
-                          setShowAddVillaModal(true);
-                        }}
-                        className="btn btn-outline-primary btn-sm"
-                      >
-                        {T.addVilla}
-                      </button>
-                    </div>
-                  )}
+                <div className="bar-values">
+                  <div className="year-income">{fmtMoney(yearData.yearIncome, currency)}</div>
+                  <div className="cumulative-income">{fmtMoney(yearData.cumulativeIncome, currency)}</div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-        
-        {/* 8. Экспорт */}
-        <div className="card">
-          <h3>{T.export}</h3>
-          <div className="export-buttons">
-            <button onClick={exportCSV} className="btn btn-secondary">
-              {T.exportCSV}
-            </button>
-            <button onClick={exportXLSX} className="btn btn-secondary">
-              {T.exportExcel}
-            </button>
-            <button onClick={exportPDF} className="btn btn-secondary">
-              {T.exportPDF}
-            </button>
+          <div className="chart-legend">
+            <div className="legend-item">
+              <div className="legend-color" style={{backgroundColor: '#3b82f6'}}></div>
+              <span>{t.totalIncome}</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-color" style={{backgroundColor: '#e2e8f0'}}></div>
+              <span>{t.cumulativeIncome}</span>
+            </div>
           </div>
         </div>
       </div>
-      
-      {/* Модальное окно PIN */}
-      {showPinModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h3>{T.enterPin}</h3>
-            <div className="form-group">
-              <label>{T.pin}:</label>
-              <input
-                type="password"
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                placeholder="Введите PIN"
-              />
+
+      {/* 7. НОВЫЙ БЛОК: Параметры расчёта и график ценообразования */}
+      {lines.length > 0 && (
+        <div className="card">
+          <h3>📊 Параметры расчёта</h3>
+          
+          {/* Параметры расчёта (read-only) */}
+          <div className="calculation-params-compact">
+            <div className="param-item-compact">
+              <span className="param-label-compact">Инфляция:</span>
+              <span className="param-value-compact">g = {pricingConfig.inflationRatePct}%/год</span>
             </div>
-            <div className="modal-actions">
-              <button onClick={handlePinSubmit} className="btn btn-primary">
-                {T.submit}
-              </button>
-              <button onClick={() => setShowPinModal(false)} className="btn btn-secondary">
-                {T.cancel}
-              </button>
+            <div className="param-item-compact">
+              <span className="param-label-compact">Старение:</span>
+              <span className="param-value-compact">β = {pricingConfig.agingBeta}/год</span>
+            </div>
+            <div className="param-item-compact">
+              <span className="param-label-compact">Lease Decay:</span>
+              <span className="param-value-compact">α = {pricingConfig.leaseAlpha}</span>
+            </div>
+            <div className="param-item-compact">
+              <span className="param-label-compact">Brand Factor:</span>
+              <span className="param-value-compact">Пик = {pricingConfig.brandPeak}x</span>
+            </div>
+          </div>
+          
+          {/* График ценообразования */}
+          <div className="pricing-chart-container">
+            <h4>Динамика цены виллы</h4>
+            <p className="chart-subtitle">Влияние факторов на цену</p>
+            <div className="pricing-chart-svg" id="pricing-chart-svg">
+              <svg width="100%" height="300" viewBox="0 0 800 300">
+                <g className="chart-lines">
+                  {(() => {
+                    const selectedVilla = catalog
+                      .flatMap(p => p.villas)
+                      .find(v => v.villaId === lines[0]?.villaId);
+                    const pricingData = selectedVilla && selectedVilla.leaseholdEndDate ? 
+                      generatePricingData(selectedVilla) : [];
+                    
+                    if (pricingData.length === 0) return null;
+                    
+                    const maxPrice = Math.max(...pricingData.map(d => Math.max(d.marketPrice, d.finalPrice)));
+                    const minPrice = Math.min(...pricingData.map(d => Math.min(d.marketPrice, d.finalPrice)));
+                    const priceRange = maxPrice - minPrice;
+                    
+                    return (
+                      <>
+                        {/* Market Price линия */}
+                        <polyline
+                          className="chart-line"
+                          points={pricingData.map((d, i) => 
+                            `${50 + i * 35},${250 - ((d.marketPrice - minPrice) / priceRange) * 200}`
+                          ).join(' ')}
+                          fill="none"
+                          stroke="#4CAF50"
+                          strokeWidth="2"
+                        />
+                        {/* Final Price линия */}
+                        <polyline
+                          className="chart-line"
+                          points={pricingData.map((d, i) => 
+                            `${50 + i * 35},${250 - ((d.finalPrice - minPrice) / priceRange) * 200}`
+                          ).join(' ')}
+                          fill="none"
+                          stroke="#2196F3"
+                          strokeWidth="2"
+                        />
+                        {/* Точки */}
+                        <g className="line-points">
+                          {pricingData.map((d, i) => (
+                            <g key={i}>
+                              <circle
+                                cx={50 + i * 35}
+                                cy={250 - ((d.marketPrice - minPrice) / priceRange) * 200}
+                                r="3"
+                                fill="#4CAF50"
+                              />
+                              <circle
+                                cx={50 + i * 35}
+                                cy={250 - ((d.finalPrice - minPrice) / priceRange) * 200}
+                                r="3"
+                                fill="#2196F3"
+                              />
+                            </g>
+                          ))}
+                        </g>
+                        {/* Оси */}
+                        <g className="chart-axes">
+                          <line className="y-axis" x1="50" y1="50" x2="50" y2="250" stroke="#666" strokeWidth="1"/>
+                          <line className="x-axis" x1="50" y1="250" x2="750" y2="250" stroke="#666" strokeWidth="1"/>
+                        </g>
+                        {/* Легенда */}
+                        <g className="chart-legend">
+                          <rect x="600" y="20" width="15" height="15" fill="#4CAF50"/>
+                          <text x="620" y="32" fontSize="12" fill="#333">Market Price</text>
+                          <rect x="600" y="40" width="15" height="15" fill="#2196F3"/>
+                          <text x="620" y="52" fontSize="12" fill="#333">Final Price</text>
+                        </g>
+                      </>
+                    );
+                  })()}
+                </g>
+              </svg>
+            </div>
+          </div>
+          
+          {/* Таблица факторов */}
+          <div className="factors-table-container">
+            <h4>Таблица факторов</h4>
+            <div className="factors-table-scroll">
+              <table className="factors-table">
+                <thead>
+                  <tr>
+                    <th>Год</th>
+                    <th>Lease Factor</th>
+                    <th>Age Factor</th>
+                    <th>Brand Factor</th>
+                    <th>Market Price</th>
+                    <th>Final Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    const selectedVilla = catalog
+                      .flatMap(p => p.villas)
+                      .find(v => v.villaId === lines[0]?.villaId);
+                    return selectedVilla && selectedVilla.leaseholdEndDate ? 
+                      generatePricingData(selectedVilla).slice(0, 10).map((data, index) => (
+                        <tr key={index}>
+                          <td>{data.year}</td>
+                          <td>{data.leaseFactor.toFixed(3)}</td>
+                          <td>{data.ageFactor.toFixed(3)}</td>
+                          <td>{data.brandFactor.toFixed(3)}</td>
+                          <td className="price-cell">{fmtMoney(data.marketPrice)}</td>
+                          <td className="price-cell">{fmtMoney(data.finalPrice)}</td>
+                        </tr>
+                      )) : null;
+                  })()}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
       )}
-      
-      {/* Модальное окно добавления проекта */}
+
+      {/* 8. Каталог проектов и вилл (только для редактора) - ОБНОВЛЕН С НОВЫМИ ПОЛЯМИ */}
+      {!isClient && (
+        <div className="editor-mode">
+          <h2>{t.catalogTitle}</h2>
+          <CatalogManager 
+            catalog={catalog} 
+            setCatalog={setCatalog} 
+            t={t} 
+            lang={lang} 
+            fmtMoney={fmtMoney}
+            showAddProjectModal={showAddProjectModal}
+            setShowAddProjectModal={setShowAddProjectModal}
+            showAddVillaModal={showAddVillaModal}
+            setShowAddVillaModal={setShowAddVillaModal}
+            editingProject={editingProject}
+            setEditingProject={setEditingProject}
+            newProjectForm={newProjectForm}
+            setNewProjectForm={setNewProjectForm}
+            newVillaForm={newVillaForm}
+            setNewVillaForm={setNewVillaForm}
+            addProject={addProject}
+            saveProject={saveProject}
+            addVilla={addVilla}
+            saveVilla={saveVilla}
+          />
+        </div>
+      )}
+
+      {/* Модальные окна - ОБНОВЛЕНЫ С НОВЫМИ ПОЛЯМИ */}
+      {modalOpen && (
+        <div className="modal-overlay" onClick={() => setModalOpen(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>{t.selectFromCatalog}</h3>
+            <div className="catalog-grid">
+              {catalog.map(project => (
+                <div key={project.projectId} className="project-group">
+                  <h4>{project.projectName}</h4>
+                  {project.villas.map(villa => (
+                    <div key={villa.villaId} className="villa-item" onClick={() => addFromCatalogLine(villa, project.projectId)}>
+                      <div className="villa-info">
+                        <strong>{villa.name}</strong>
+                        <span>{villa.area} м² × ${villa.ppsm} = {fmtMoney(villa.baseUSD, 'USD')}</span>
+                        <span>{t.dailyRate}: ${villa.dailyRateUSD} | {t.rentalPriceIndex}: {villa.rentalPriceIndexPct}%</span>
+                      </div>
+                      <button className="btn primary small">{t.addSelected}</button>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setModalOpen(false)} className="btn">{t.cancel}</button>
+          </div>
+        </div>
+      )}
+
       {showAddProjectModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h3>{T.addProject}</h3>
+        <div className="modal-overlay" onClick={() => setShowAddProjectModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>{t.addProject}</h3>
             <div className="form-group">
-              <label>{T.projectName}:</label>
-              <input
-                type="text"
-                value={newProjectForm.name}
-                onChange={(e) => setNewProjectForm({ name: e.target.value })}
+              <label>{t.projectName}:</label>
+              <input 
+                type="text" 
+                value={newProjectForm.projectName} 
+                onChange={e => setNewProjectForm(prev => ({...prev, projectName: e.target.value}))}
                 placeholder="Название проекта"
+                className="input"
               />
             </div>
             <div className="modal-actions">
-              <button onClick={handleAddProject} className="btn btn-primary">
-                {T.save}
-              </button>
-              <button onClick={() => setShowAddProjectModal(false)} className="btn btn-secondary">
-                {T.cancel}
-              </button>
+              <button onClick={saveProject} className="btn primary">{t.save}</button>
+              <button onClick={() => setShowAddProjectModal(false)} className="btn">{t.cancel}</button>
             </div>
           </div>
         </div>
       )}
-      
-      {/* Модальное окно добавления/редактирования виллы */}
+
       {showAddVillaModal && (
-        <div className="modal-overlay">
-          <div className="modal villa-modal">
-            <h3>{editingProject ? 'Редактировать виллу' : T.addVilla}</h3>
-            
+        <div className="modal-overlay" onClick={() => setShowAddVillaModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>{t.addVilla}</h3>
             <div className="form-group">
-              <label>{T.villaName}:</label>
-              <input
-                type="text"
-                value={newVillaForm.name}
-                onChange={(e) => setNewVillaForm(prev => ({ ...prev, name: e.target.value }))}
+              <label>{t.villaName}:</label>
+              <input 
+                type="text" 
+                value={newVillaForm.name} 
+                onChange={e => setNewVillaForm(prev => ({...prev, name: e.target.value}))}
                 placeholder="Название виллы"
+                className="input"
               />
             </div>
-            
             <div className="form-group">
-              <label>{T.area}:</label>
-              <input
-                type="number"
-                value={newVillaForm.area}
-                onChange={(e) => setNewVillaForm(prev => ({ ...prev, area: e.target.value }))}
-                placeholder="Площадь в кв.м"
+              <label>{t.villaArea}:</label>
+              <input 
+                type="number" 
+                value={newVillaForm.area} 
+                onChange={e => setNewVillaForm(prev => ({...prev, area: +e.target.value}))}
+                placeholder="Площадь"
+                className="input"
               />
             </div>
-            
             <div className="form-group">
-              <label>{T.ppsm}:</label>
-              <input
-                type="number"
-                value={newVillaForm.ppsm}
-                onChange={(e) => setNewVillaForm(prev => ({ ...prev, ppsm: e.target.value }))}
-                placeholder="Цена за кв.м в USD"
+              <label>{t.villaPpsm}:</label>
+              <input 
+                type="number" 
+                value={newVillaForm.ppsm} 
+                onChange={e => setNewVillaForm(prev => ({...prev, ppsm: +e.target.value}))}
+                placeholder="Цена за м²"
+                className="input"
               />
             </div>
-            
             <div className="form-group">
-              <label>{T.leaseholdEnd}:</label>
-              <input
-                type="date"
-                value={newVillaForm.leaseholdEndDate}
-                onChange={(e) => setNewVillaForm(prev => ({ ...prev, leaseholdEndDate: e.target.value }))}
+              <label>{t.villaBasePrice}:</label>
+              <input 
+                type="number" 
+                value={newVillaForm.baseUSD} 
+                onChange={e => setNewVillaForm(prev => ({...prev, baseUSD: +e.target.value}))}
+                placeholder="Базовая цена"
+                className="input"
               />
             </div>
-            
+            {/* НОВЫЕ ПОЛЯ ДЛЯ ЛИЗХОЛДА И АРЕНДЫ */}
             <div className="form-group">
-              <label>{T.dailyRate}:</label>
-              <input
-                type="number"
-                value={newVillaForm.dailyRateUSD}
-                onChange={(e) => setNewVillaForm(prev => ({ ...prev, dailyRateUSD: e.target.value }))}
-                placeholder="Дневная ставка в USD"
+              <label>{t.leaseholdEndDate}:</label>
+              <input 
+                type="date" 
+                value={newVillaForm.leaseholdEndDate ? newVillaForm.leaseholdEndDate.toISOString().split('T')[0] : ''} 
+                onChange={e => setNewVillaForm(prev => ({...prev, leaseholdEndDate: new Date(e.target.value)}))}
+                className="input"
               />
             </div>
-            
             <div className="form-group">
-              <label>{T.rentalIndex}:</label>
-              <input
-                type="number"
-                step="0.1"
-                value={newVillaForm.rentalPriceIndexPct}
-                onChange={(e) => setNewVillaForm(prev => ({ ...prev, rentalPriceIndexPct: e.target.value }))}
-                placeholder="Индекс аренды в %"
+              <label>{t.dailyRate}:</label>
+              <input 
+                type="number" 
+                value={newVillaForm.dailyRateUSD} 
+                onChange={e => setNewVillaForm(prev => ({...prev, dailyRateUSD: +e.target.value}))}
+                placeholder="Стоимость ночи"
+                className="input"
               />
             </div>
-            
+            <div className="form-group">
+              <label>{t.rentalPriceIndex}:</label>
+              <input 
+                type="number" 
+                value={newVillaForm.rentalPriceIndexPct} 
+                onChange={e => setNewVillaForm(prev => ({...prev, rentalPriceIndexPct: +e.target.value}))}
+                placeholder="Индексация в год (%)"
+                className="input"
+              />
+            </div>
             <div className="modal-actions">
-              <button 
-                onClick={editingProject ? handleSaveVilla : handleAddVilla} 
-                className="btn btn-primary"
-              >
-                {editingProject ? 'Сохранить изменения' : T.save}
-              </button>
+              <button onClick={saveVilla} className="btn primary">{t.save}</button>
+              <button onClick={() => setShowAddVillaModal(false)} className="btn">{t.cancel}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ===== КОМПОНЕНТ КАТАЛОГА - ОБНОВЛЕН С НОВЫМИ ПОЛЯМИ =====
+function CatalogManager({ 
+  catalog, 
+  setCatalog, 
+  t, 
+  lang, 
+  fmtMoney,
+  showAddProjectModal,
+  setShowAddProjectModal,
+  showAddVillaModal,
+  setShowAddVillaModal,
+  editingProject,
+  setEditingProject,
+  newProjectForm,
+  setNewProjectForm,
+  newVillaForm,
+  setNewVillaForm,
+  addProject,
+  saveProject,
+  addVilla,
+  saveVilla
+}) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('name');
+  const [areaFilter, setAreaFilter] = useState({ from: '', to: '' });
+  const [priceFilter, setPriceFilter] = useState({ from: '', to: '' });
+
+  const filteredCatalog = useMemo(() => {
+    let filtered = [...catalog];
+    
+    if (searchTerm) {
+      filtered = filtered.filter(project => 
+        project.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.villas.some(villa => 
+          villa.name.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      );
+    }
+    
+    if (areaFilter.from || areaFilter.to) {
+      filtered = filtered.map(project => ({
+        ...project,
+        villas: project.villas.filter(villa => {
+          const area = villa.area;
+          const from = areaFilter.from ? +areaFilter.from : 0;
+          const to = areaFilter.to ? +areaFilter.to : Infinity;
+          return area >= from && area <= to;
+        })
+      })).filter(project => project.villas.length > 0);
+    }
+    
+    if (priceFilter.from || priceFilter.to) {
+      filtered = filtered.map(project => ({
+        ...project,
+        villas: project.villas.filter(villa => {
+          const price = villa.baseUSD;
+          const from = priceFilter.from ? +priceFilter.from : 0;
+          const to = priceFilter.to ? +priceFilter.to : Infinity;
+          return price >= from && price <= to;
+        })
+      })).filter(project => project.villas.length > 0);
+    }
+    
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'price':
+          const aPrice = Math.min(...a.villas.map(v => v.baseUSD));
+          const bPrice = Math.min(...b.villas.map(v => v.baseUSD));
+          return aPrice - bPrice;
+        case 'area':
+          const aArea = Math.min(...a.villas.map(v => v.area));
+          const bArea = Math.min(...b.villas.map(v => v.area));
+          return aArea - bArea;
+        case 'name':
+        default:
+          return a.projectName.localeCompare(b.projectName);
+      }
+    });
+    
+    return filtered;
+  }, [catalog, searchTerm, sortBy, areaFilter, priceFilter]);
+
+  const deleteProject = (projectId) => {
+    if (confirm(t.deleteProjectConfirm)) {
+      setCatalog(prev => prev.filter(p => p.projectId !== projectId));
+    }
+  };
+
+  const deleteVilla = (projectId, villaId) => {
+    if (confirm(t.deleteVillaConfirm)) {
+      setCatalog(prev => prev.map(p => 
+        p.projectId === projectId 
+          ? { ...p, villas: p.villas.filter(v => v.villaId !== villaId) }
+          : p
+      ));
+    }
+  };
+
+  const exportCatalog = () => {
+    const dataStr = JSON.stringify(catalog, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+    link.href = url;
+    link.download = 'arconique_catalog.json';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importCatalog = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            setCatalog(imported);
+            alert(t.catalogImported);
+          } else {
+            alert(t.wrongFileFormat);
+          }
+        } catch (error) {
+          alert(t.importError);
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  return (
+    <div className="catalog-section">
+      {/* Панель управления */}
+      <div className="catalog-controls">
+        <div className="search-filters">
+          <input 
+            type="text" 
+            placeholder="Поиск..." 
+            value={searchTerm} 
+            onChange={e => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+          
+          <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="sort-select">
+            <option value="name">По названию</option>
+            <option value="price">По цене</option>
+            <option value="area">По площади</option>
+          </select>
+          
+          <div className="filter-group">
+            <input 
+              type="number" 
+              placeholder={t.areaFrom} 
+              value={areaFilter.from} 
+              onChange={e => setAreaFilter(prev => ({...prev, from: e.target.value}))}
+              className="filter-input"
+            />
+            <span>-</span>
+            <input 
+              type="number" 
+              placeholder={t.areaTo} 
+              value={areaFilter.to} 
+              onChange={e => setAreaFilter(prev => ({...prev, to: e.target.value}))}
+              className="filter-input"
+            />
+          </div>
+          
+          <div className="filter-group">
+            <input 
+              type="number" 
+              placeholder={t.priceFrom} 
+              value={priceFilter.from} 
+              onChange={e => setPriceFilter(prev => ({...prev, from: e.target.value}))}
+              className="filter-input"
+            />
+            <span>-</span>
+            <input 
+              type="number" 
+              placeholder={t.priceTo} 
+              value={priceFilter.to} 
+              onChange={e => setPriceFilter(prev => ({...prev, to: e.target.value}))}
+              className="filter-input"
+            />
+          </div>
+        </div>
+        
+        <div className="catalog-actions">
+          <button onClick={() => setShowAddProjectModal(true)} className="btn primary">
+            {t.addProject}
+          </button>
+          <button onClick={() => setShowAddVillaModal(true)} className="btn success">
+            {t.addVilla}
+          </button>
+          <button onClick={exportCatalog} className="btn">
+            Экспорт JSON
+          </button>
+          <label className="btn import-btn">
+            Импорт JSON
+            <input 
+              type="file" 
+              accept=".json" 
+              onChange={importCatalog} 
+              style={{display: 'none'}}
+            />
+          </label>
+        </div>
+      </div>
+
+      {/* Список проектов и вилл */}
+      <div className="catalog-list">
+        {filteredCatalog.map(project => (
+          <div key={project.projectId} className="project-card">
+            <div className="project-header">
+              <h3>{project.projectName}</h3>
+              <div className="project-actions">
+                <button 
+                  onClick={() => setEditingProject(project)} 
+                  className="btn small"
+                >
+                  ✏️
+                </button>
+                <button 
+                  onClick={() => deleteProject(project.projectId)} 
+                  className="btn danger small"
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+            
+            <div className="villas-grid">
+              {project.villas.map(villa => (
+                <div key={villa.villaId} className="villa-card">
+                  <div className="villa-header">
+                    <h4>{villa.name}</h4>
+                    <div className="villa-actions">
+                      <button 
+                        onClick={() => setNewVillaForm(villa)} 
+                        className="btn small"
+                      >
+                        ✏️
+                      </button>
+                      <button 
+                        onClick={() => deleteVilla(project.projectId, villa.villaId)} 
+                        className="btn danger small"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="villa-details">
+                    <div className="detail-row">
+                      <span className="label">{t.villaArea}:</span>
+                      <span className="value">{villa.area} м²</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="label">{t.villaPpsm}:</span>
+                      <span className="value">${villa.ppsm}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="label">{t.villaBasePrice}:</span>
+                      <span className="value">{fmtMoney(villa.baseUSD, 'USD')}</span>
+                    </div>
+                    {/* НОВЫЕ ПОЛЯ ДЛЯ ЛИЗХОЛДА И АРЕНДЫ */}
+                    <div className="detail-row">
+                      <span className="label">{t.leaseholdEndDate}:</span>
+                      <span className="value">
+                        {villa.leaseholdEndDate ? 
+                          villa.leaseholdEndDate.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US') : 
+                          'Не указано'
+                        }
+                      </span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="label">{t.dailyRate}:</span>
+                      <span className="value">${villa.dailyRateUSD || 150}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="label">{t.rentalPriceIndex}:</span>
+                      <span className="value">{villa.rentalPriceIndexPct || 5}%</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Модальное окно редактирования проекта */}
+      {editingProject && (
+        <div className="modal-overlay" onClick={() => setEditingProject(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>Редактировать проект</h3>
+            <div className="form-group">
+              <label>{t.projectName}:</label>
+              <input 
+                type="text" 
+                value={editingProject.projectName} 
+                onChange={e => setEditingProject(prev => ({...prev, projectName: e.target.value}))}
+                className="input"
+              />
+            </div>
+            <div className="modal-actions">
               <button onClick={() => {
-                setShowAddVillaModal(false);
+                setCatalog(prev => prev.map(p => 
+                  p.projectId === editingProject.projectId ? editingProject : p
+                ));
                 setEditingProject(null);
-                setNewVillaForm({
-                  name: '',
-                  area: '',
-                  ppsm: '',
-                  leaseholdEndDate: '',
-                  dailyRateUSD: '',
-                  rentalPriceIndexPct: ''
-                });
-              }} className="btn btn-secondary">
-                {T.cancel}
+              }} className="btn primary">
+                {t.save}
+              </button>
+              <button onClick={() => setEditingProject(null)} className="btn">
+                {t.cancel}
               </button>
             </div>
           </div>
@@ -1422,8 +2132,7 @@ function App() {
   );
 }
 
-export default App;
 // ===== РЕНДЕРИНГ ПРИЛОЖЕНИЯ =====
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const root = createRoot(document.getElementById('root'));
 root.render(<App />);
-
+          
