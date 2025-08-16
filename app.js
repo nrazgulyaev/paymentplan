@@ -1,4 +1,4 @@
-// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С ЛИЗХОЛДОМ, ИНДЕКСАЦИЕЙ И ЦЕНООБРАЗОВАНИЕМ) - ПОЛНОСТЬЮ ПРОВЕРЕННАЯ ВЕРСИЯ =====
+// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С ЛИЗХОЛДОМ, ИНДЕКСАЦИЕЙ И ЦЕНООБРАЗОВАНИЕМ) - ПОЛНОСТЬЮ ИСПРАВЛЕННАЯ И ПРОВЕРЕННАЯ ВЕРСИЯ =====
 
 const { useState, useEffect, useMemo, useRef } = React;
 
@@ -380,6 +380,12 @@ function App() {
   };
 
   const saveVilla = () => {
+    // ИСПРАВЛЕНО: Проверяем что editingProject не null
+    if (!editingProject) {
+      alert('Ошибка: проект не выбран');
+      return;
+    }
+    
     if (!newVillaForm.name || !newVillaForm.area || !newVillaForm.ppsm) {
       alert('Заполните все обязательные поля');
       return;
@@ -403,6 +409,7 @@ function App() {
     ));
     
     setShowAddVillaModal(false);
+    setEditingProject(null); // Сбрасываем editingProject
     setNewVillaForm({
       name: '',
       area: 0,
@@ -415,6 +422,7 @@ function App() {
   };
 
   const editVilla = (projectId, villa) => {
+    setEditingProject(projectId); // Устанавливаем editingProject
     setNewVillaForm({
       name: villa.name,
       area: villa.area,
@@ -424,7 +432,7 @@ function App() {
       dailyRateUSD: villa.dailyRateUSD,
       rentalPriceIndexPct: villa.rentalPriceIndexPct
     });
-    setShowAddVillaModal(true); // ИСПРАВЛЕНО: Открываем модальное окно
+    setShowAddVillaModal(true);
   };
 
   const deleteProject = (projectId) => {
@@ -556,7 +564,7 @@ function App() {
     return cumulative;
   };
 
-  // Функции экспорта
+  // Функции экспорта с проверкой библиотек
   const exportCSV = () => {
     const rows = [
       [t.month, t.description, t.amountDue, t.rentalIncome, t.netPayment, t.remainingBalance],
@@ -578,7 +586,12 @@ function App() {
   };
 
   const exportXLSX = () => {
-    // ИСПРАВЛЕНО: Добавлена точка с запятой и убран лишний отступ
+    // ИСПРАВЛЕНО: Проверяем наличие библиотеки XLSX
+    if (typeof XLSX === 'undefined') {
+      alert('Библиотека XLSX не загружена. Экспорт в Excel недоступен.');
+      return;
+    }
+    
     const ws1 = XLSX.utils.json_to_sheet(project.cashflow.map(c => ({
       [t.month]: formatMonth(c.month),
       [t.description]: (c.items || []).join(' + '),
@@ -614,6 +627,12 @@ function App() {
   };
 
   const exportPDF = () => {
+    // ИСПРАВЛЕНО: Проверяем наличие библиотеки html2pdf
+    if (typeof html2pdf === 'undefined') {
+      alert('Библиотека html2pdf не загружена. Экспорт в PDF недоступен.');
+      return;
+    }
+    
     const element = document.getElementById('app-content');
     const opt = {
       margin: 1,
@@ -1040,10 +1059,10 @@ function App() {
                   <td className="col-villa">{lineData.line.snapshot?.name}</td>
                   <td className="col-qty">{lineData.qty}</td>
                   <td className="col-area">{lineData.line.snapshot?.area} м²</td>
-                                   <td className="col-ppsm">${lineData.line.snapshot?.ppsm}</td>
+                  <td className="col-ppsm">${lineData.line.snapshot?.ppsm}</td>
                   <td className="col-price">{fmtMoney(lineData.base, currency)}</td>
                   <td className="col-discount">{lineData.discountPct}%</td>
-                  <td className="col-pre">{lineData.prePct}%</td>
+                                   <td className="col-pre">{lineData.prePct}%</td>
                   <td className="col-months">{lineData.vMonths}</td>
                   <td className="col-total">{fmtMoney(lineData.lineTotal, currency)}</td>
                   {/* НОВЫЕ ЯЧЕЙКИ ДЛЯ АРЕНДЫ */}
@@ -1061,30 +1080,7 @@ function App() {
         </div>
       </div>
 
-      {/* 3. KPI по проекту - ОБНОВЛЕН С НОВЫМИ ПОЛЯМИ ДЛЯ АРЕНДЫ */}
-      <div className="card">
-        <h3>{t.kpiTitle}</h3>
-        <div className="kpi-grid">
-          <div className="kpi-item">
-            <span className="kpi-label">{t.totalInvestment}:</span>
-            <span className="kpi-value">{fmtMoney(project.total, currency)}</span>
-          </div>
-          <div className="kpi-item">
-            <span className="kpi-label">{t.totalRentalIncome}:</span>
-            <span className="kpi-value positive">{fmtMoney(project.totalRental, currency)}</span>
-          </div>
-          <div className="kpi-item">
-            <span className="kpi-label">{t.netInvestment}:</span>
-            <span className="kpi-value">{fmtMoney(project.netInvestment, currency)}</span>
-          </div>
-          <div className="kpi-item">
-            <span className="kpi-label">{t.roi}:</span>
-            <span className="kpi-value">{project.roi.toFixed(2)}%</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 4. Базовая рассрочка - ВОССТАНОВЛЕН СТАРЫЙ ДИЗАЙН */}
+      {/* 3. Базовая рассрочка - ВОССТАНОВЛЕН СТАРЫЙ ДИЗАЙН */}
       <div className="card">
         <div className="stages-section">
           <h3>{t.stagesTitle}</h3>
@@ -1155,7 +1151,7 @@ function App() {
         </div>
       </div>
 
-      {/* 5. Кэшфлоу - ВОССТАНОВЛЕН СТАРЫЙ ДИЗАЙН */}
+      {/* 4. Кэшфлоу - ВОССТАНОВЛЕН СТАРЫЙ ДИЗАЙН */}
       <div className="card">
         <h3>Кэшфлоу</h3>
         <div className="cashflow-actions">
@@ -1192,7 +1188,7 @@ function App() {
         </div>
       </div>
 
-      {/* 6. График общей доходности от сдачи в аренду - ИСПРАВЛЕННАЯ ОРИЕНТАЦИЯ */}
+      {/* 5. График общей доходности от сдачи в аренду - ИСПРАВЛЕННАЯ ОРИЕНТАЦИЯ */}
       <div className="card">
         <h3>{t.rentalIncomeChart}</h3>
         <div className="rental-chart-container">
@@ -1281,7 +1277,7 @@ function App() {
         </div>
       </div>
 
-      {/* 7. Параметры расчёта и график ценообразования - ПОЛНОСТЬЮ ИСПРАВЛЕННЫЙ */}
+      {/* 6. Параметры расчёта и график ценообразования - ПОЛНОСТЬЮ ИСПРАВЛЕННЫЙ */}
       {lines.length > 0 && (
         <div className="card">
           <h3>📊 Параметры расчёта</h3>
@@ -1553,7 +1549,7 @@ function App() {
         </div>
       )}
 
-      {/* 8. Каталог проектов и вилл (только для редактора) - УПРОЩЕННЫЙ БЕЗ ПОИСКА И ФИЛЬТРОВ */}
+      {/* 7. Каталог проектов и вилл (только для редактора) - УПРОЩЕННЫЙ БЕЗ ПОИСКА И ФИЛЬТРОВ */}
       {!isClient && (
         <div className="card">
           <h3>{t.catalogTitle}</h3>
