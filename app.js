@@ -1469,7 +1469,8 @@ function App() {
         <h3>{t.rentalIncomeChart}</h3>
         <div className="rental-chart">
           <div className="chart-container">
-            {yearlyRentalData.map((yearData, index) => (
+             {yearlyRentalData && Array.isArray(yearlyRentalData) && yearlyRentalData.length > 0 ? (
+        yearlyRentalData.map((yearData, index) => (
               <div key={index} className="chart-bar">
                 <div className="bar-label">{yearData.year === 0 ? t.keys : `${yearData.year} ${t.years}`}</div>
                 <div className="bar-container">
