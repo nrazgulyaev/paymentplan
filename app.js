@@ -1599,7 +1599,7 @@ function App() {
             </div>
           </div>
           
-        {/* График ценообразования */}
+       {/* График ценообразования - С РЕАЛЬНЫМИ ГОДАМИ */}
 <div className="pricing-chart-container">
   <h4>Динамика цены виллы</h4>
   <p className="chart-subtitle">Влияние факторов на цену</p>
@@ -1621,7 +1621,7 @@ function App() {
           
           return (
             <>
-              {/* ТОЛЬКО Final Price линия - Market Price убрана */}
+              {/* Final Price линия */}
               <polyline
                 className="chart-line"
                 points={pricingData.map((d, i) => 
@@ -1632,7 +1632,7 @@ function App() {
                 strokeWidth="2"
               />
               
-              {/* Точки только для Final Price */}
+              {/* Точки */}
               <g className="line-points">
                 {pricingData.map((d, i) => (
                   <circle
@@ -1651,7 +1651,28 @@ function App() {
                 <line className="x-axis" x1="50" y1="250" x2="750" y2="250" stroke="#666" strokeWidth="1"/>
               </g>
               
-              {/* Легенда - только Final Price */}
+              {/* Подписи по оси X - РЕАЛЬНЫЕ ГОДЫ */}
+              <g className="x-labels">
+                {pricingData.map((d, i) => {
+                  const realYear = startMonth.getFullYear() + handoverMonth / 12 + d.year;
+                  const displayYear = Math.floor(realYear);
+                  
+                  return (
+                    <text
+                      key={i}
+                      x={50 + i * 35}
+                      y="270"
+                      textAnchor="middle"
+                      fontSize="12"
+                      fill="#666"
+                    >
+                      {displayYear}
+                    </text>
+                  );
+                })}
+              </g>
+              
+              {/* Легенда */}
               <g className="chart-legend">
                 <rect x="600" y="20" width="15" height="15" fill="#2196F3"/>
                 <text x="620" y="32" fontSize="12" fill="#333">Final Price</text>
@@ -1664,7 +1685,7 @@ function App() {
   </div>
 </div>
 
-{/* Таблица факторов - БЕЗ ОГРАНИЧЕНИЙ */}
+{/* Таблица факторов - С РЕАЛЬНЫМИ ГОДАМИ */}
 <div className="factors-table-container">
   <h4>Таблица факторов</h4>
   <div className="factors-table-scroll">
@@ -1685,17 +1706,22 @@ function App() {
             .flatMap(p => p.villas)
             .find(v => v.villaId === lines[0]?.villaId);
           return selectedVilla && selectedVilla.leaseholdEndDate ? 
-            // УБРАЛ .slice(0, 10) - теперь показываются ВСЕ годы
-            generatePricingData(selectedVilla).map((data, index) => (
-              <tr key={index}>
-                <td>{data.year}</td>
-                <td>{data.leaseFactor.toFixed(3)}</td>
-                <td>{data.ageFactor.toFixed(3)}</td>
-                <td>{data.brandFactor.toFixed(3)}</td>
-                <td>{Math.pow(1 + pricingConfig.inflationRatePct / 100, data.year).toFixed(3)}</td>
-                <td className="price-cell">{fmtMoney(data.finalPrice)}</td>
-              </tr>
-            )) : null;
+            generatePricingData(selectedVilla).map((data, index) => {
+              // Вычисляем реальный год
+              const realYear = startMonth.getFullYear() + handoverMonth / 12 + data.year;
+              const displayYear = Math.floor(realYear);
+              
+              return (
+                <tr key={index}>
+                  <td>{displayYear}</td>
+                  <td>{data.leaseFactor.toFixed(3)}</td>
+                  <td>{data.ageFactor.toFixed(3)}</td>
+                  <td>{data.brandFactor.toFixed(3)}</td>
+                  <td>{Math.pow(1 + pricingConfig.inflationRatePct / 100, data.year).toFixed(3)}</td>
+                  <td className="price-cell">{fmtMoney(data.finalPrice)}</td>
+                </tr>
+              );
+            }) : null;
         })()}
       </tbody>
     </table>
