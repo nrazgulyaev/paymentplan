@@ -1,4 +1,4 @@
-// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С ЛИЗХОЛДОМ, ИНДЕКСАЦИЕЙ И ЦЕНООБРАЗОВАНИЕМ) - ПОЛНОСТЬЮ ИСПРАВЛЕННАЯ ВЕРСИЯ =====
+// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С ЛИЗХОЛДОМ, ИНДЕКСАЦИЕЙ И ЦЕНООБРАЗОВАНИЕМ) - ПОЛНОСТЬЮ ПРОВЕРЕННАЯ ВЕРСИЯ =====
 
 const { useState, useEffect, useMemo, useRef } = React;
 
@@ -100,6 +100,7 @@ function App() {
   // Состояния для модальных окон
   const [showAddProjectModal, setShowAddProjectModal] = useState(false);
   const [showAddVillaModal, setShowAddVillaModal] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [newProjectForm, setNewProjectForm] = useState({
     projectId: '',
@@ -769,8 +770,16 @@ function App() {
         return sum + getCumulativeRentalIncome(villa, year);
       }, 0);
       
+      // ИСПРАВЛЕНО: Показываем конкретные годы аренды
+      let yearLabel;
+      if (year === 0) {
+        yearLabel = 'Текущий'; // Год получения ключей (аренда начинается через 3 месяца)
+      } else {
+        yearLabel = year; // Последующие годы аренды
+      }
+      
       data.push({
-        year: year === 0 ? 'Текущий' : year,
+        year: yearLabel,
         yearlyIncome,
         cumulativeIncome
       });
@@ -1031,7 +1040,7 @@ function App() {
                   <td className="col-villa">{lineData.line.snapshot?.name}</td>
                   <td className="col-qty">{lineData.qty}</td>
                   <td className="col-area">{lineData.line.snapshot?.area} м²</td>
-                  <td className="col-ppsm">${lineData.line.snapshot?.ppsm}</td>
+                                   <td className="col-ppsm">${lineData.line.snapshot?.ppsm}</td>
                   <td className="col-price">{fmtMoney(lineData.base, currency)}</td>
                   <td className="col-discount">{lineData.discountPct}%</td>
                   <td className="col-pre">{lineData.prePct}%</td>
@@ -1060,8 +1069,6 @@ function App() {
             <span className="kpi-label">{t.totalInvestment}:</span>
             <span className="kpi-value">{fmtMoney(project.total, currency)}</span>
           </div>
-          <div className="kpi-item">
-            <span className="kpi-label">{t.totalRentalIncome}
           <div className="kpi-item">
             <span className="kpi-label">{t.totalRentalIncome}:</span>
             <span className="kpi-value positive">{fmtMoney(project.totalRental, currency)}</span>
@@ -1188,31 +1195,88 @@ function App() {
       {/* 6. График общей доходности от сдачи в аренду - ИСПРАВЛЕННАЯ ОРИЕНТАЦИЯ */}
       <div className="card">
         <h3>{t.rentalIncomeChart}</h3>
-        <div className="rental-chart">
-          <div className="chart-container">
-            {yearlyRentalData.map((yearData, index) => (
-              <div key={index} className="chart-bar">
-                {/* ОСЬ X - только годы */}
-                <div className="bar-label">
-                  {yearData.year === 'Текущий' ? '0' : yearData.year}
-                </div>
-                {/* ОСЬ Y - только накопительный доход */}
-                <div className="bar-value">
-                  {fmtMoney(yearData.cumulativeIncome, currency)}
-                </div>
-                {/* Бар с накопительным доходом */}
-                <div 
-                  className="bar" 
-                  style={{
-                    height: `${Math.max(20, (yearData.cumulativeIncome / Math.max(...yearlyRentalData.map(d => d.cumulativeIncome))) * 200)}px`
-                  }}
-                >
-                  <div className="bar-tooltip">
-                    {fmtMoney(yearData.cumulativeIncome, currency)}
-                  </div>
-                </div>
-              </div>
-            ))}
+        <div className="rental-chart-container">
+          <h4>Динамика накопленного дохода от аренды</h4>
+          <p className="chart-subtitle">Накопительный доход по годам (аренда начинается через 3 месяца после получения ключей)</p>
+          <div className="rental-chart-svg" id="rental-chart-svg">
+            <svg width="100%" height="300" viewBox="0 0 800 300">
+              <g className="chart-lines">
+                {(() => {
+                  if (yearlyRentalData.length === 0) return null;
+                  
+                  const maxIncome = Math.max(...yearlyRentalData.map(d => d.cumulativeIncome));
+                  const minIncome = Math.min(...yearlyRentalData.map(d => d.cumulativeIncome));
+                  const incomeRange = maxIncome - minIncome;
+                  const chartWidth = 700;
+                  const chartHeight = 250;
+                  const padding = 50;
+                  
+                  return yearlyRentalData.map((point, index) => {
+                    const x = padding + (index / (yearlyRentalData.length - 1)) * (chartWidth - 2 * padding);
+                    const y = padding + ((maxIncome - point.cumulativeIncome) / incomeRange) * (chartHeight - 2 * padding);
+                    
+                    return (
+                      <g key={index}>
+                        <circle 
+                          cx={x} 
+                          cy={y} 
+                          r="3" 
+                          fill="#28a745" 
+                          stroke="none"
+                        />
+                        {index > 0 && (
+                          <line 
+                            x1={padding + ((index - 1) / (yearlyRentalData.length - 1)) * (chartWidth - 2 * padding)}
+                            y1={padding + ((maxIncome - yearlyRentalData[index - 1].cumulativeIncome) / incomeRange) * (chartHeight - 2 * padding)}
+                            x2={x}
+                            y2={y}
+                            stroke="#28a745"
+                            strokeWidth="2"
+                          />
+                        )}
+                      </g>
+                    );
+                  });
+                })()}
+              </g>
+              
+              {/* Оси графика */}
+              <g className="chart-axes">
+                <line x1="50" y1="50" x2="50" y2="300" stroke="#ccc" strokeWidth="1" />
+                <line x1="50" y1="300" x2="750" y2="300" stroke="#ccc" strokeWidth="1" />
+                
+                {/* Подписи осей */}
+                <text x="400" y="320" textAnchor="middle" fontSize="12" fill="#666">
+                  Годы
+                </text>
+                <text x="15" y="175" textAnchor="middle" fontSize="12" fill="#666" transform="rotate(-90, 15, 175)">
+                  Накопительный доход (USD)
+                </text>
+                
+                {/* Подписи по оси X (КОНКРЕТНЫЕ ГОДЫ АРЕНДЫ) */}
+                {yearlyRentalData.map((point, index) => {
+                  const x = 50 + (index / (yearlyRentalData.length - 1)) * 700;
+                  
+                  // ИСПРАВЛЕНО: Вычисляем конкретный год аренды
+                  const currentYear = startMonth.getFullYear();
+                  let rentalYear;
+                  
+                  if (point.year === 'Текущий') {
+                    // Текущий год - аренда начинается через 3 месяца
+                    rentalYear = currentYear;
+                  } else {
+                    // Последующие годы аренды
+                    rentalYear = currentYear + parseInt(point.year);
+                  }
+                  
+                  return (
+                    <text key={index} x={x} y="315" textAnchor="middle" fontSize="10" fill="#666">
+                      {rentalYear}
+                    </text>
+                  );
+                })()}
+              </g>
+            </svg>
           </div>
         </div>
       </div>
@@ -1301,6 +1365,52 @@ function App() {
             </div>
           </div>
           
+          {/* Текущие коэффициенты - В СТИЛЕ СУЩЕСТВУЮЩИХ БЛОКОВ */}
+          {(() => {
+            const selectedVilla = catalog
+              .flatMap(p => p.villas)
+              .find(v => v.villaId === lines[0]?.villaId);
+            
+            if (!selectedVilla || !selectedVilla.leaseholdEndDate) return null;
+            
+            const currentYear = 0; // Текущий год
+            const totalYears = Math.ceil((selectedVilla.leaseholdEndDate - startMonth) / (365 * 24 * 60 * 60 * 1000));
+            
+            const lease = leaseFactor(currentYear, totalYears, pricingConfig.leaseAlpha);
+            const age = ageFactor(currentYear, pricingConfig.agingBeta);
+            const brand = brandFactor(currentYear, pricingConfig);
+            const inflation = Math.pow(1 + pricingConfig.inflationRatePct / 100, currentYear);
+            const overallMultiplier = lease * age * brand * inflation;
+            
+            return (
+              <div className="current-coefficients-display">
+                <h4>Текущие коэффициенты</h4>
+                <div className="coefficients-list">
+                  <div className="coefficient-item">
+                    <span className="coefficient-label">Lease Factor:</span>
+                    <span className="coefficient-value">{lease.toFixed(1)}</span>
+                  </div>
+                  <div className="coefficient-item">
+                    <span className="coefficient-label">Age Factor:</span>
+                    <span className="coefficient-value">{age.toFixed(1)}</span>
+                  </div>
+                  <div className="coefficient-item">
+                    <span className="coefficient-label">Brand Factor:</span>
+                    <span className="coefficient-value">{brand.toFixed(1)}</span>
+                  </div>
+                  <div className="coefficient-item">
+                    <span className="coefficient-label">Inflation Factor:</span>
+                    <span className="coefficient-value">{inflation.toFixed(1)}</span>
+                  </div>
+                  <div className="coefficient-item">
+                    <span className="coefficient-label">Общий множитель:</span>
+                    <span className="coefficient-value">{overallMultiplier.toFixed(1)}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+          
           {/* График ценообразования - ТОЛЬКО Final Price */}
           <div className="pricing-chart-container">
             <h4>Динамика цены виллы</h4>
@@ -1365,46 +1475,80 @@ function App() {
                   <text x="15" y="175" textAnchor="middle" fontSize="12" fill="#666" transform="rotate(-90, 15, 175)">
                     Цена (USD)
                   </text>
+                  
+                  {/* Подписи по оси X (КОНКРЕТНЫЕ ГОДЫ) */}
+                  {(() => {
+                    const selectedVilla = catalog
+                      .flatMap(p => p.villas)
+                      .find(v => v.villaId === lines[0]?.villaId);
+                    const pricingData = selectedVilla && selectedVilla.leaseholdEndDate ? 
+                      generatePricingData(selectedVilla) : [];
+                    
+                    if (pricingData.length === 0) return null;
+                    
+                    const currentYear = startMonth.getFullYear();
+                    
+                    return pricingData.map((point, index) => {
+                      const x = 50 + (index / (pricingData.length - 1)) * 700;
+                      const specificYear = currentYear + point.year;
+                      
+                      return (
+                        <text key={index} x={x} y="315" textAnchor="middle" fontSize="10" fill="#666">
+                          {specificYear}
+                        </text>
+                      );
+                    });
+                  })()}
                 </g>
               </svg>
             </div>
           </div>
           
-          {/* Таблица факторов - ОБНОВЛЕННАЯ СТРУКТУРА */}
+          {/* Таблица факторов - ПОКАЗЫВАЕТ ВСЕ ГОДЫ */}
           <div className="factors-table-container">
             <h4>Таблица факторов ценообразования</h4>
-            <table className="factors-table">
-              <thead>
-                <tr>
-                  <th>Год</th>
-                  <th>Lease Factor</th>
-                  <th>Age Factor</th>
-                  <th>Brand Factor</th>
-                  <th>Коэффициент инфляции</th>
-                  <th>Final Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(() => {
-                  const selectedVilla = catalog
-                    .flatMap(p => p.villas)
-                    .find(v => v.villaId === lines[0]?.villaId);
-                  const pricingData = selectedVilla && selectedVilla.leaseholdEndDate ? 
-                    generatePricingData(selectedVilla).slice(0, 10) : [];
-                  
-                  return pricingData.map((point, index) => (
-                    <tr key={index}>
-                      <td>{point.year}</td>
-                      <td>{point.leaseFactor.toFixed(3)}</td>
-                      <td>{point.ageFactor.toFixed(3)}</td>
-                      <td>{point.brandFactor.toFixed(3)}</td>
-                      <td>{point.inflationFactor.toFixed(3)}</td>
-                      <td>{fmtMoney(point.finalPrice, 'USD')}</td>
-                    </tr>
-                  ));
-                })()}
-              </tbody>
-            </table>
+            <div className="factors-table-scroll">
+              <table className="factors-table">
+                <thead>
+                  <tr>
+                    <th>Год</th>
+                    <th>Lease Factor</th>
+                    <th>Age Factor</th>
+                    <th>Brand Factor</th>
+                    <th>Коэффициент инфляции</th>
+                    <th>Final Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    const selectedVilla = catalog
+                      .flatMap(p => p.villas)
+                      .find(v => v.villaId === lines[0]?.villaId);
+                    
+                    // ИСПРАВЛЕНО: Убрано ограничение .slice(0, 10) - показываем ВСЕ годы
+                    const pricingData = selectedVilla && selectedVilla.leaseholdEndDate ? 
+                      generatePricingData(selectedVilla) : [];
+                    
+                    return pricingData.map((point, index) => {
+                      // ИСПРАВЛЕНО: Вычисляем конкретный год
+                      const currentYear = startMonth.getFullYear();
+                      const specificYear = currentYear + point.year;
+                      
+                      return (
+                        <tr key={index}>
+                          <td>{specificYear}</td>
+                          <td>{point.leaseFactor.toFixed(3)}</td>
+                          <td>{point.ageFactor.toFixed(3)}</td>
+                          <td>{point.brandFactor.toFixed(3)}</td>
+                          <td>{point.inflationFactor.toFixed(3)}</td>
+                          <td>{fmtMoney(point.finalPrice, 'USD')}</td>
+                        </tr>
+                      );
+                    });
+                  })()}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
