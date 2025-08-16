@@ -718,9 +718,9 @@ function App() {
     // Расчет проекта (ОБНОВЛЕН С НОВОЙ ЛОГИКОЙ АРЕНДЫ С ИНДЕКСАЦИЕЙ)
   const project = useMemo(() => {
     const totals = {
-      baseUSD: linesData.reduce((s, x) => s + x.base, 0),
-      preUSD: linesData.reduce((s, x) => s + x.preTotal, 0),
-      finalUSD: linesData.reduce((s, x) => s + x.lineTotal, 0),
+      baseUSD: (linesData || []).reduce((s, x) => s + x.base, 0),
+    preUSD: (linesData || []).reduce((s, x) => s + x.preTotal, 0),
+    finalUSD: (linesData || []).reduce((s, x) => s + x.lineTotal, 0),
     };
     totals.interestUSD = totals.finalUSD - totals.baseUSD;
     totals.afterUSD = totals.finalUSD - totals.preUSD;
