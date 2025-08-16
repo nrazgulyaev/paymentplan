@@ -1,4 +1,4 @@
-// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С ЛИЗХОЛДОМ И ИНДЕКСАЦИЕЙ) - ОБНОВЛЕННАЯ ВЕРСИЯ =====
+// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С ЛИЗХОЛДОМ И ИНДЕКСАЦИЕЙ) - ИСПРАВЛЕННАЯ ВЕРСИЯ =====
 
 const { useState, useEffect, useMemo, useRef } = React;
 
@@ -362,7 +362,6 @@ function App() {
   };
 
 // ... existing code ...
-
 // ... existing code ...
 
   // Получаем переводы для текущего языка
@@ -708,7 +707,7 @@ function App() {
 
 // ... existing code ...
 
-// ... existing code ...
+  // ... existing code ...
 
   // Функции для работы с линиями (ВОССТАНОВЛЕНЫ СТАРЫЕ)
   const updLine = (id, patch) => setLines(prev => prev.map(l => l.id === id ? {...l, ...patch} : l));
@@ -1694,29 +1693,26 @@ function CatalogManager({
     }
   };
 
- // ... existing code ...
+  // ... existing code ...
 
   return (
     <div className="catalog-section">
-      <div className="catalog-header">
-        <div className="catalog-controls">
-          <button onClick={addProject} className="btn primary">{t.addProject}</button>
-          <button onClick={() => addVilla(null)} className="btn primary">{t.addVilla}</button>
-          <button onClick={exportCatalog} className="btn">{t.exportJSON}</button>
-          <label className="btn">
-            {t.importJSON}
-            <input type="file" accept=".json" onChange={importCatalog} style={{ display: 'none' }} />
-          </label>
-        </div>
-        
-        <div className="catalog-filters">
+      {/* Панель управления */}
+      <div className="catalog-controls">
+        <div className="search-filters">
           <input 
             type="text" 
-            placeholder={t.search} 
+            placeholder={t.searchPlaceholder} 
             value={searchTerm} 
             onChange={e => setSearchTerm(e.target.value)}
-            className="input"
+            className="search-input"
           />
+          
+          <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="sort-select">
+            <option value="name">{t.sortByName}</option>
+            <option value="price">{t.sortByPrice}</option>
+            <option value="area">{t.sortByArea}</option>
+          </select>
           
           <div className="filter-group">
             <input 
@@ -1724,14 +1720,15 @@ function CatalogManager({
               placeholder={t.areaFrom} 
               value={areaFilter.from} 
               onChange={e => setAreaFilter(prev => ({...prev, from: e.target.value}))}
-              className="input small"
+              className="filter-input"
             />
+            <span>-</span>
             <input 
               type="number" 
               placeholder={t.areaTo} 
               value={areaFilter.to} 
               onChange={e => setAreaFilter(prev => ({...prev, to: e.target.value}))}
-              className="input small"
+              className="filter-input"
             />
           </div>
           
@@ -1741,33 +1738,60 @@ function CatalogManager({
               placeholder={t.priceFrom} 
               value={priceFilter.from} 
               onChange={e => setPriceFilter(prev => ({...prev, from: e.target.value}))}
-              className="input small"
+              className="filter-input"
             />
+            <span>-</span>
             <input 
               type="number" 
               placeholder={t.priceTo} 
               value={priceFilter.to} 
               onChange={e => setPriceFilter(prev => ({...prev, to: e.target.value}))}
-              className="input small"
+              className="filter-input"
             />
           </div>
-          
-          <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="select">
-            <option value="name">{t.sort} {t.byName}</option>
-            <option value="price">{t.sort} {t.byPrice}</option>
-            <option value="area">{t.sort} {t.byArea}</option>
-          </select>
+        </div>
+        
+        <div className="catalog-actions">
+          <button onClick={() => setShowAddProjectModal(true)} className="btn primary">
+            {t.addProject}
+          </button>
+          <button onClick={() => setShowAddVillaModal(true)} className="btn success">
+            {t.addVilla}
+          </button>
+          <button onClick={exportCatalog} className="btn">
+            {t.exportCatalog}
+          </button>
+          <label className="btn import-btn">
+            {t.importCatalog}
+            <input 
+              type="file" 
+              accept=".json" 
+              onChange={importCatalog} 
+              style={{display: 'none'}}
+            />
+          </label>
         </div>
       </div>
 
-      <div className="catalog-content">
+      {/* Список проектов и вилл */}
+      <div className="catalog-list">
         {filteredCatalog.map(project => (
           <div key={project.projectId} className="project-card">
             <div className="project-header">
               <h3>{project.projectName}</h3>
               <div className="project-actions">
-                <button onClick={() => addVilla(project.projectId)} className="btn small">{t.addVilla}</button>
-                <button onClick={() => deleteProject(project.projectId)} className="btn danger small">{t.remove}</button>
+                <button 
+                  onClick={() => setEditingProject(project)} 
+                  className="btn small"
+                >
+                  ✏️
+                </button>
+                <button 
+                  onClick={() => deleteProject(project.projectId)} 
+                  className="btn danger small"
+                >
+                  🗑️
+                </button>
               </div>
             </div>
             
@@ -1777,37 +1801,51 @@ function CatalogManager({
                   <div className="villa-header">
                     <h4>{villa.name}</h4>
                     <div className="villa-actions">
-                      <button onClick={() => deleteVilla(project.projectId, villa.villaId)} className="btn danger small">{t.remove}</button>
+                      <button 
+                        onClick={() => setNewVillaForm(villa)} 
+                        className="btn small"
+                      >
+                        ✏️
+                      </button>
+                      <button 
+                        onClick={() => deleteVilla(project.projectId, villa.villaId)} 
+                        className="btn danger small"
+                      >
+                        🗑️
+                      </button>
                     </div>
                   </div>
                   
                   <div className="villa-details">
-                    <div className="detail-item">
-                      <span className="detail-label">{t.villaArea}:</span>
-                      <span className="detail-value">{villa.area} м²</span>
+                    <div className="detail-row">
+                      <span className="label">{t.villaArea}:</span>
+                      <span className="value">{villa.area} м²</span>
                     </div>
-                    <div className="detail-item">
-                      <span className="detail-label">{t.villaPpsm}:</span>
-                      <span className="detail-value">${villa.ppsm}</span>
+                    <div className="detail-row">
+                      <span className="label">{t.villaPpsm}:</span>
+                      <span className="value">${villa.ppsm}</span>
                     </div>
-                    <div className="detail-item">
-                      <span className="detail-label">{t.villaBasePrice}:</span>
-                      <span className="detail-value">{fmtMoney(villa.baseUSD, 'USD')}</span>
+                    <div className="detail-row">
+                      <span className="label">{t.villaBasePrice}:</span>
+                      <span className="value">{fmtMoney(villa.baseUSD, 'USD')}</span>
                     </div>
                     {/* НОВЫЕ ПОЛЯ ДЛЯ ЛИЗХОЛДА И АРЕНДЫ */}
-                    <div className="detail-item">
-                      <span className="detail-label">{t.leaseholdEndDate}:</span>
-                      <span className="detail-value">
-                        {villa.leaseholdEndDate ? villa.leaseholdEndDate.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US') : '-'}
+                    <div className="detail-row">
+                      <span className="label">{t.leaseholdEndDate}:</span>
+                      <span className="value">
+                        {villa.leaseholdEndDate ? 
+                          villa.leaseholdEndDate.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US') : 
+                          t.notSet
+                        }
                       </span>
                     </div>
-                    <div className="detail-item">
-                      <span className="detail-label">{t.dailyRate}:</span>
-                      <span className="detail-value">${villa.dailyRateUSD || 0}</span>
+                    <div className="detail-row">
+                      <span className="label">{t.dailyRate}:</span>
+                      <span className="value">${villa.dailyRateUSD || 150}</span>
                     </div>
-                    <div className="detail-item">
-                      <span className="detail-label">{t.rentalPriceIndex}:</span>
-                      <span className="detail-value">{villa.rentalPriceIndexPct || 0}%</span>
+                    <div className="detail-row">
+                      <span className="label">{t.rentalPriceIndex}:</span>
+                      <span className="value">{villa.rentalPriceIndexPct || 5}%</span>
                     </div>
                   </div>
                 </div>
@@ -1816,10 +1854,41 @@ function CatalogManager({
           </div>
         ))}
       </div>
+
+      {/* Модальное окно редактирования проекта */}
+      {editingProject && (
+        <div className="modal-overlay" onClick={() => setEditingProject(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>{t.editProject}</h3>
+            <div className="form-group">
+              <label>{t.projectName}:</label>
+              <input 
+                type="text" 
+                value={editingProject.projectName} 
+                onChange={e => setEditingProject(prev => ({...prev, projectName: e.target.value}))}
+                className="input"
+              />
+            </div>
+            <div className="modal-actions">
+              <button onClick={() => {
+                setCatalog(prev => prev.map(p => 
+                  p.projectId === editingProject.projectId ? editingProject : p
+                ));
+                setEditingProject(null);
+              }} className="btn primary">
+                {t.save}
+              </button>
+              <button onClick={() => setEditingProject(null)} className="btn">
+                {t.cancel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// ===== ЗАПУСК ПРИЛОЖЕНИЯ =====
+// ===== РЕНДЕРИНГ ПРИЛОЖЕНИЯ =====
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
