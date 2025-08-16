@@ -2113,3 +2113,4 @@ function App() {
 
 // Рендеринг приложения
 ReactDOM.render(<App />, document.getElementById('root'));
+
