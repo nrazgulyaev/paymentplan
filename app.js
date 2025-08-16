@@ -1862,7 +1862,8 @@ function App() {
                         }))}
                       />
                       <span className="unit">степень</span>
-                      <div className="hint">1 = линейно, >1 = ускоренно, <1 = замедленно</div>
+                    
+<div className="hint">1 = линейно, &gt;1 = ускоренно, &lt;1 = замедленно</div>
                     </div>
                     
                     <div className="form-group">
@@ -1879,7 +1880,8 @@ function App() {
                         }))}
                       />
                       <span className="unit">в год</span>
-                      <div className="hint">0.025 = 2.5% в год</div>
+                     
+<div className="hint">0.025 = 2.5% в год</div>
                     </div>
                   </div>
                 </div>
