@@ -1,4 +1,4 @@
-// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С ЛИЗХОЛДОМ, ИНДЕКСАЦИЕЙ И ЦЕНООБРАЗОВАНИЕМ) - ИСПРАВЛЕННАЯ ВЕРСИЯ =====
+// ===== ПОЛНОЕ ПРИЛОЖЕНИЕ ARCONIQUE (С ЛИЗХОЛДОМ, ИНДЕКСАЦИЕЙ И ЦЕНООБРАЗОВАНИЕМ) - ПОЛНОСТЬЮ ИСПРАВЛЕННАЯ ВЕРСИЯ =====
 
 const { useState, useEffect, useMemo, useRef } = React;
 
@@ -390,26 +390,44 @@ function App() {
 
   // НОВАЯ ФУНКЦИЯ: Расчет количества дней в месяце для аренды
   const getDaysInMonth = (monthOffset) => {
-    const date = new Date(startMonth);
-    date.setMonth(date.getMonth() + monthOffset);
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    try {
+      if (monthOffset < 0) return 30;
+      
+      const date = new Date(startMonth);
+      date.setMonth(date.getMonth() + monthOffset);
+      
+      if (isNaN(date.getTime())) return 30;
+      
+      return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    } catch (error) {
+      console.error('Error calculating days in month:', error);
+      return 30;
+    }
   };
 
   // НОВАЯ ФУНКЦИЯ: Расчет чистого срока лизхолда
   const getCleanLeaseholdTerm = (leaseholdEndDate) => {
     if (!leaseholdEndDate) return { years: 0, months: 0 };
     
-    const now = new Date();
-    const end = new Date(leaseholdEndDate);
-    const diffTime = end - now;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays <= 0) return { years: 0, months: 0 };
-    
-    const years = Math.floor(diffDays / 365);
-    const months = Math.floor((diffDays % 365) / 30);
-    
-    return { years, months };
+    try {
+      const now = new Date();
+      const end = new Date(leaseholdEndDate);
+      
+      if (isNaN(end.getTime())) return { years: 0, months: 0 };
+      
+      const diffTime = end - now;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays <= 0) return { years: 0, months: 0 };
+      
+      const years = Math.floor(diffDays / 365);
+      const months = Math.floor((diffDays % 365) / 30);
+      
+      return { years: Math.max(0, years), months: Math.max(0, months) };
+    } catch (error) {
+      console.error('Error calculating leasehold term:', error);
+      return { years: 0, months: 0 };
+    }
   };
 
   // НОВЫЕ ФУНКЦИИ ДЛЯ ЦЕНООБРАЗОВАНИЯ:
@@ -450,60 +468,81 @@ function App() {
   const calculateVillaPrice = (villa, yearOffset) => {
     if (!villa || !villa.leaseholdEndDate) return 0;
     
-    const P0 = villa.baseUSD;
-    const T = getCleanLeaseholdTerm(villa.leaseholdEndDate).years;
-    const g = pricingConfig.inflationRatePct / 100;
-    const alpha = pricingConfig.leaseAlpha;
-    const beta = pricingConfig.agingBeta;
-    
-    if (yearOffset >= T) return 0;
-    
-    const inflationFactor = Math.pow(1 + g, yearOffset);
-    const leaseFactorValue = leaseFactor(yearOffset, T, alpha);
-    const ageFactorValue = ageFactor(yearOffset, beta);
-    const brandFactorValue = brandFactor(yearOffset, pricingConfig);
-    
-    return P0 * inflationFactor * leaseFactorValue * ageFactorValue * brandFactorValue;
+    try {
+      const P0 = villa.baseUSD || 0;
+      const T = getCleanLeaseholdTerm(villa.leaseholdEndDate).years || 0;
+      const g = (pricingConfig.inflationRatePct || 0) / 100;
+      const alpha = pricingConfig.leaseAlpha || 1;
+      const beta = pricingConfig.agingBeta || 0.025;
+      
+      if (yearOffset >= T || T <= 0) return 0;
+      
+      const inflationFactor = Math.pow(1 + g, yearOffset);
+      const leaseFactorValue = leaseFactor(yearOffset, T, alpha);
+      const ageFactorValue = ageFactor(yearOffset, beta);
+      const brandFactorValue = brandFactor(yearOffset, pricingConfig);
+      
+      const result = P0 * inflationFactor * leaseFactorValue * ageFactorValue * brandFactorValue;
+      return isNaN(result) ? 0 : result;
+    } catch (error) {
+      console.error('Error calculating villa price:', error);
+      return 0;
+    }
   };
 
   // Функция генерации данных для графика ценообразования
   const generatePricingData = (villa) => {
     if (!villa || !villa.leaseholdEndDate) return [];
     
-    const T = getCleanLeaseholdTerm(villa.leaseholdEndDate).years;
-    const data = [];
-    
-    for (let year = 0; year <= T; year++) {
-      const marketPrice = villa.baseUSD * Math.pow(1 + pricingConfig.inflationRatePct / 100, year);
-      const finalPrice = calculateVillaPrice(villa, year);
+    try {
+      const T = getCleanLeaseholdTerm(villa.leaseholdEndDate).years || 0;
+      if (T <= 0) return [];
       
-      data.push({
-        year,
-        marketPrice,
-        finalPrice,
-        leaseFactor: leaseFactor(year, T, pricingConfig.leaseAlpha),
-        ageFactor: ageFactor(year, pricingConfig.agingBeta),
-        brandFactor: brandFactor(year, pricingConfig)
-      });
+      const data = [];
+      
+      for (let year = 0; year <= T; year++) {
+        const marketPrice = (villa.baseUSD || 0) * Math.pow(1 + (pricingConfig.inflationRatePct || 0) / 100, year);
+        const finalPrice = calculateVillaPrice(villa, year);
+        
+        data.push({
+          year,
+          marketPrice: isNaN(marketPrice) ? 0 : marketPrice,
+          finalPrice: isNaN(finalPrice) ? 0 : finalPrice,
+          leaseFactor: leaseFactor(year, T, pricingConfig.leaseAlpha || 1),
+          ageFactor: ageFactor(year, pricingConfig.agingBeta || 0.025),
+          brandFactor: brandFactor(year, pricingConfig)
+        });
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error generating pricing data:', error);
+      return [];
     }
-    
-    return data;
   };
 
   // Функция расчета арендного дохода с индексацией
   const calculateRentalIncome = (villa, monthOffset) => {
     if (!villa) return 0;
     
-    const daysInMonth = getDaysInMonth(monthOffset);
-    const baseDailyRate = villa.dailyRateUSD;
-    const occupancyRate = villa.occupancyRate / 100;
-    const annualIndexation = villa.rentalPriceIndexPct / 100;
-    
-    // Индексация по месяцам (годовая ставка делится на 12)
-    const monthlyIndexation = Math.pow(1 + annualIndexation, monthOffset / 12);
-    const adjustedDailyRate = baseDailyRate * monthlyIndexation;
-    
-    return adjustedDailyRate * daysInMonth * occupancyRate;
+    try {
+      const daysInMonth = getDaysInMonth(monthOffset) || 30;
+      const baseDailyRate = villa.dailyRateUSD || 0;
+      const occupancyRate = (villa.occupancyRate || 70) / 100;
+      const annualIndexation = (villa.rentalPriceIndexPct || 5) / 100;
+      
+      if (monthOffset < 0) return 0;
+      
+      // Индексация по месяцам (годовая ставка делится на 12)
+      const monthlyIndexation = Math.pow(1 + annualIndexation, monthOffset / 12);
+      const adjustedDailyRate = baseDailyRate * monthlyIndexation;
+      
+      const result = adjustedDailyRate * daysInMonth * occupancyRate;
+      return isNaN(result) ? 0 : result;
+    } catch (error) {
+      console.error('Error calculating rental income:', error);
+      return 0;
+    }
   };
 
   // Функция расчета накопительного арендного дохода
@@ -1015,7 +1054,7 @@ function App() {
             />
           </div>
           
-                   <div className="field">
+          <div className="field">
             <label>{t.startMonth}</label>
             <input 
               type="date" 
@@ -1538,18 +1577,22 @@ function App() {
                         </tr>
                       </thead>
                       <tbody>
-                        {lines[0] && lines[0].leaseholdEndDate ? 
-                          generatePricingData(lines[0]).slice(0, 10).map((data, index) => (
-                            <tr key={index}>
-                              <td>{data.year}</td>
-                              <td>{data.leaseFactor.toFixed(3)}</td>
-                              <td>{data.ageFactor.toFixed(3)}</td>
-                              <td>{data.brandFactor.toFixed(3)}</td>
-                              <td className="price-cell">${data.finalPrice.toLocaleString()}</td>
-                            </tr>
-                          )) : 
-                          <tr><td colSpan="5">Выберите виллу с лизхолдом для отображения данных</td></tr>
-                        }
+                        {(() => {
+                          const selectedVilla = catalog
+                            .flatMap(p => p.villas)
+                            .find(v => v.villaId === lines[0]?.villaId);
+                          return selectedVilla && selectedVilla.leaseholdEndDate ? 
+                            generatePricingData(selectedVilla).slice(0, 10).map((data, index) => (
+                              <tr key={index}>
+                                <td>{data.year}</td>
+                                <td>{data.leaseFactor.toFixed(3)}</td>
+                                <td>{data.ageFactor.toFixed(3)}</td>
+                                <td>{data.brandFactor.toFixed(3)}</td>
+                                <td className="price-cell">${data.finalPrice.toLocaleString()}</td>
+                              </tr>
+                            )) : 
+                            <tr><td colSpan="5">Выберите виллу с лизхолдом для отображения данных</td></tr>
+                        })()}
                       </tbody>
                     </table>
                   </div>
@@ -2088,7 +2131,9 @@ function App() {
                     </thead>
                     <tbody>
                       {(() => {
-                        const selectedVilla = linesData.find(l => l.villaId === selectedVillaId);
+                        const selectedVilla = catalog
+                          .flatMap(p => p.villas)
+                          .find(v => v.villaId === selectedVillaId);
                         return selectedVilla && selectedVilla.leaseholdEndDate ? 
                           generatePricingData(selectedVilla).map((data, index) => (
                             <tr key={index} className={index === 0 ? 'selected-row' : ''}>
@@ -2121,4 +2166,3 @@ function App() {
 
 // Рендеринг приложения
 ReactDOM.render(<App />, document.getElementById('root'));
-
