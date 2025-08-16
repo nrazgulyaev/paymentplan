@@ -1464,7 +1464,7 @@ function App() {
         </div>
       </div>
 
-      {/* 6. НОВЫЙ БЛОК: График общей доходности от сдачи в аренду */}
+     {/* 6. НОВЫЙ БЛОК: График общей доходности от сдачи в аренду */}
 <div className="card">
   <h3>{t.rentalIncomeChart}</h3>
   <div className="rental-chart">
@@ -1504,7 +1504,6 @@ function App() {
     </div>
   </div>
 </div>
-
       {/* 7. НОВЫЙ БЛОК: Параметры расчёта и график ценообразования */}
       {lines.length > 0 && (
         <div className="card">
