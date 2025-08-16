@@ -1465,42 +1465,45 @@ function App() {
       </div>
 
       {/* 6. НОВЫЙ БЛОК: График общей доходности от сдачи в аренду */}
-      <div className="card">
-        <h3>{t.rentalIncomeChart}</h3>
-        <div className="rental-chart">
-          <div className="chart-container">
-             {yearlyRentalData && Array.isArray(yearlyRentalData) && yearlyRentalData.length > 0 ? (
+<div className="card">
+  <h3>{t.rentalIncomeChart}</h3>
+  <div className="rental-chart">
+    <div className="chart-container">
+      {yearlyRentalData && Array.isArray(yearlyRentalData) && yearlyRentalData.length > 0 ? (
         yearlyRentalData.map((yearData, index) => (
-              <div key={index} className="chart-bar">
-                <div className="bar-label">{yearData.year === 0 ? t.keys : `${yearData.year} ${t.years}`}</div>
-                <div className="bar-container">
-                  <div 
-                    className="bar-fill" 
-                    style={{
-                      height: `${Math.max(10, (yearData.yearIncome / Math.max(...yearlyRentalData.map(y => y.yearIncome))) * 200)}px`,
-                      backgroundColor: yearData.year === 0 ? '#e2e8f0' : '#3b82f6'
-                    }}
-                  ></div>
-                </div>
-                <div className="bar-values">
-                  <div className="year-income">{fmtMoney(yearData.yearIncome, currency)}</div>
-                  <div className="cumulative-income">{fmtMoney(yearData.cumulativeIncome, currency)}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="chart-legend">
-            <div className="legend-item">
-              <div className="legend-color" style={{backgroundColor: '#3b82f6'}}></div>
-              <span>{t.totalIncome}</span>
+          <div key={index} className="chart-bar">
+            <div className="bar-label">{yearData.year === 0 ? t.keys : `${yearData.year} ${t.years}`}</div>
+            <div className="bar-container">
+              <div 
+                className="bar-fill" 
+                style={{
+                  height: `${Math.max(10, (yearData.yearIncome / Math.max(...yearlyRentalData.map(y => y.yearIncome))) * 200)}px`,
+                  backgroundColor: yearData.year === 0 ? '#e2e8f0' : '#3b82f6'
+                }}
+              ></div>
             </div>
-            <div className="legend-item">
-              <div className="legend-color" style={{backgroundColor: '#e2e8f0'}}></div>
-              <span>{t.cumulativeIncome}</span>
+            <div className="bar-values">
+              <div className="year-income">{fmtMoney(yearData.yearIncome, currency)}</div>
+              <div className="cumulative-income">{fmtMoney(yearData.cumulativeIncome, currency)}</div>
             </div>
           </div>
-        </div>
+        ))
+      ) : (
+        <div className="no-data">Нет данных для отображения</div>
+      )}
+    </div>
+    <div className="chart-legend">
+      <div className="legend-item">
+        <div className="legend-color" style={{backgroundColor: '#3b82f6'}}></div>
+        <span>{t.totalIncome}</span>
       </div>
+      <div className="legend-item">
+        <div className="legend-color" style={{backgroundColor: '#e2e8f0'}}></div>
+        <span>{t.cumulativeIncome}</span>
+      </div>
+    </div>
+  </div>
+</div>
 
       {/* 7. НОВЫЙ БЛОК: Параметры расчёта и график ценообразования */}
       {lines.length > 0 && (
