@@ -536,6 +536,30 @@ function App() {
     }
   };
 
+  // НОВАЯ ФУНКЦИЯ: Расчет рыночной цены виллы на ключах
+const calculateMarketPriceAtHandover = (villa, line) => {
+  try {
+    if (!villa || !line) return 0;
+    
+    // Базовая цена виллы
+    const basePrice = villa.baseUSD;
+    
+    // Месячный рост цены до ключей (в долях)
+    const monthlyGrowthRate = (line.monthlyPriceGrowthPct || 2) / 100;
+    
+    // Количество месяцев от начала до получения ключей
+    const monthsToHandover = handoverMonth;
+    
+    // Рыночная цена на ключах = базовая цена × (1 + месячный рост)^количество месяцев
+    const marketPriceAtHandover = basePrice * Math.pow(1 + monthlyGrowthRate, monthsToHandover);
+    
+    return marketPriceAtHandover;
+  } catch (error) {
+    console.error('Ошибка расчета рыночной цены на ключах:', error);
+    return 0;
+  }
+};
+
   // ИСПРАВЛЕНО: Используем startMonth вместо new Date()
   const calculateVillaPrice = (villa, yearOffset) => {
     try {
@@ -567,8 +591,19 @@ const generatePricingData = (villa) => {
     
     // УБРАНО ОГРАНИЧЕНИЕ: было Math.min(totalYears, 20), теперь все годы
     for (let year = 0; year <= totalYears; year++) {
-      const marketPrice = villa.baseUSD * Math.pow(1 + pricingConfig.inflationRatePct / 100, year);
-      const finalPrice = calculateVillaPrice(villa, year);
+    
+      // Получаем линию для расчета месячного роста
+const selectedLine = lines.find(l => l.villaId === villa.villaId);
+
+// Рыночная цена на ключах
+const marketPriceAtHandover = calculateMarketPriceAtHandover(villa, selectedLine);
+
+// Final Price = рыночная цена на ключах × коэффициенты × инфляция
+const finalPrice = marketPriceAtHandover * 
+  Math.pow(1 + pricingConfig.inflationRatePct / 100, year) * 
+  leaseFactor(year, totalYears, pricingConfig.leaseAlpha) * 
+  ageFactor(year, pricingConfig.agingBeta) * 
+  brandFactor(year, pricingConfig);
       
       data.push({
         year,
@@ -906,9 +941,10 @@ const calculateOptimalExitPoint = useMemo(() => {
       return total + yearIncome;
     }, 0);
     
-    // Общий капитал инвестора = Final Price + доход от аренды
-    const totalInvestorCapital = data.finalPrice + rentalIncome;
-    
+  
+
+// Общий капитал инвестора = Final Price + доход от аренды
+const totalInvestorCapital = finalPrice + rentalIncome;
     // Находим максимальное значение
     if (totalInvestorCapital > maxTotalValue) {
             maxTotalValue = totalInvestorCapital;
@@ -1846,13 +1882,7 @@ const calculateOptimalExitPoint = useMemo(() => {
               const realYear = startMonth.getFullYear() + handoverMonth / 12 + data.year;
               const displayYear = Math.floor(realYear);
               
-              // Final Price = итоговая цена из KPI × все коэффициенты
-              const finalPrice = project.totals.finalUSD * 
-                Math.pow(1 + pricingConfig.inflationRatePct / 100, data.year) * 
-                             data.leaseFactor * 
-                data.ageFactor * 
-                data.brandFactor;
-              
+             
               // Доходность от аренды для этого года
               const rentalIncome = lines.reduce((total, line) => {
                 if (data.year < 0) return total;
@@ -1882,8 +1912,23 @@ const calculateOptimalExitPoint = useMemo(() => {
                 return total + yearIncome;
               }, 0);
               
-              // Общий капитал инвестора
-              const totalInvestorCapital = finalPrice + rentalIncome;
+              // Получаем виллу для расчета
+const selectedVilla = catalog
+  .flatMap(p => p.villas)
+  .find(v => v.villaId === lines[0]?.villaId);
+
+// Рыночная цена на ключах
+const marketPriceAtHandover = calculateMarketPriceAtHandover(selectedVilla, lines[0]);
+
+// Final Price = рыночная цена на ключах × коэффициенты × инфляция
+const finalPrice = marketPriceAtHandover * 
+  Math.pow(1 + pricingConfig.inflationRatePct / 100, data.year) * 
+  data.leaseFactor * 
+  data.ageFactor * 
+  data.brandFactor;
+
+// Общий капитал инвестора = Final Price + доход от аренды
+const totalInvestorCapital = finalPrice + rentalIncome;
               
               // Возвращаем JSX только после определения ВСЕХ переменных
               return (
