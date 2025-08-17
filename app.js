@@ -1136,7 +1136,7 @@ const calculateOptimalExitPoint = useMemo(() => {
 
   const delStage = (id) => setStages(prev => prev.filter(s => s.id !== id));
 
-  const updStage = (id, patch) => setStages(prev => prev.map(s => s.id === id ? {...s, ...patch} : l));
+  const updStage = (id, patch) => setStages(prev => prev.map(s => s.id === id ? {...s, ...patch} : s));
 
   return (
     <>
