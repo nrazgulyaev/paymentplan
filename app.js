@@ -1774,8 +1774,7 @@ const calculateOptimalExitPoint = useMemo(() => {
   </div>
 </div>
 
-{/* Таблица факторов - ИСПРАВЛЕННЫЙ РАСЧЕТ С ПРАВИЛЬНЫМИ ГОДАМИ */}
-{/* Таблица факторов - ПОЛНЫЙ ИСПРАВЛЕННЫЙ КОД */}
+{/* Таблица факторов - ПРАВИЛЬНЫЙ ПОРЯДОК */}
 <div className="factors-table-container">
   <h4>Таблица факторов</h4>
   <div className="factors-table-scroll">
@@ -1799,56 +1798,47 @@ const calculateOptimalExitPoint = useMemo(() => {
             .find(v => v.villaId === lines[0]?.villaId);
           return selectedVilla && selectedVilla.leaseholdEndDate ? 
             generatePricingData(selectedVilla).map((data, index) => {
-              // Вычисляем реальный год
+              // 1. Сначала вычисляем реальный год
               const realYear = startMonth.getFullYear() + handoverMonth / 12 + data.year;
               const displayYear = Math.floor(realYear);
               
-              // ИСПРАВЛЕНО: Final Price = итоговая цена из KPI × все коэффициенты
+              // 2. Затем Final Price
               const finalPrice = project.totals.finalUSD * 
                 Math.pow(1 + pricingConfig.inflationRatePct / 100, data.year) * 
                 data.leaseFactor * 
                 data.ageFactor * 
                 data.brandFactor;
               
-              // ИСПРАВЛЕННЫЙ расчет доходности от аренды для этого года
+              // 3. ПОСЛЕ этого рассчитываем доходность от аренды
               const rentalIncome = lines.reduce((total, line) => {
-                if (data.year < 0) return total; // До получения ключей аренды нет
+                if (data.year < 0) return total;
                 
-                // ИСПРАВЛЕНО: Правильный расчет месяцев работы
                 let yearStartMonth, yearEndMonth;
                 
                 if (data.year === 0) {
-                  // Год 0: от (handoverMonth + 3) до конца года
-                  yearStartMonth = handoverMonth + 3; // Например: 8 + 3 = 11 (ноябрь)
-                  yearEndMonth = 12; // До конца года (декабрь)
+                  yearStartMonth = handoverMonth + 3;
+                  yearEndMonth = 12;
                 } else {
-                  // Год 1+: полный год
-                  yearStartMonth = 1; // Январь
-                  yearEndMonth = 12;  // Декабрь
+                  yearStartMonth = 1;
+                  yearEndMonth = 12;
                 }
                 
-                // Проверяем, не превышает ли конец года срок лизхолда
                 const leaseholdEndMonth = Math.floor((line.snapshot?.leaseholdEndDate - startMonth) / (30 * 24 * 60 * 60 * 1000));
                 const actualEndMonth = Math.min(yearEndMonth, leaseholdEndMonth);
                 
-                if (yearStartMonth >= actualEndMonth) return total; // Вилла уже не работает
+                if (yearStartMonth >= actualEndMonth) return total;
                 
-                // Количество месяцев работы в этом году
-                const workingMonths = Math.max(0, actualEndMonth - yearStartMonth + 1); // +1 потому что включаем оба месяца
-                
-                // Средний доход за месяц
+                const workingMonths = Math.max(0, actualEndMonth - yearStartMonth + 1);
                 const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, data.year);
                 const avgDaysPerMonth = 30.44;
                 const occupancyDays = avgDaysPerMonth * (line.occupancyPct / 100);
                 const monthlyIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
-                
-                // Годовой доход = месячный доход × количество рабочих месяцев
                 const yearIncome = monthlyIncome * workingMonths;
                 
                 return total + yearIncome;
               }, 0);
               
-              // НОВЫЙ РАСЧЕТ: Общий капитал инвестора
+              // 4. И ТОЛЬКО ПОСЛЕ этого используем обе переменные
               const totalInvestorCapital = finalPrice + rentalIncome;
               
               return (
@@ -1858,7 +1848,6 @@ const calculateOptimalExitPoint = useMemo(() => {
                   <td>{data.ageFactor.toFixed(3)}</td>
                   <td>{data.brandFactor.toFixed(3)}</td>
                   <td>{Math.pow(1 + pricingConfig.inflationRatePct / 100, data.year).toFixed(3)}</td>
-                  {/* ИСПРАВЛЕНО: Final Price = итоговая цена × коэффициенты */}
                   <td className="price-cell">{fmtMoney(finalPrice)}</td>
                   <td className="rental-cell">{fmtMoney(rentalIncome)}</td>
                   <td className="total-capital-cell">{fmtMoney(totalInvestorCapital)}</td>
