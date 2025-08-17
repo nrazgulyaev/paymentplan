@@ -489,8 +489,6 @@ function App() {
     return yearlyIncome;
   };
 
-  
-
   // НОВЫЕ ФУНКЦИИ ЦЕНООБРАЗОВАНИЯ - ИСПРАВЛЕНЫ
   const leaseFactor = (year, totalYears, alpha) => {
     try {
@@ -537,28 +535,28 @@ function App() {
   };
 
   // НОВАЯ ФУНКЦИЯ: Расчет рыночной цены виллы на ключах
-const calculateMarketPriceAtHandover = (villa, line) => {
-  try {
-    if (!villa || !line) return 0;
-    
-    // Базовая цена виллы
-    const basePrice = villa.baseUSD;
-    
-    // Месячный рост цены до ключей (в долях)
-    const monthlyGrowthRate = (line.monthlyPriceGrowthPct || 2) / 100;
-    
-    // Количество месяцев от начала до получения ключей
-    const monthsToHandover = handoverMonth;
-    
-    // Рыночная цена на ключах = базовая цена × (1 + месячный рост)^количество месяцев
-    const marketPriceAtHandover = basePrice * Math.pow(1 + monthlyGrowthRate, monthsToHandover);
-    
-    return marketPriceAtHandover;
-  } catch (error) {
-    console.error('Ошибка расчета рыночной цены на ключах:', error);
-    return 0;
-  }
-};
+  const calculateMarketPriceAtHandover = (villa, line) => {
+    try {
+      if (!villa || !line) return 0;
+      
+      // Базовая цена виллы
+      const basePrice = villa.baseUSD;
+      
+      // Месячный рост цены до ключей (в долях)
+      const monthlyGrowthRate = (line.monthlyPriceGrowthPct || 2) / 100;
+      
+      // Количество месяцев от начала до получения ключей
+      const monthsToHandover = handoverMonth;
+      
+      // Рыночная цена на ключах = базовая цена × (1 + месячный рост)^количество месяцев
+      const marketPriceAtHandover = basePrice * Math.pow(1 + monthlyGrowthRate, monthsToHandover);
+      
+      return marketPriceAtHandover;
+    } catch (error) {
+      console.error('Ошибка расчета рыночной цены на ключах:', error);
+      return 0;
+    }
+  };
 
   // ИСПРАВЛЕНО: Используем startMonth вместо new Date()
   const calculateVillaPrice = (villa, yearOffset) => {
@@ -581,44 +579,45 @@ const calculateMarketPriceAtHandover = (villa, line) => {
   };
 
   // ИСПРАВЛЕНО: Используем startMonth вместо new Date()
+  // ИСПРАВЛЕНО: Функция generatePricingData - убрано ограничение по годам
   const generatePricingData = (villa) => {
-  try {
-    if (!villa || !villa.leaseholdEndDate) return [];
-    
-    const totalYears = Math.ceil((villa.leaseholdEndDate - startMonth) / (365 * 24 * 60 * 60 * 1000));
-    const data = [];
-    
-    // УБРАНО ОГРАНИЧЕНИЕ: было Math.min(totalYears, 20), теперь все годы
-    for (let year = 0; year <= totalYears; year++) {
-    
-      // Получаем линию для расчета месячного роста
-      const selectedLine = lines.find(l => l.villaId === villa.villaId);
-
-      // Рыночная цена на ключах
-      const marketPriceAtHandover = calculateMarketPriceAtHandover(villa, selectedLine);
-
-      // Final Price = рыночная цена на ключах × коэффициенты × инфляция
-      const finalPrice = marketPriceAtHandover * 
-        Math.pow(1 + pricingConfig.inflationRatePct / 100, year) * 
-        leaseFactor(year, totalYears, pricingConfig.leaseAlpha) * 
-        ageFactor(year, pricingConfig.agingBeta) * 
-        brandFactor(year, pricingConfig);
+    try {
+      if (!villa || !villa.leaseholdEndDate) return [];
       
-      data.push({
-        year,
-        finalPrice,
-        leaseFactor: leaseFactor(year, totalYears, pricingConfig.leaseAlpha),
-        ageFactor: ageFactor(year, pricingConfig.agingBeta),
-        brandFactor: brandFactor(year, pricingConfig)
-      });
+      const totalYears = Math.ceil((villa.leaseholdEndDate - startMonth) / (365 * 24 * 60 * 60 * 1000));
+      const data = [];
+      
+      // УБРАНО ОГРАНИЧЕНИЕ: было Math.min(totalYears, 20), теперь все годы
+      for (let year = 0; year <= totalYears; year++) {
+        
+        // Получаем линию для расчета месячного роста
+        const selectedLine = lines.find(l => l.villaId === villa.villaId);
+
+        // Рыночная цена на ключах
+        const marketPriceAtHandover = calculateMarketPriceAtHandover(villa, selectedLine);
+
+        // Final Price = рыночная цена на ключах × коэффициенты × инфляция
+        const finalPrice = marketPriceAtHandover * 
+          Math.pow(1 + pricingConfig.inflationRatePct / 100, year) * 
+          leaseFactor(year, totalYears, pricingConfig.leaseAlpha) * 
+          ageFactor(year, pricingConfig.agingBeta) * 
+          brandFactor(year, pricingConfig);
+        
+        data.push({
+          year,
+          finalPrice,
+          leaseFactor: leaseFactor(year, totalYears, pricingConfig.leaseAlpha),
+          ageFactor: ageFactor(year, pricingConfig.agingBeta),
+          brandFactor: brandFactor(year, pricingConfig)
+        });
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Ошибка в generatePricingData:', error);
+      return [];
     }
-    
-    return data;
-  } catch (error) {
-    console.error('Ошибка в generatePricingData:', error);
-    return [];
-  }
-};
+  };
 
   // Функции для работы с проектами (ВОССТАНОВЛЕНЫ СТАРЫЕ)
   const addProject = () => {
@@ -882,104 +881,102 @@ const calculateMarketPriceAtHandover = (villa, line) => {
   }, [lines, startMonth, handoverMonth]);
 
   // НОВЫЙ РАСЧЕТ: Общий чистый срок лизхолда
-const totalLeaseholdTerm = useMemo(() => {
-  const allTerms = lines.map(line => {
-    if (!line.snapshot?.leaseholdEndDate) return { years: 0, months: 0 };
-    return getCleanLeaseholdTerm(line.snapshot.leaseholdEndDate);
-  });
-  
-  const maxYears = Math.max(...allTerms.map(t => t.years));
-  const maxMonths = Math.max(...allTerms.map(t => t.months));
-  
-  return { years: maxYears, months: maxMonths };
-}, [lines, startMonth, handoverMonth]);
+  const totalLeaseholdTerm = useMemo(() => {
+    const allTerms = lines.map(line => {
+      if (!line.snapshot?.leaseholdEndDate) return { years: 0, months: 0 };
+      return getCleanLeaseholdTerm(line.snapshot.leaseholdEndDate);
+    });
+    
+    const maxYears = Math.max(...allTerms.map(t => t.years));
+    const maxMonths = Math.max(...allTerms.map(t => t.months));
+    
+    return { years: maxYears, months: maxMonths };
+  }, [lines, startMonth, handoverMonth]);
 
-// УПРОЩЕННАЯ ФУНКЦИЯ: Расчет точки выхода с максимальным ROI
-const calculateOptimalExitPoint = useMemo(() => {
-  if (lines.length === 0) return { year: 0, totalValue: 0, roi: 0, annualRoi: 0 };
-  
-  const selectedVilla = catalog
-    .flatMap(p => p.villas)
-    .find(v => v.villaId === lines[0]?.villaId);
-  
-  if (!selectedVilla || !selectedVilla.leaseholdEndDate) return { year: 0, totalValue: 0, roi: 0, annualRoi: 0 };
-  
-  const pricingData = generatePricingData(selectedVilla);
-  let maxTotalValue = 0;
-  let optimalYear = 0;
-  
-  // ПРОСТОЙ РАСЧЕТ: находим год с максимальным общим капиталом
-  pricingData.forEach((data) => {
-    // Доходность от аренды для этого года (тот же код, что и в таблице)
-    const rentalIncome = lines.reduce((total, line) => {
-      if (data.year < 0) return 0;
+  // УПРОЩЕННАЯ ФУНКЦИЯ: Расчет точки выхода с максимальным ROI
+  const calculateOptimalExitPoint = useMemo(() => {
+    if (lines.length === 0) return { year: 0, totalValue: 0, roi: 0, annualRoi: 0 };
+    
+    const selectedVilla = catalog
+      .flatMap(p => p.villas)
+      .find(v => v.villaId === lines[0]?.villaId);
+    
+    if (!selectedVilla || !selectedVilla.leaseholdEndDate) return { year: 0, totalValue: 0, roi: 0, annualRoi: 0 };
+    
+    const pricingData = generatePricingData(selectedVilla);
+    let maxTotalValue = 0;
+    let optimalYear = 0;
+    
+    // ПРОСТОЙ РАСЧЕТ: находим год с максимальным общим капиталом
+    pricingData.forEach((data) => {
+            // Доходность от аренды для этого года (тот же код, что и в таблице)
+      const rentalIncome = lines.reduce((total, line) => {
+        if (data.year < 0) return total;
+        
+        let yearStartMonth, yearEndMonth;
+        
+        if (data.year === 0) {
+          yearStartMonth = handoverMonth + 3;
+          yearEndMonth = 12;
+        } else {
+          yearStartMonth = 1;
+          yearEndMonth = 12;
+        }
+        
+        const leaseholdEndMonth = Math.floor((line.snapshot?.leaseholdEndDate - startMonth) / (30 * 24 * 60 * 60 * 1000));
+        const actualEndMonth = Math.min(yearEndMonth, leaseholdEndMonth);
+        
+        if (yearStartMonth >= actualEndMonth) return total;
+        
+        const workingMonths = Math.max(0, actualEndMonth - yearStartMonth + 1);
+        const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, data.year);
+        const avgDaysPerMonth = 30.44;
+        const occupancyDays = avgDaysPerMonth * (line.occupancyPct / 100);
+        const monthlyIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
+        const yearIncome = monthlyIncome * workingMonths;
+        
+        return total + yearIncome;
+      }, 0);
       
-      let yearStartMonth, yearEndMonth;
+      // Получаем виллу для расчета
+      const selectedVilla = catalog
+        .flatMap(p => p.villas)
+        .find(v => v.villaId === lines[0]?.villaId);
+
+      // Рыночная цена на ключах
+      const marketPriceAtHandover = calculateMarketPriceAtHandover(selectedVilla, lines[0]);
+
+      // Final Price = рыночная цена на ключах × коэффициенты × инфляция
+      const finalPrice = marketPriceAtHandover * 
+        Math.pow(1 + pricingConfig.inflationRatePct / 100, data.year) * 
+        data.leaseFactor * 
+        data.ageFactor * 
+        data.brandFactor;
+
+      // Общий капитал инвестора = Final Price + доход от аренды
+      const totalInvestorCapital = finalPrice + rentalIncome;
       
-      if (data.year === 0) {
-        yearStartMonth = handoverMonth + 3;
-        yearEndMonth = 12;
-      } else {
-        yearStartMonth = 1;
-        yearEndMonth = 12;
+      // Находим максимальное значение
+      if (totalInvestorCapital > maxTotalValue) {
+        maxTotalValue = totalInvestorCapital;
+        optimalYear = data.year;
       }
-      
-      const leaseholdEndMonth = Math.floor((line.snapshot?.leaseholdEndDate - startMonth) / (30 * 24 * 60 * 60 * 1000));
-      const actualEndMonth = Math.min(yearEndMonth, leaseholdEndMonth);
-      
-      if (yearStartMonth >= actualEndMonth) return total;
-      
-      const workingMonths = Math.max(0, actualEndMonth - yearStartMonth + 1);
-      const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, data.year);
-      const avgDaysPerMonth = 30.44;
-      const occupancyDays = avgDaysPerMonth * (line.occupancyPct / 100);
-      const monthlyIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
-      const yearIncome = monthlyIncome * workingMonths;
-      
-      return total + yearIncome;
-    }, 0);
+    });
     
-  
-// Получаем виллу для расчета
-const selectedVilla = catalog
-  .flatMap(p => p.villas)
-  .find(v => v.villaId === lines[0]?.villaId);
-
-// Рыночная цена на ключах
-const marketPriceAtHandover = calculateMarketPriceAtHandover(selectedVilla, lines[0]);
-
-// Final Price = рыночная цена на ключах × коэффициенты × инфляция
-const finalPrice = marketPriceAtHandover * 
-  Math.pow(1 + pricingConfig.inflationRatePct / 100, data.year) * 
-  data.leaseFactor * 
-  data.ageFactor * 
-  data.brandFactor;
-
-// Общий капитал инвестора = Final Price + доход от аренды
-const totalInvestorCapital = finalPrice + rentalIncome;
+    // Расчет ROI
+    const initialInvestment = project.totals.baseUSD;
+    const totalRoi = ((maxTotalValue - initialInvestment) / initialInvestment) * 100;
     
-    // Находим максимальное значение
-    if (totalInvestorCapital > maxTotalValue) {
-            maxTotalValue = totalInvestorCapital;
-      optimalYear = data.year;
-    }
-  });
-  
-  // Расчет ROI
-  const initialInvestment = project.totals.baseUSD;
-  const totalRoi = ((maxTotalValue - initialInvestment) / initialInvestment) * 100;
-  
-  // ГОДОВОЙ ROI = общий ROI / количество лет
-  const annualRoi = optimalYear > 0 ? totalRoi / optimalYear : 0;
-  
-  return {
-    year: optimalYear,
-    totalValue: maxTotalValue,
-    roi: totalRoi,
-    annualRoi: annualRoi
-  };
-}, [lines, catalog, handoverMonth, startMonth, project.totals.baseUSD]);
-
+    // ГОДОВОЙ ROI = общий ROI / количество лет
+    const annualRoi = optimalYear > 0 ? totalRoi / optimalYear : 0;
+    
+    return {
+      year: optimalYear,
+      totalValue: maxTotalValue,
+      roi: totalRoi,
+      annualRoi: annualRoi
+    };
+  }, [lines, catalog, handoverMonth, startMonth, project.totals.baseUSD]);
   
   // Функции для работы с линиями (ВОССТАНОВЛЕНЫ СТАРЫЕ)
   const updLine = (id, patch) => setLines(prev => prev.map(l => l.id === id ? {...l, ...patch} : l));
@@ -1070,7 +1067,8 @@ const totalInvestorCapital = finalPrice + rentalIncome;
       [t.occupancyRate]: ld.line.occupancyPct || 0,
       [t.rentalPriceIndex]: ld.line.rentalPriceIndexPct || 0,
       [t.monthlyPriceGrowth]: ld.line.monthlyPriceGrowthPct || 0,
-      [t.leaseholdEndDate]: ld.line.snapshot?.leaseholdEndDate ? ld.line.snapshot.leaseholdEndDate.toLocaleDateString() : ''    })));
+      [t.leaseholdEndDate]: ld.line.snapshot?.leaseholdEndDate ? ld.line.snapshot.leaseholdEndDate.toLocaleDateString() : ''
+    })));
     
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws1, 'Cashflow');
@@ -1537,19 +1535,18 @@ const totalInvestorCapital = finalPrice + rentalIncome;
             <div className="muted">{t.cleanLeaseholdTerm}</div>
             <div className="v">{totalLeaseholdTerm.years} {t.years} {totalLeaseholdTerm.months} {t.months}</div>
           </div>
- <div className="kpi">
-    <div className="muted">Точка выхода с макс. ROI</div>
-    <div className="v">
-        {(() => {
-          const realYear = startMonth.getFullYear() + handoverMonth / 12 + calculateOptimalExitPoint.year;
-          return Math.floor(realYear);
-        })()}
-      </div>
-      <div className="muted" style={{fontSize: '0.8em'}}>
-        Годовой ROI: {calculateOptimalExitPoint.annualRoi.toFixed(1)}%
-      </div>
-  </div>
-            
+          <div className="kpi">
+            <div className="muted">Точка выхода с макс. ROI</div>
+            <div className="v">
+              {(() => {
+                const realYear = startMonth.getFullYear() + handoverMonth / 12 + calculateOptimalExitPoint.year;
+                return Math.floor(realYear);
+              })()}
+            </div>
+            <div className="muted" style={{fontSize: '0.8em'}}>
+              Годовой ROI: {calculateOptimalExitPoint.annualRoi.toFixed(1)}%
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1670,8 +1667,6 @@ const totalInvestorCapital = finalPrice + rentalIncome;
         </div>
       </div>
 
-      
-
       {/* 7. НОВЫЙ БЛОК: Параметры расчёта и график ценообразования */}
       {lines.length > 0 && (
         <div className="card">
@@ -1697,255 +1692,270 @@ const totalInvestorCapital = finalPrice + rentalIncome;
             </div>
           </div>
           
-    {/* График ценообразования - С ОБЩИМ МАСШТАБОМ ДЛЯ ОБЕИХ ЛИНИЙ */}
-<div className="pricing-chart-container">
-  <h4>Динамика цены виллы</h4>
-  <p className="chart-subtitle">Влияние факторов на цену и доходность от аренды</p>
-  <div className="pricing-chart-svg" id="pricing-chart-svg">
-    <svg width="100%" height="300" viewBox="0 0 800 300">
-      <g className="chart-lines">
-        {(() => {
-          const selectedVilla = catalog
-            .flatMap(p => p.villas)
-            .find(v => v.villaId === lines[0]?.villaId);
-          const pricingData = selectedVilla && selectedVilla.leaseholdEndDate ? 
-            generatePricingData(selectedVilla) : [];
-          
-          if (pricingData.length === 0) return null;
-          
-          // ИСПРАВЛЕННЫЙ расчет данных по аренде для каждого года
-          const rentalData = pricingData.map(data => {
-            const rentalIncome = lines.reduce((total, line) => {
-              if (data.year < 0) return 0;
-              
-              let yearStartMonth, yearEndMonth;
-              
-              if (data.year === 0) {
-                yearStartMonth = handoverMonth + 3;
-                yearEndMonth = 12;
-              } else {
-                yearStartMonth = 1;
-                yearEndMonth = 12;
-              }
-              
-              const leaseholdEndMonth = Math.floor((line.snapshot?.leaseholdEndDate - startMonth) / (30 * 24 * 60 * 60 * 1000));
-              const actualEndMonth = Math.min(yearEndMonth, leaseholdEndMonth);
-              
-              if (yearStartMonth >= actualEndMonth) return total;
-              
-              const workingMonths = Math.max(0, actualEndMonth - yearStartMonth + 1);
-              const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, data.year);
-              const avgDaysPerMonth = 30.44;
-              const occupancyDays = avgDaysPerMonth * (line.occupancyPct / 100);
-              const monthlyIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
-              const yearIncome = monthlyIncome * workingMonths;
-              
-              return total + yearIncome;
-            }, 0);
-            
-            return { ...data, rentalIncome };
-          });
-          
-          // ИСПРАВЛЕНО: ОБЩИЙ диапазон для обеих линий
-          const maxPrice = Math.max(...pricingData.map(d => d.finalPrice));
-          const minPrice = Math.min(...pricingData.map(d => d.finalPrice));
-          const maxRental = Math.max(...rentalData.map(d => d.rentalIncome));
-          const minRental = Math.min(...rentalData.map(d => d.rentalIncome));
-          
-          // ОБЩИЙ диапазон: от минимального значения до максимального
-          const globalMin = Math.min(minPrice, minRental);
-          const globalMax = Math.max(maxPrice, maxRental);
-          const globalRange = globalMax - globalMin;
-          
-          return (
-            <>
-              {/* Линия Final Price (синяя) - использует ОБЩИЙ диапазон */}
-              <polyline
-                className="chart-line"
-                points={pricingData.map((d, i) => 
-                  `${50 + i * 35},${250 - ((d.finalPrice - globalMin) / globalRange) * 200}`
-                ).join(' ')}
-                fill="none"
-                stroke="#2196F3"
-                strokeWidth="2"
-              />
-              
-              {/* Линия доходности от аренды (зеленая) - использует ОБЩИЙ диапазон */}
-              <polyline
-                className="chart-line"
-                points={rentalData.map((d, i) => 
-                  `${50 + i * 35},${250 - ((d.rentalIncome - globalMin) / globalRange) * 200}`
-                ).join(' ')}
-                fill="none"
-                stroke="#4CAF50"
-                strokeWidth="2"
-              />
-              
-              {/* Точки для Final Price - ОБЩИЙ диапазон */}
-              <g className="line-points">
-                {pricingData.map((d, i) => (
-                  <circle
-                    key={`price-${i}`}
-                    cx={50 + i * 35}
-                    cy={250 - ((d.finalPrice - globalMin) / globalRange) * 200}
-                    r="3"
-                    fill="#2196F3"
-                  />
-                ))}
-              </g>
-              
-              {/* Точки для доходности от аренды - ОБЩИЙ диапазон */}
-              <g className="line-points">
-                {rentalData.map((d, i) => (
-                  <circle
-                    key={`rental-${i}`}
-                    cx={50 + i * 35}
-                    cy={250 - ((d.rentalIncome - globalMin) / globalRange) * 200}
-                    r="3"
-                    fill="#4CAF50"
-                  />
-                ))}
-              </g>
-              
-              {/* Оси */}
-              <g className="chart-axes">
-                <line className="y-axis" x1="50" y1="50" x2="50" y2="250" stroke="#666" strokeWidth="1"/>
-                <line className="x-axis" x1="50" y1="250" x2="750" y2="250" stroke="#666" strokeWidth="1"/>
-              </g>
-              
-              {/* ПОДПИСИ ПО ОСИ Y - ОБЩИЙ диапазон */}
-              <g className="y-labels">
-                {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
-                  // ОБЩИЙ диапазон для обеих линий
-                  const value = globalMin + ratio * globalRange;
-                  const y = 250 - ratio * 200;
-                  
-                  return (
-                    <g key={i}>
-                      <line x1="45" y1={y} x2="50" y2={y} stroke="#666" strokeWidth="1"/>
-                      <text x="40" y={y + 4} textAnchor="end" fontSize="10" fill="#666">
-                        {fmtMoney(value, 'USD')}
-                      </text>
-                    </g>
-                  );
-                })}
-              </g>
-              
-              {/* Подписи по оси X - РЕАЛЬНЫЕ ГОДЫ */}
-              <g className="x-labels">
-                {pricingData.map((d, i) => {
-                  const realYear = startMonth.getFullYear() + handoverMonth / 12 + d.year;
-                  const displayYear = Math.floor(realYear);
-                  
-                  return (
-                    <text
-                      key={i}
-                      x={50 + i * 35}
-                      y="270"
-                      textAnchor="middle"
-                      fontSize="12"
-                      fill="#666"
-                    >
-                      {displayYear}
-                    </text>
-                  );
-                })}
-              </g>
-              
-              {/* Легенда - ОБЕ ЛИНИИ */}
-              <g className="chart-legend">
-                <rect x="600" y="20" width="15" height="15" fill="#2196F3"/>
-                <text x="620" y="32" fontSize="12" fill="#333">Final Price</text>
-                <rect x="600" y="40" width="15" height="15" fill="#4CAF50"/>
-                <text x="620" y="52" fontSize="12" fill="#333">Доходность от аренды</text>
-              </g>
-            </>
-          );
-        })()}
-      </g>
-    </svg>
-  </div>
-</div>
+          {/* График ценообразования - С ОБЩИМ МАСШТАБОМ ДЛЯ ОБЕИХ ЛИНИЙ */}
+          <div className="pricing-chart-container">
+            <h4>Динамика цены виллы</h4>
+            <p className="chart-subtitle">Влияние факторов на цену и доходность от аренды</p>
+            <div className="pricing-chart-svg" id="pricing-chart-svg">
+              <svg width="100%" height="300" viewBox="0 0 800 300">
+                <g className="chart-lines">
+                  {(() => {
+                    const selectedVilla = catalog
+                      .flatMap(p => p.villas)
+                      .find(v => v.villaId === lines[0]?.villaId);
+                    const pricingData = selectedVilla && selectedVilla.leaseholdEndDate ? 
+                      generatePricingData(selectedVilla) : [];
+                    
+                    if (pricingData.length === 0) return null;
+                    
+                    // ИСПРАВЛЕННЫЙ расчет данных по аренде для каждого года
+                    const rentalData = pricingData.map(data => {
+                      const rentalIncome = lines.reduce((total, line) => {
+                        if (data.year < 0) return total;
+                        
+                        let yearStartMonth, yearEndMonth;
+                        
+                        if (data.year === 0) {
+                          yearStartMonth = handoverMonth + 3;
+                          yearEndMonth = 12;
+                        } else {
+                          yearStartMonth = 1;
+                          yearEndMonth = 12;
+                        }
+                        
+                        const leaseholdEndMonth = Math.floor((line.snapshot?.leaseholdEndDate - startMonth) / (30 * 24 * 60 * 60 * 1000));
+                        const actualEndMonth = Math.min(yearEndMonth, leaseholdEndMonth);
+                        
+                        if (yearStartMonth >= actualEndMonth) return total;
+                        
+                        const workingMonths = Math.max(0, actualEndMonth - yearStartMonth + 1);
+                        const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, data.year);
+                        const avgDaysPerMonth = 30.44;
+                        const occupancyDays = avgDaysPerMonth * (line.occupancyPct / 100);
+                        const monthlyIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
+                        const yearIncome = monthlyIncome * workingMonths;
+                        
+                        return total + yearIncome;
+                      }, 0);
+                      
+                      return { ...data, rentalIncome };
+                    });
+                    
+                    // ИСПРАВЛЕНО: ОБЩИЙ диапазон для обеих линий
+                    const maxPrice = Math.max(...pricingData.map(d => d.finalPrice));
+                    const minPrice = Math.min(...pricingData.map(d => d.finalPrice));
+                    const maxRental = Math.max(...rentalData.map(d => d.rentalIncome));
+                    const minRental = Math.min(...rentalData.map(d => d.rentalIncome));
+                    
+                    // ОБЩИЙ диапазон: от минимального значения до максимального
+                    const globalMin = Math.min(minPrice, minRental);
+                    const globalMax = Math.max(maxPrice, maxRental);
+                    const globalRange = globalMax - globalMin;
+                    
+                    return (
+                      <>
+                        {/* Линия Final Price (синяя) - использует ОБЩИЙ диапазон */}
+                        <polyline
+                          className="chart-line"
+                          points={pricingData.map((d, i) => 
+                            `${50 + i * 35},${250 - ((d.finalPrice - globalMin) / globalRange) * 200}`
+                          ).join(' ')}
+                          fill="none"
+                          stroke="#2196F3"
+                          strokeWidth="2"
+                        />
+                        
+                        {/* Линия доходности от аренды (зеленая) - использует ОБЩИЙ диапазон */}
+                        <polyline
+                          className="chart-line"
+                          points={rentalData.map((d, i) => 
+                            `${50 + i * 35},${250 - ((d.rentalIncome - globalMin) / globalRange) * 200}`
+                          ).join(' ')}
+                          fill="none"
+                          stroke="#4CAF50"
+                          strokeWidth="2"
+                        />
+                        
+                        {/* Точки для Final Price - ОБЩИЙ диапазон */}
+                        <g className="line-points">
+                          {pricingData.map((d, i) => (
+                            <circle
+                              key={`price-${i}`}
+                              cx={50 + i * 35}
+                              cy={250 - ((d.finalPrice - globalMin) / globalRange) * 200}
+                              r="3"
+                              fill="#2196F3"
+                            />
+                          ))}
+                        </g>
+                        
+                        {/* Точки для доходности от аренды - ОБЩИЙ диапазон */}
+                        <g className="line-points">
+                          {rentalData.map((d, i) => (
+                            <circle
+                              key={`rental-${i}`}
+                              cx={50 + i * 35}
+                              cy={250 - ((d.rentalIncome - globalMin) / globalRange) * 200}
+                              r="3"
+                              fill="#4CAF50"
+                            />
+                          ))}
+                        </g>
+                        
+                        {/* Оси */}
+                        <g className="chart-axes">
+                          <line className="y-axis" x1="50" y1="50" x2="50" y2="250" stroke="#666" strokeWidth="1"/>
+                          <line className="x-axis" x1="50" y1="250" x2="750" y2="250" stroke="#666" strokeWidth="1"/>
+                        </g>
+                        
+                        {/* ПОДПИСИ ПО ОСИ Y - ОБЩИЙ диапазон */}
+                        <g className="y-labels">
+                          {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
+                            // ОБЩИЙ диапазон для обеих линий
+                            const value = globalMin + ratio * globalRange;
+                            const y = 250 - ratio * 200;
+                            
+                            return (
+                              <g key={i}>
+                                <line x1="45" y1={y} x2="50" y2={y} stroke="#666" strokeWidth="1"/>
+                                <text x="40" y={y + 4} textAnchor="end" fontSize="10" fill="#666">
+                                  {fmtMoney(value, 'USD')}
+                                </text>
+                              </g>
+                            );
+                          })}
+                        </g>
+                        
+                        {/* Подписи по оси X - РЕАЛЬНЫЕ ГОДЫ */}
+                        <g className="x-labels">
+                          {pricingData.map((d, i) => {
+                            const realYear = startMonth.getFullYear() + handoverMonth / 12 + d.year;
+                            const displayYear = Math.floor(realYear);
+                            
+                            return (
+                              <text
+                                key={i}
+                                x={50 + i * 35}
+                                y="270"
+                                textAnchor="middle"
+                                fontSize="12"
+                                fill="#666"
+                                                           >
+                                {displayYear}
+                              </text>
+                            );
+                          })}
+                        </g>
+                        
+                        {/* Легенда - ОБЕ ЛИНИИ */}
+                        <g className="chart-legend">
+                          <rect x="600" y="20" width="15" height="15" fill="#2196F3"/>
+                          <text x="620" y="32" fontSize="12" fill="#333">Final Price</text>
+                          <rect x="600" y="40" width="15" height="15" fill="#4CAF50"/>
+                          <text x="620" y="52" fontSize="12" fill="#333">Доходность от аренды</text>
+                        </g>
+                      </>
+                    );
+                  })()}
+                </g>
+              </svg>
+            </div>
+          </div>
 
-{/* Таблица факторов - ИСПРАВЛЕННЫЙ КОД */}
-<div className="factors-table-container">
-  <h4>Таблица факторов</h4>
-  <div className="factors-table-scroll">
-    <table className="factors-table">
-      <thead>
-        <tr>
-          <th>Год</th>
-          <th>Lease Factor</th>
-          <th>Age Factor</th>
-          <th>Brand Factor</th>
-          <th>Коэффициент инфляции</th>
-          <th>Final Price</th>
-          <th>Доходность от аренды</th>
-          <th>Общий капитал инвестора</th>
-        </tr>
-      </thead>
-      <tbody>
-        {(() => {
-          const selectedVilla = catalog
-            .flatMap(p => p.villas)
-            .find(v => v.villaId === lines[0]?.villaId);
-          return selectedVilla && selectedVilla.leaseholdEndDate ? 
-            generatePricingData(selectedVilla).map((data, index) => {
-              // ВСЕ переменные должны быть определены здесь, внутри map
-              const realYear = startMonth.getFullYear() + handoverMonth / 12 + data.year;
-              const displayYear = Math.floor(realYear);
-              
-             
-              // Доходность от аренды для этого года
-              const rentalIncome = lines.reduce((total, line) => {
-                if (data.year < 0) return total;
-                
-                let yearStartMonth, yearEndMonth;
-                
-                if (data.year === 0) {
-                  yearStartMonth = handoverMonth + 3;
-                  yearEndMonth = 12;
-                } else {
-                  yearStartMonth = 1;
-                  yearEndMonth = 12;
-                }
-                
-                const leaseholdEndMonth = Math.floor((line.snapshot?.leaseholdEndDate - startMonth) / (30 * 24 * 60 * 60 * 1000));
-                const actualEndMonth = Math.min(yearEndMonth, leaseholdEndMonth);
-                
-                if (yearStartMonth >= actualEndMonth) return total;
-                
-                const workingMonths = Math.max(0, actualEndMonth - yearStartMonth + 1);
-                const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, data.year);
-                const avgDaysPerMonth = 30.44;
-                const occupancyDays = avgDaysPerMonth * (line.occupancyPct / 100);
-                const monthlyIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
-                const yearIncome = monthlyIncome * workingMonths;
-                
-                return total + yearIncome;
-              }, 0);
-              
-            
-              
-              // Возвращаем JSX только после определения ВСЕХ переменных
-              return (
-                <tr key={index}>
-                  <td>{displayYear}</td>
-                  <td>{data.leaseFactor.toFixed(3)}</td>
-                  <td>{data.ageFactor.toFixed(3)}</td>
-                  <td>{data.brandFactor.toFixed(3)}</td>
-                  <td>{Math.pow(1 + pricingConfig.inflationRatePct / 100, data.year).toFixed(3)}</td>
-                  <td className="price-cell">{fmtMoney(finalPrice)}</td>
-                  <td className="rental-cell">{fmtMoney(rentalIncome)}</td>
-                  <td className="total-capital-cell">{fmtMoney(totalInvestorCapital)}</td>
-                </tr>
-              );
-            }) : null;
-        })()}
-      </tbody>
-    </table>
-  </div>
-</div>
+          {/* Таблица факторов - ИСПРАВЛЕННЫЙ КОД */}
+          <div className="factors-table-container">
+            <h4>Таблица факторов</h4>
+            <div className="factors-table-scroll">
+              <table className="factors-table">
+                <thead>
+                  <tr>
+                    <th>Год</th>
+                    <th>Lease Factor</th>
+                    <th>Age Factor</th>
+                    <th>Brand Factor</th>
+                    <th>Коэффициент инфляции</th>
+                    <th>Final Price</th>
+                    <th>Доходность от аренды</th>
+                    <th>Общий капитал инвестора</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    const selectedVilla = catalog
+                      .flatMap(p => p.villas)
+                      .find(v => v.villaId === lines[0]?.villaId);
+                    return selectedVilla && selectedVilla.leaseholdEndDate ? 
+                      generatePricingData(selectedVilla).map((data, index) => {
+                        // ВСЕ переменные должны быть определены здесь, внутри map
+                        const realYear = startMonth.getFullYear() + handoverMonth / 12 + data.year;
+                        const displayYear = Math.floor(realYear);
+                        
+                        // Доходность от аренды для этого года
+                        const rentalIncome = lines.reduce((total, line) => {
+                          if (data.year < 0) return total;
+                          
+                          let yearStartMonth, yearEndMonth;
+                          
+                          if (data.year === 0) {
+                            yearStartMonth = handoverMonth + 3;
+                            yearEndMonth = 12;
+                          } else {
+                            yearStartMonth = 1;
+                            yearEndMonth = 12;
+                          }
+                          
+                          const leaseholdEndMonth = Math.floor((line.snapshot?.leaseholdEndDate - startMonth) / (30 * 24 * 60 * 60 * 1000));
+                          const actualEndMonth = Math.min(yearEndMonth, leaseholdEndMonth);
+                          
+                          if (yearStartMonth >= actualEndMonth) return total;
+                          
+                          const workingMonths = Math.max(0, actualEndMonth - yearStartMonth + 1);
+                          const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, data.year);
+                          const avgDaysPerMonth = 30.44;
+                          const occupancyDays = avgDaysPerMonth * (line.occupancyPct / 100);
+                          const monthlyIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
+                          const yearIncome = monthlyIncome * workingMonths;
+                          
+                          return total + yearIncome;
+                        }, 0);
+                        
+                        // Получаем виллу для расчета
+                        const selectedVilla = catalog
+                          .flatMap(p => p.villas)
+                          .find(v => v.villaId === lines[0]?.villaId);
+
+                        // Рыночная цена на ключах
+                        const marketPriceAtHandover = calculateMarketPriceAtHandover(selectedVilla, lines[0]);
+
+                        // Final Price = рыночная цена на ключах × коэффициенты × инфляция
+                        const finalPrice = marketPriceAtHandover * 
+                          Math.pow(1 + pricingConfig.inflationRatePct / 100, data.year) * 
+                          data.leaseFactor * 
+                          data.ageFactor * 
+                          data.brandFactor;
+
+                        // Общий капитал инвестора = Final Price + доход от аренды
+                        const totalInvestorCapital = finalPrice + rentalIncome;
+                        
+                        // Возвращаем JSX только после определения ВСЕХ переменных
+                        return (
+                          <tr key={index}>
+                            <td>{displayYear}</td>
+                            <td>{data.leaseFactor.toFixed(3)}</td>
+                            <td>{data.ageFactor.toFixed(3)}</td>
+                            <td>{data.brandFactor.toFixed(3)}</td>
+                            <td>{Math.pow(1 + pricingConfig.inflationRatePct / 100, data.year).toFixed(3)}</td>
+                            <td className="price-cell">{fmtMoney(finalPrice)}</td>
+                            <td className="rental-cell">{fmtMoney(rentalIncome)}</td>
+                            <td className="total-capital-cell">{fmtMoney(totalInvestorCapital)}</td>
+                          </tr>
+                        );
+                      }) : null;
+                  })()}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
@@ -2191,7 +2201,8 @@ function CatalogManager({
     }
     
     filtered.sort((a, b) => {
-      switch (sortBy) {        case 'price':
+      switch (sortBy) {
+        case 'price':
           const aPrice = Math.min(...a.villas.map(v => v.baseUSD));
           const bPrice = Math.min(...b.villas.map(v => v.baseUSD));
           return aPrice - bPrice;
@@ -2458,5 +2469,3 @@ function CatalogManager({
 // ===== РЕНДЕРИНГ ПРИЛОЖЕНИЯ =====
 const root = createRoot(document.getElementById('root'));
 root.render(<App />);
-                
-      
