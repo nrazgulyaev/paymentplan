@@ -662,115 +662,115 @@ function App() {
     }
   };
 
-  // НОВАЯ ФУНКЦИЯ: Генерация месячных данных для таблицы факторов 2
-  const generateMonthlyPricingData = (villa) => {
-    try {
-      if (!villa || !villa.leaseholdEndDate) return [];
+  // ОБНОВЛЕННАЯ ФУНКЦИЯ: Генерация месячных данных для таблицы факторов 2
+const generateMonthlyPricingData = (villa) => {
+  try {
+    if (!villa || !villa.leaseholdEndDate) return [];
+    
+    const selectedLine = lines.find(l => l.villaId === villa.villaId);
+    if (!selectedLine) return [];
+    
+    // Общее количество месяцев от подписания до окончания рассрочки
+    const totalMonths = months + handoverMonth;
+    
+    // Рыночная цена на ключах
+    const marketPriceAtHandover = calculateMarketPriceAtHandover(villa, selectedLine);
+    
+    // Получаем данные по линии для расчета платежей
+    const lineData = linesData.find(ld => ld.line.id === selectedLine.id);
+    if (!lineData) return [];
+    
+    const monthlyData = [];
+    
+    for (let month = 0; month <= totalMonths; month++) {
+      let leaseFactorValue = 1;
+      let ageFactorValue = 1;
+      let brandFactorValue = 1;
+      let inflationFactor = 1;
+      let finalPrice = 0;
+      let rentalIncome = 0;
+      let paymentAmount = 0;
       
-      const selectedLine = lines.find(l => l.villaId === villa.villaId);
-      if (!selectedLine) return [];
-      
-      // Общее количество месяцев от подписания до окончания рассрочки
-      const totalMonths = months + handoverMonth;
-      
-      // Рыночная цена на ключах
-      const marketPriceAtHandover = calculateMarketPriceAtHandover(villa, selectedLine);
-      
-      // Получаем данные по линии для расчета платежей
-      const lineData = linesData.find(ld => ld.line.id === selectedLine.id);
-      if (!lineData) return [];
-      
-      const monthlyData = [];
-      
-      for (let month = 0; month <= totalMonths; month++) {
-        let leaseFactor = 1;
-        let ageFactor = 1;
-        let brandFactor = 1;
-        let inflationFactor = 1;
-        let finalPrice = 0;
-        let rentalIncome = 0;
-        let paymentAmount = 0;
+      if (month <= handoverMonth) {
+        // ДО получения ключей: только месячный рост цены
+        const monthlyGrowthRate = (selectedLine.monthlyPriceGrowthPct || 2) / 100;
+        finalPrice = villa.baseUSD * Math.pow(1 + monthlyGrowthRate, month);
         
-        if (month <= handoverMonth) {
-          // ДО получения ключей: только месячный рост цены
-          const monthlyGrowthRate = (selectedLine.monthlyPriceGrowthPct || 2) / 100;
-          finalPrice = villa.baseUSD * Math.pow(1 + monthlyGrowthRate, month);
-          
-          // Платежи по этапам рассрочки
-          const stagePayment = lineData.preSchedule.find(s => s.month === month);
-          if (stagePayment) {
-            paymentAmount = stagePayment.amountUSD;
-          }
-        } else {
-          // ПОСЛЕ получения ключей: все факторы работают
-          const yearOffset = (month - handoverMonth) / 12;
-          
-          // Месячные коэффициенты (делим годовые на 12)
-          leaseFactor = leaseFactor(yearOffset, totalMonths / 12, pricingConfig.leaseAlpha);
-          ageFactor = ageFactor(yearOffset, pricingConfig.agingBeta / 12);
-          brandFactor = brandFactor(yearOffset, pricingConfig);
-          inflationFactor = Math.pow(1 + pricingConfig.inflationRatePct / 100, yearOffset);
-          
-          // Final Price с учетом всех факторов
-          finalPrice = marketPriceAtHandover * inflationFactor * leaseFactor * ageFactor * brandFactor;
-          
-          // Доходность от аренды (начинается через 3 месяца после ключей)
-          if (month >= handoverMonth + 3) {
-            const indexedPrice = getIndexedRentalPrice(selectedLine.dailyRateUSD, selectedLine.rentalPriceIndexPct, yearOffset);
-            const daysInMonth = getDaysInMonth(month);
-            rentalIncome = indexedPrice * 0.55 * (selectedLine.occupancyPct / 100) * daysInMonth * selectedLine.qty;
-          }
-          
-          // Платежи по рассрочке после ключей
-          if (month <= handoverMonth + lineData.vMonths) {
-            const postMonth = month - handoverMonth;
-            const postPayment = lineData.postRows.find(r => r.month === month);
-            if (postPayment) {
-              paymentAmount = postPayment.paymentUSD;
-            }
-          }
-          // Если рассрочка закончилась, но месяц еще в пределах года - платеж = 0
-          else if (month <= totalMonths) {
-            paymentAmount = 0;
-          }
+        // Платежи по этапам рассрочки
+        const stagePayment = lineData.preSchedule.find(s => s.month === month);
+        if (stagePayment) {
+          paymentAmount = stagePayment.amountUSD;
         }
+      } else {
+        // ПОСЛЕ получения ключей: все факторы работают
+        const yearOffset = (month - handoverMonth) / 12;
         
-        // Накопительный доход от аренды
-        let cumulativeRentalIncome = 0;
+        // Месячные коэффициенты (делим годовые на 12)
+        leaseFactorValue = leaseFactor(yearOffset, totalMonths / 12, pricingConfig.leaseAlpha);
+        ageFactorValue = ageFactor(yearOffset, pricingConfig.agingBeta / 12);
+        brandFactorValue = brandFactor(yearOffset, pricingConfig);
+        inflationFactor = Math.pow(1 + pricingConfig.inflationRatePct / 100, yearOffset);
+        
+        // Final Price с учетом всех факторов
+        finalPrice = marketPriceAtHandover * inflationFactor * leaseFactorValue * ageFactorValue * brandFactorValue;
+        
+        // Доходность от аренды (начинается через 3 месяца после ключей)
         if (month >= handoverMonth + 3) {
-          for (let m = handoverMonth + 3; m <= month; m++) {
-            const mYearOffset = (m - handoverMonth) / 12;
-            const mIndexedPrice = getIndexedRentalPrice(selectedLine.dailyRateUSD, selectedLine.rentalPriceIndexPct, mYearOffset);
-            const mDaysInMonth = getDaysInMonth(m);
-            const mRentalIncome = mIndexedPrice * 0.55 * (selectedLine.occupancyPct / 100) * mDaysInMonth * selectedLine.qty;
-            cumulativeRentalIncome += mRentalIncome;
-          }
+          const indexedPrice = getIndexedRentalPrice(selectedLine.dailyRateUSD, selectedLine.rentalPriceIndexPct, yearOffset);
+          const daysInMonth = getDaysInMonth(month);
+          rentalIncome = indexedPrice * 0.55 * (selectedLine.occupancyPct / 100) * daysInMonth * selectedLine.qty;
         }
         
-        // Общий капитал инвестора
-        const totalInvestorCapital = finalPrice + cumulativeRentalIncome;
-        
-        monthlyData.push({
-          month,
-          year: Math.floor(month / 12),
-          leaseFactor,
-          ageFactor,
-          brandFactor,
-          inflationFactor,
-          finalPrice,
-          rentalIncome,
-          cumulativeRentalIncome,
-          totalInvestorCapital,
-          paymentAmount
-        });
+        // Платежи по рассрочке после ключей
+        if (month <= handoverMonth + lineData.vMonths) {
+          const postMonth = month - handoverMonth;
+          const postPayment = lineData.postRows.find(r => r.month === month);
+          if (postPayment) {
+            paymentAmount = postPayment.paymentUSD;
+          }
+        }
+        // Если рассрочка закончилась, но месяц еще в пределах года - платеж = 0
+        else if (month <= totalMonths) {
+          paymentAmount = 0;
+        }
       }
       
-      return monthlyData;
-    } catch (error) {
-      console.error('Ошибка в generateMonthlyPricingData:', error);
-      return [];
+      // Накопительный доход от аренды
+      let cumulativeRentalIncome = 0;
+      if (month >= handoverMonth + 3) {
+        for (let m = handoverMonth + 3; m <= month; m++) {
+          const mYearOffset = (m - handoverMonth) / 12;
+          const mIndexedPrice = getIndexedRentalPrice(selectedLine.dailyRateUSD, selectedLine.rentalPriceIndexPct, mYearOffset);
+          const mDaysInMonth = getDaysInMonth(m);
+          const mRentalIncome = mIndexedPrice * 0.55 * (selectedLine.occupancyPct / 100) * mDaysInMonth * selectedLine.qty;
+          cumulativeRentalIncome += mRentalIncome;
+        }
+      }
+      
+      // Общий капитал инвестора
+      const totalInvestorCapital = finalPrice + cumulativeRentalIncome;
+      
+      monthlyData.push({
+        month,
+        year: Math.floor(month / 12),
+        leaseFactor: leaseFactorValue,
+        ageFactor: ageFactorValue,
+        brandFactor: brandFactorValue,
+        inflationFactor,
+        finalPrice,
+        rentalIncome,
+        cumulativeRentalIncome,
+        totalInvestorCapital,
+        paymentAmount
+      });
     }
-  };
+    
+    return monthlyData;
+  } catch (error) {
+    console.error('Ошибка в generateMonthlyPricingData:', error);
+    return [];
+  }
+};
 
   // Функции для работы с проектами (ВОССТАНОВЛЕНЫ СТАРЫЕ)
   const addProject = () => {
