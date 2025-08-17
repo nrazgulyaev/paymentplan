@@ -778,7 +778,6 @@ if (month > 0 && totalPaymentsToDate > 0) {
 }
 
 // 3. Итоговый ROI (переводим в годовой показатель)
-
 let cumulativeRoi = 0;
 if (totalPaymentsToDate > 0) {
   const cumulativeRoiRaw = ((finalPrice - project.totals.finalUSD) / totalPaymentsToDate) * 100;
