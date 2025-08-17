@@ -2415,7 +2415,7 @@ monthlyData.push({
                       generateMonthlyPricingData(selectedVilla).map((data) => (
                         <tr key={data.month}>
                           <td>{data.monthName}</td>
-<td>{data.year}</td>
+
                           <td>{data.leaseFactor.toFixed(3)}</td>
                           <td>{data.ageFactor.toFixed(3)}</td>
                           <td>{data.brandFactor.toFixed(3)}</td>
