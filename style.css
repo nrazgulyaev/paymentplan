@@ -2399,14 +2399,15 @@ h1 {
 }
 
 .factors-table-container {
-  /* Убираем ограничение по высоте */
-  max-height: none;
+  /* Возвращаем разумное ограничение по высоте */
+  max-height: 400px;
+  overflow: hidden;
 }
 
 .factors-table-scroll {
-  /* Убираем ограничение по высоте */
-  max-height: none;
-  overflow: visible;
+  /* Возвращаем ограничение для прокрутки */
+  max-height: 350px;
+  overflow-y: auto;
 }
 
 .factors-table {
@@ -2449,15 +2450,66 @@ h1 {
   font-weight: bold;
 }
 
-/* Убрать старые стили кэшфлоу */
-.cashflow-scroll,
-.cashflow-table {
-  display: none;
+/* ===== ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ДЛЯ НОВЫХ ЭЛЕМЕНТОВ ===== */
+
+/* Стили для новых столбцов в месячной таблице факторов 2 */
+.total-capital-cell {
+  font-weight: 600;
+  color: var(--ink);
+  font-family: 'Courier New', monospace;
+  text-align: right;
 }
 
-/* Показать новые стили */
-.factors-table-container {
-  display: block;
+.monthly-roi-cell,
+.cumulative-roi-cell,
+.irr-cell {
+  text-align: right;
+  font-weight: 500;
 }
+
+.monthly-roi-cell.positive,
+.cumulative-roi-cell.positive,
+.irr-cell.positive {
+  color: #28a745;
+}
+
+.monthly-roi-cell.negative,
+.cumulative-roi-cell.negative,
+.irr-cell.negative {
+  color: #dc3545;
+}
+
+/* Стили для столбца "Сумма к оплате" */
+.payment-cell {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--primary);
+  font-weight: 600;
+  text-align: right;
+}
+
+/* Стили для кэшфлоу в стиле таблицы факторов */
+.cashflow-block .factors-table-container {
+  margin-top: var(--spacing-lg);
+}
+
+.cashflow-block .factors-table th,
+.cashflow-block .factors-table td {
+  padding: 10px 8px;
+  font-size: 12px;
+}
+
+/* Улучшенные стили для положительных/отрицательных значений */
+.positive {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.negative {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+/* ===== КОНЕЦ ДОПОЛНИТЕЛЬНЫХ СТИЛЕЙ ===== */
+
 
 /* ===== КОНЕЦ СТИЛЕЙ ===== */
