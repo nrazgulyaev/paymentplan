@@ -2426,4 +2426,38 @@ h1 {
 .irr-cell.positive { color: #28a745; }
 .irr-cell.negative { color: #dc3545; }
 
+/* Стили для кэшфлоу в стиле таблицы факторов */
+.payment-cell {
+  background-color: #e3f2fd; /* Светло-синий фон */
+  color: #1976d2; /* Темно-синий текст */
+  font-weight: bold;
+}
+
+.balance-cell {
+  background-color: #f3e5f5; /* Светло-фиолетовый фон */
+  color: #7b1fa2; /* Темно-фиолетовый текст */
+  font-weight: bold;
+}
+
+.positive {
+  color: #2e7d32; /* Зеленый для положительных значений */
+  font-weight: bold;
+}
+
+.negative {
+  color: #c62828; /* Красный для отрицательных значений */
+  font-weight: bold;
+}
+
+/* Убрать старые стили кэшфлоу */
+.cashflow-scroll,
+.cashflow-table {
+  display: none;
+}
+
+/* Показать новые стили */
+.factors-table-container {
+  display: block;
+}
+
 /* ===== КОНЕЦ СТИЛЕЙ ===== */
