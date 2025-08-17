@@ -660,6 +660,23 @@ function App() {
     }, 0);
   };
 
+  // НОВАЯ ФУНКЦИЯ: Расчет IRR (упрощенная версия)
+  const calculateIRR = (cashFlows) => {
+    if (cashFlows.length < 2) return 0;
+    
+    // Упрощенный расчет IRR на основе ROI
+    const investment = Math.abs(cashFlows[0]);
+    const totalReturn = cashFlows.slice(1).reduce((sum, cf) => sum + cf, 0);
+    
+    if (investment <= 0) return 0;
+    
+    const totalRoi = ((totalReturn - investment) / investment) * 100;
+    const months = cashFlows.length - 1;
+    
+    // Примерная IRR на основе ROI и времени
+    return totalRoi / (months / 12);
+  };
+
   // НОВАЯ ФУНКЦИЯ: Генерация данных для таблицы факторов
   const generateFactorsData = (villa) => {
     try {
@@ -904,7 +921,7 @@ function App() {
         if (month > 0) {
           // ROI за месяц = (аренда за месяц + ΔЦена) / сумма платежей с начала до данного месяца × 100%
           let previousFinalPrice = 0;
-          if (month <= handoverMonth) {
+                   if (month <= handoverMonth) {
             const monthlyGrowth = (selectedLine.monthlyPriceGrowthPct || 2) / 100;
             previousFinalPrice = villa.baseUSD * Math.pow(1 + monthlyGrowth, month - 1);
           } else {
@@ -918,7 +935,7 @@ function App() {
           }
           
           if (previousFinalPrice > 0 && currentInvestedCapital > 0) {
-                        const priceChange = finalPrice - previousFinalPrice;
+            const priceChange = finalPrice - previousFinalPrice;
             monthlyRoi = ((rentalIncome + priceChange) / currentInvestedCapital) * 100;
           }
           
@@ -959,7 +976,7 @@ function App() {
             cashFlows[cashFlows.length - 1] += finalPrice;
             
             // Упрощенный расчет IRR
-            irr = calculateMonthlyIRR(cashFlows);
+            irr = calculateIRR(cashFlows);
           }
         }
         
@@ -975,7 +992,6 @@ function App() {
           paymentAmount,
           currentInvestedCapital,
           totalInvestorCapital: finalPrice + rentalIncome,
-          // ДОБАВЛЕНО недостающее поле
           monthlyRoi,
           cumulativeRoi,
           irr
@@ -987,40 +1003,6 @@ function App() {
       console.error('Ошибка в generateMonthlyPricingData:', error);
       return [];
     }
-  };
-
-  // НОВАЯ ФУНКЦИЯ: Расчет месячного IRR
-  const calculateMonthlyIRR = (cashFlows) => {
-    if (cashFlows.length < 2) return 0;
-    
-    // Упрощенный расчет IRR на основе ROI
-    const investment = Math.abs(cashFlows[0]);
-    const totalReturn = cashFlows.slice(1).reduce((sum, cf) => sum + cf, 0);
-    
-    if (investment <= 0) return 0;
-    
-    const totalRoi = ((totalReturn - investment) / investment) * 100;
-    const months = cashFlows.length - 1;
-    
-    // Примерная IRR на основе ROI и времени
-    return totalRoi / (months / 12);
-  };
-
-  // НОВАЯ ФУНКЦИЯ: Расчет IRR (упрощенная версия)
-  const calculateIRR = (cashFlows) => {
-    if (cashFlows.length < 2) return 0;
-    
-    // Упрощенный расчет IRR на основе ROI
-    const investment = Math.abs(cashFlows[0]);
-    const totalReturn = cashFlows.slice(1).reduce((sum, cf) => sum + cf, 0);
-    
-    if (investment <= 0) return 0;
-    
-    const totalRoi = ((totalReturn - investment) / investment) * 100;
-    const months = cashFlows.length - 1;
-    
-    // Примерная IRR на основе ROI и времени
-    return totalRoi / (months / 12);
   };
 
   // НОВАЯ ФУНКЦИЯ: Расчет данных для линий
@@ -2093,7 +2075,7 @@ function App() {
               <input 
                 type="number" 
                 value={newVillaForm.ppsm} 
-                                onChange={(e) => setNewVillaForm(prev => ({ ...prev, ppsm: +e.target.value }))}
+                onChange={(e) => setNewVillaForm(prev => ({ ...prev, ppsm: +e.target.value }))}
                 min="1000" 
                 max="10000"
               />
@@ -2112,7 +2094,7 @@ function App() {
               <label>{t.monthlyPriceGrowth}</label>
               <input 
                 type="number" 
-                value={newVillaForm.monthlyPriceGrowthPct} 
+                                value={newVillaForm.monthlyPriceGrowthPct} 
                 onChange={(e) => setNewVillaForm(prev => ({ ...prev, monthlyPriceGrowthPct: +e.target.value }))}
                 min="0" 
                 max="10" 
@@ -2166,3 +2148,5 @@ function App() {
 // Рендер приложения
 const root = createRoot(document.getElementById('root'));
 root.render(<App />);
+
+                                   
