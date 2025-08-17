@@ -812,7 +812,8 @@ if (month > 0) {
 
 monthlyData.push({
   month,
-  year: Math.floor(month / 12),
+  monthName: formatMonth(month), // НОВОЕ ПОЛЕ: название месяца
+  year: startMonth.getFullYear() + Math.floor(month / 12), // НОВОЕ ПОЛЕ: реальный год
   leaseFactor: leaseFactorValue,
   ageFactor: ageFactorValue,
   brandFactor: brandFactorValue,
@@ -2402,8 +2403,8 @@ monthlyData.push({
                     return selectedVilla && selectedVilla.leaseholdEndDate ? 
                       generateMonthlyPricingData(selectedVilla).map((data) => (
                         <tr key={data.month}>
-                          <td>{data.month}</td>
-                          <td>{data.year}</td>
+                          <td>{data.monthName}</td>
+<td>{data.year}</td>
                           <td>{data.leaseFactor.toFixed(3)}</td>
                           <td>{data.ageFactor.toFixed(3)}</td>
                           <td>{data.brandFactor.toFixed(3)}</td>
