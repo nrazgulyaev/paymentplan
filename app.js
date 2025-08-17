@@ -1775,7 +1775,7 @@ const calculateOptimalExitPoint = useMemo(() => {
 </div>
 
 {/* Таблица факторов - ИСПРАВЛЕННЫЙ РАСЧЕТ С ПРАВИЛЬНЫМИ ГОДАМИ */}
-{/* Таблица факторов - С НОВЫМ СТОЛБЦОМ */}
+{/* Таблица факторов - ИСПРАВЛЕННЫЙ Final Price */}
 <div className="factors-table-container">
   <h4>Таблица факторов</h4>
   <div className="factors-table-scroll">
@@ -1803,46 +1803,17 @@ const calculateOptimalExitPoint = useMemo(() => {
               const realYear = startMonth.getFullYear() + handoverMonth / 12 + data.year;
               const displayYear = Math.floor(realYear);
               
-              // ИСПРАВЛЕННЫЙ расчет доходности от аренды для этого года
-              const rentalIncome = lines.reduce((total, line) => {
-                if (data.year < 0) return total; // До получения ключей аренды нет
-                
-                // ИСПРАВЛЕНО: Правильный расчет месяцев работы
-                let yearStartMonth, yearEndMonth;
-                
-                if (data.year === 0) {
-                  // Год 0: от (handoverMonth + 3) до конца года
-                  yearStartMonth = handoverMonth + 3; // Например: 8 + 3 = 11 (ноябрь)
-                  yearEndMonth = 12; // До конца года (декабрь)
-                } else {
-                  // Год 1+: полный год
-                  yearStartMonth = 1; // Январь
-                  yearEndMonth = 12;  // Декабрь
-                }
-                
-                // Проверяем, не превышает ли конец года срок лизхолда
-                const leaseholdEndMonth = Math.floor((line.snapshot?.leaseholdEndDate - startMonth) / (30 * 24 * 60 * 60 * 1000));
-                const actualEndMonth = Math.min(yearEndMonth, leaseholdEndMonth);
-                
-                if (yearStartMonth >= actualEndMonth) return total; // Вилла уже не работает
-                
-                // Количество месяцев работы в этом году
-                const workingMonths = Math.max(0, actualEndMonth - yearStartMonth + 1); // +1 потому что включаем оба месяца
-                
-                // Средний доход за месяц
-                const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, data.year);
-                const avgDaysPerMonth = 30.44;
-                const occupancyDays = avgDaysPerMonth * (line.occupancyPct / 100);
-                const monthlyIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
-                
-                // Годовой доход = месячный доход × количество рабочих месяцев
-                const yearIncome = monthlyIncome * workingMonths;
-                
-                return total + yearIncome;
-              }, 0);
+              // ИСПРАВЛЕНО: Final Price = итоговая цена из KPI × все коэффициенты
+              const finalPrice = project.totals.finalUSD * 
+                Math.pow(1 + pricingConfig.inflationRatePct / 100, data.year) * 
+                data.leaseFactor * 
+                data.ageFactor * 
+                data.brandFactor;
+              
+              // ... остальной код для расчета доходности ...
               
               // НОВЫЙ РАСЧЕТ: Общий капитал инвестора
-              const totalInvestorCapital = data.finalPrice + rentalIncome;
+              const totalInvestorCapital = finalPrice + rentalIncome;
               
               return (
                 <tr key={index}>
@@ -1851,7 +1822,8 @@ const calculateOptimalExitPoint = useMemo(() => {
                   <td>{data.ageFactor.toFixed(3)}</td>
                   <td>{data.brandFactor.toFixed(3)}</td>
                   <td>{Math.pow(1 + pricingConfig.inflationRatePct / 100, data.year).toFixed(3)}</td>
-                  <td className="price-cell">{fmtMoney(data.finalPrice)}</td>
+                  {/* ИСПРАВЛЕНО: Final Price = итоговая цена × коэффициенты */}
+                  <td className="price-cell">{fmtMoney(finalPrice)}</td>
                   <td className="rental-cell">{fmtMoney(rentalIncome)}</td>
                   <td className="total-capital-cell">{fmtMoney(totalInvestorCapital)}</td>
                 </tr>
