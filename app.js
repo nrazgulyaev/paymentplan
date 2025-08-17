@@ -835,6 +835,92 @@ const generatePricingData = (villa) => {
     return { years: maxYears, months: maxMonths };
   }, [lines, startMonth, handoverMonth]);
 
+  // НОВЫЙ РАСЧЕТ: Общий чистый срок лизхолда
+const totalLeaseholdTerm = useMemo(() => {
+  const allTerms = lines.map(line => {
+    if (!line.snapshot?.leaseholdEndDate) return { years: 0, months: 0 };
+    return getCleanLeaseholdTerm(line.snapshot.leaseholdEndDate);
+  });
+  
+  const maxYears = Math.max(...allTerms.map(t => t.years));
+  const maxMonths = Math.max(...allTerms.map(t => t.months));
+  
+  return { years: maxYears, months: maxMonths };
+}, [lines, startMonth, handoverMonth]);
+
+// НОВАЯ ФУНКЦИЯ: Расчет точки выхода с максимальным ROI
+const calculateOptimalExitPoint = useMemo(() => {
+  if (lines.length === 0) return { year: 0, totalValue: 0, roi: 0, annualRoi: 0 };
+  
+  const selectedVilla = catalog
+    .flatMap(p => p.villas)
+    .find(v => v.villaId === lines[0]?.villaId);
+  
+  if (!selectedVilla || !selectedVilla.leaseholdEndDate) return { year: 0, totalValue: 0, roi: 0, annualRoi: 0 };
+  
+  const pricingData = generatePricingData(selectedVilla);
+  let maxTotalValue = 0;
+  let optimalYear = 0;
+  let cumulativeRentalIncome = 0;
+  
+  pricingData.forEach((data, index) => {
+    // Доходность от аренды для этого года
+    const rentalIncome = lines.reduce((total, line) => {
+      if (data.year < 0) return 0;
+      
+      let yearStartMonth, yearEndMonth;
+      
+      if (data.year === 0) {
+        yearStartMonth = handoverMonth + 3;
+        yearEndMonth = 12;
+      } else {
+        yearStartMonth = 1;
+        yearEndMonth = 12;
+      }
+      
+      const leaseholdEndMonth = Math.floor((line.snapshot?.leaseholdEndDate - startMonth) / (30 * 24 * 60 * 60 * 1000));
+      const actualEndMonth = Math.min(yearEndMonth, leaseholdEndMonth);
+      
+      if (yearStartMonth >= actualEndMonth) return total;
+      
+      const workingMonths = Math.max(0, actualEndMonth - yearStartMonth + 1);
+      const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, data.year);
+      const avgDaysPerMonth = 30.44;
+      const occupancyDays = avgDaysPerMonth * (line.occupancyPct / 100);
+      const monthlyIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
+      const yearIncome = monthlyIncome * workingMonths;
+      
+      return total + yearIncome;
+    }, 0);
+    
+    // Накопительный доход от аренды
+    cumulativeRentalIncome += rentalIncome;
+    
+    // Общая стоимость: Final Price + накопительный доход от аренды
+    const totalValue = data.finalPrice + cumulativeRentalIncome;
+    
+    // Находим максимальное значение
+    if (totalValue > maxTotalValue) {
+      maxTotalValue = totalValue;
+      optimalYear = data.year;
+    }
+  });
+  
+  // Расчет ROI
+  const initialInvestment = project.totals.baseUSD;
+  const totalRoi = ((maxTotalValue - initialInvestment) / initialInvestment) * 100;
+  
+  // ГОДОВОЙ ROI = общий ROI / количество лет
+  const annualRoi = optimalYear > 0 ? totalRoi / optimalYear : 0;
+  
+  return {
+    year: optimalYear,
+    totalValue: maxTotalValue,
+    roi: totalRoi,
+    annualRoi: annualRoi
+  };
+}, [lines, catalog, handoverMonth, startMonth, project.totals.baseUSD]);
+
   // Функции для работы с линиями (ВОССТАНОВЛЕНЫ СТАРЫЕ)
   const updLine = (id, patch) => setLines(prev => prev.map(l => l.id === id ? {...l, ...patch} : l));
   const delLine = (id) => setLines(prev => prev.filter(l => l.id !== id));
