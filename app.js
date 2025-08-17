@@ -823,19 +823,6 @@ const generatePricingData = (villa) => {
   }, [lines, startMonth, handoverMonth]);
 
   // НОВЫЙ РАСЧЕТ: Общий чистый срок лизхолда
-  const totalLeaseholdTerm = useMemo(() => {
-    const allTerms = lines.map(line => {
-      if (!line.snapshot?.leaseholdEndDate) return { years: 0, months: 0 };
-      return getCleanLeaseholdTerm(line.snapshot.leaseholdEndDate);
-    });
-    
-    const maxYears = Math.max(...allTerms.map(t => t.years));
-    const maxMonths = Math.max(...allTerms.map(t => t.months));
-    
-    return { years: maxYears, months: maxMonths };
-  }, [lines, startMonth, handoverMonth]);
-
-  // НОВЫЙ РАСЧЕТ: Общий чистый срок лизхолда
 const totalLeaseholdTerm = useMemo(() => {
   const allTerms = lines.map(line => {
     if (!line.snapshot?.leaseholdEndDate) return { years: 0, months: 0 };
@@ -920,7 +907,7 @@ const calculateOptimalExitPoint = useMemo(() => {
     annualRoi: annualRoi
   };
 }, [lines, catalog, handoverMonth, startMonth, project.totals.baseUSD]);
-
+  
   // Функции для работы с линиями (ВОССТАНОВЛЕНЫ СТАРЫЕ)
   const updLine = (id, patch) => setLines(prev => prev.map(l => l.id === id ? {...l, ...patch} : l));
   const delLine = (id) => setLines(prev => prev.filter(l => l.id !== id));
