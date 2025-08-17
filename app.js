@@ -1609,7 +1609,7 @@ function App() {
             <div className="muted">{t.cleanLeaseholdTerm}</div>
             <div className="v">{totalLeaseholdTerm.years} {t.years} {totalLeaseholdTerm.months} {t.months}</div>
           </div>
-                   {/* НОВЫЙ ПАРАМЕТР: Точка выхода с максимальным IRR */}
+                             {/* НОВЫЙ ПАРАМЕТР: Точка выхода с максимальным IRR */}
           <div className="kpi">
             <div className="muted">Точка выхода с макс. IRR</div>
             <div className="v">
@@ -1620,6 +1620,63 @@ function App() {
             </div>
             <div className="muted" style={{fontSize: '0.8em'}}>
               IRR: {calculateOptimalExitPoint.irr.toFixed(1)}%
+            </div>
+            <div className="muted" style={{fontSize: '0.8em'}}>
+              Итоговый ROI: {(() => {
+                if (calculateOptimalExitPoint.year === 0) return '0.0%';
+                
+                const selectedVilla = catalog
+                  .flatMap(p => p.villas)
+                  .find(v => v.villaId === lines[0]?.villaId);
+                
+                if (!selectedVilla) return '0.0%';
+                
+                const pricingData = generatePricingData(selectedVilla);
+                const yearData = pricingData[calculateOptimalExitPoint.year];
+                
+                if (!yearData) return '0.0%';
+                
+                // Расчет итогового ROI для этого года
+                let totalRentalIncome = 0;
+                for (let i = 0; i <= calculateOptimalExitPoint.year; i++) {
+                  const yearData = pricingData[i];
+                  // Расчет доходности от аренды для года i
+                  const yearRentalIncome = lines.reduce((total, line) => {
+                    if (yearData.year < 0) return total;
+                    
+                    let yearStartMonth, yearEndMonth;
+                    
+                    if (yearData.year === 0) {
+                      yearStartMonth = handoverMonth + 3;
+                      yearEndMonth = 12;
+                    } else {
+                      yearStartMonth = 1;
+                      yearEndMonth = 12;
+                    }
+                    
+                    const leaseholdEndMonth = Math.floor((line.snapshot?.leaseholdEndDate - startMonth) / (30 * 24 * 60 * 60 * 1000));
+                    const actualEndMonth = Math.min(yearEndMonth, leaseholdEndMonth);
+                    
+                    if (yearStartMonth >= actualEndMonth) return total;
+                    
+                    const workingMonths = Math.max(0, actualEndMonth - yearStartMonth + 1);
+                    const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, yearData.year);
+                    const avgDaysPerMonth = 30.44;
+                    const occupancyDays = avgDaysPerMonth * (line.occupancyPct / 100);
+                    const monthlyIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
+                    const yearIncome = monthlyIncome * workingMonths;
+                    
+                    return total + yearIncome;
+                  }, 0);
+                  totalRentalIncome += yearRentalIncome;
+                }
+                
+                // Итоговый ROI = (сумма аренды + Final Price - Итоговая цена из KPI) / Итоговая цена из KPI
+                const finalPrice = yearData.finalPrice;
+                const cumulativeRoi = ((totalRentalIncome + finalPrice - project.totals.finalUSD) / project.totals.finalUSD) * 100;
+                
+                return cumulativeRoi.toFixed(1) + '%';
+              })()}
             </div>
           </div>
         </div>
