@@ -1447,14 +1447,14 @@ const calculateOptimalExitPoint = useMemo(() => {
  <div className="kpi">
     <div className="muted">Точка выхода с макс. ROI</div>
     <div className="v">
-      {(() => {
-        const realYear = startMonth.getFullYear() + handoverMonth / 12 + calculateOptimalExitPoint.year;
-        return Math.floor(realYear);
-      })()}
-    </div>
-    <div className="muted" style={{fontSize: '0.8em'}}>
-      Годовой ROI: {calculateOptimalExitPoint.annualRoi.toFixed(1)}%
-    </div>
+        {(() => {
+          const realYear = startMonth.getFullYear() + handoverMonth / 12 + calculateOptimalExitPoint.year;
+          return Math.floor(realYear);
+        })()}
+      </div>
+      <div className="muted" style={{fontSize: '0.8em'}}>
+        Годовой ROI: {calculateOptimalExitPoint.annualRoi.toFixed(1)}%
+      </div>
   </div>
             
         </div>
