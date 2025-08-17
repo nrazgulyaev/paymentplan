@@ -558,8 +558,6 @@ function App() {
     }
   };
 
- 
-
   // ИСПРАВЛЕНО: Используем startMonth вместо new Date()
   const calculateVillaPrice = (villa, yearOffset) => {
     try {
@@ -580,7 +578,6 @@ function App() {
     }
   };
 
-  // ИСПРАВЛЕНО: Используем startMonth вместо new Date()
   // ИСПРАВЛЕНО: Функция generatePricingData - убрано ограничение по годам
   const generatePricingData = (villa) => {
     try {
@@ -877,7 +874,7 @@ function App() {
     };
   }, [lines, catalog, startMonth, months, handoverMonth, pricingConfig]);
 
- // НОВАЯ ФУНКЦИЯ: Генерация данных для таблицы факторов
+  // НОВАЯ ФУНКЦИЯ: Генерация данных для таблицы факторов
   const generateFactorsData = (villa) => {
     try {
       if (!villa || !villa.leaseholdEndDate) return [];
@@ -911,7 +908,7 @@ function App() {
           // Итоговая цена
           finalPrice = marketPriceAtHandover * leaseFactorValue * ageFactorValue * brandFactorValue * inflationFactorValue;
         } else {
-          // До получения ключей: базовая цена с ростом
+        // До получения ключей: базовая цена с ростом
           const monthsToHandover = handoverMonth + year + 1;
           const monthlyGrowth = (selectedLine.monthlyPriceGrowthPct || 2) / 100;
           finalPrice = villa.baseUSD * Math.pow(1 + monthlyGrowth, monthsToHandover);
@@ -1007,6 +1004,100 @@ function App() {
       return total + yearRentalIncome;
     }, 0);
   };
+
+  // ДОБАВЛЕННЫЕ ФУНКЦИИ: Обновление и удаление линий
+  const updateLineQty = (id, qty) => {
+    setLines(prev => prev.map(l => l.id === id ? {...l, qty} : l));
+  };
+
+  const updateLineDiscount = (id, discountPct) => {
+    setLines(prev => prev.map(l => l.id === id ? {...l, discountPct} : l));
+  };
+
+  const removeLine = (id) => {
+    setLines(prev => prev.filter(l => l.id !== id));
+  };
+
+  // Функции для работы с каталогом
+  const exportCatalog = () => {
+    const dataStr = JSON.stringify(catalog, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'arconique_catalog.json';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importCatalog = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            setCatalog(imported);
+            alert('Каталог успешно импортирован');
+          }
+        } catch (error) {
+          alert('Ошибка при импорте файла');
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  // Данные для графика
+  const chartData = useMemo(() => {
+    if (lines.length === 0) return { 
+      finalPricePoints: '', 
+      rentalIncomePoints: '', 
+      globalMin: 0, 
+      globalRange: 1 
+    };
+    
+    const selectedVilla = catalog
+      .flatMap(p => p.villas)
+      .find(v => v.villaId === lines[0]?.villaId);
+    
+    if (!selectedVilla) return { 
+      finalPricePoints: '', 
+      rentalIncomePoints: '', 
+      globalMin: 0, 
+      globalRange: 1 
+    };
+    
+    const pricingData = generatePricingData(selectedVilla);
+    
+    // Точки для Final Price
+    const finalPricePoints = pricingData.map((data, index) => {
+      const x = 50 + index * 140;
+      const y = 250 - (data.finalPrice / 1000000) * 200; // Масштаб для миллионов
+      return `${x},${y}`;
+    }).join(' ');
+    
+    // Точки для доходности от аренды
+    const rentalIncomePoints = pricingData.map((data, index) => {
+      const x = 50 + index * 140;
+      const y = 250 - (data.rentalIncome / 1000000) * 200; // Масштаб для миллионов
+      return `${x},${y}`;
+    }).join(' ');
+    
+    // Общий диапазон для масштабирования
+    const allValues = [
+      ...pricingData.map(d => d.finalPrice), 
+      ...pricingData.map(d => d.rentalIncome)
+    ];
+    const globalMin = Math.min(...allValues);
+    const globalMax = Math.max(...allValues);
+    const globalRange = globalMax - globalMin;
+    
+    return { finalPricePoints, rentalIncomePoints, globalMin, globalRange };
+  }, [lines, catalog, startMonth, months, handoverMonth, pricingConfig]);
+
+  const { finalPricePoints, rentalIncomePoints, globalMin, globalRange } = chartData;
 
   // Расчет данных по строкам (ОБНОВЛЕН С НОВОЙ ЛОГИКОЙ АРЕНДЫ)
   const linesData = useMemo(() => lines.map(line => {
@@ -1283,27 +1374,20 @@ function App() {
   }, [lines, stages, stagesSumPct, handoverMonth, months, monthlyRatePct, catalog, pricingConfig, startMonth]);
 
   // НОВАЯ ФУНКЦИЯ: Расчет IRR (упрощенная версия)
-  const calculateIRR = (investment, rentalIncome, finalPrice, months) => {
-    if (investment <= 0) return 0;
+  const calculateIRR = (cashFlows) => {
+    if (cashFlows.length < 2) return 0;
     
     // Упрощенный расчет IRR на основе ROI
-    const totalReturn = rentalIncome + finalPrice;
+    const investment = Math.abs(cashFlows[0]);
+    const totalReturn = cashFlows.slice(1).reduce((sum, cf) => sum + cf, 0);
+    
+    if (investment <= 0) return 0;
+    
     const totalRoi = ((totalReturn - investment) / investment) * 100;
+    const months = cashFlows.length - 1;
     
     // Примерная IRR на основе ROI и времени
     return totalRoi / (months / 12);
-  };
-
-  // НОВАЯ ФУНКЦИЯ: Получение индексированной цены аренды
-  const getIndexedRentalPrice = (baseDailyRate, annualIndexPct, yearOffset) => {
-    return baseDailyRate * Math.pow(1 + annualIndexPct / 100, yearOffset);
-  };
-
-  // НОВАЯ ФУНКЦИЯ: Получение количества дней в месяце
-  const getDaysInMonth = (month) => {
-    const date = new Date(startMonth);
-    date.setMonth(date.getMonth() + month);
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   };
 
   // Функции для работы с проектами (ВОССТАНОВЛЕНЫ СТАРЫЕ)
@@ -1784,7 +1868,7 @@ function App() {
             <thead>
               <tr>
                 <th className="col-project">{t.project}</th>
-                <th className="col-villa">{t.villa}</th>
+                               <th className="col-villa">{t.villa}</th>
                 <th className="col-qty">{t.qty}</th>
                 <th className="col-area">{t.area}</th>
                 <th className="col-ppsm">{t.ppsm}</th>
@@ -1806,7 +1890,7 @@ function App() {
             <tbody>
               {linesData.map(ld => (
                 <tr key={ld.line.id}>
-                                   <td className="col-project">
+                  <td className="col-project">
                     <div className="project-info">
                       <div className="project-name">{ld.line.projectName}</div>
                       <div className="villa-name">{ld.line.villaName}</div>
@@ -1856,7 +1940,7 @@ function App() {
         </div>
       </div>
 
-      {/* 2. Таблица факторов - ОБНОВЛЕНА С НОВЫМИ СТОЛБЦАМИ ROI */}
+      {/* 3. Таблица факторов - ОБНОВЛЕНА С НОВЫМИ СТОЛБЦАМИ ROI */}
       <div className="factors-block">
         <div className="card">
           <div className="card-header">
@@ -1902,7 +1986,7 @@ function App() {
         </div>
       </div>
 
-      {/* 3. Таблица факторов 2 - месячная детализация - НОВАЯ */}
+      {/* 4. Таблица факторов 2 - месячная детализация - НОВАЯ */}
       <div className="factors-block">
         <div className="card">
           <div className="card-header">
@@ -1954,7 +2038,7 @@ function App() {
         </div>
       </div>
 
-      {/* 4. График ценообразования - ОБНОВЛЕН С ОБЩИМ МАСШТАБОМ */}
+      {/* 5. График ценообразования - ОБНОВЛЕН С ОБЩИМ МАСШТАБОМ */}
       <div className="chart-block">
         <div className="card">
           <div className="card-header">
@@ -2045,7 +2129,7 @@ function App() {
         </div>
       </div>
 
-      {/* 5. Сводный кэшфлоу по месяцам - ОБНОВЛЕН В СТИЛЕ ТАБЛИЦЫ ФАКТОРОВ */}
+      {/* 6. Сводный кэшфлоу по месяцам - ОБНОВЛЕН В СТИЛЕ ТАБЛИЦЫ ФАКТОРОВ */}
       <div className="cashflow-block">
         <div className="card">
           <div className="card-header">
@@ -2074,7 +2158,7 @@ function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {project.cashflow.map((row, index) => (
+                  {project?.cashflow?.map((row, index) => (
                     <tr key={index}>
                       <td>{row.month}</td>
                       <td style={{textAlign: 'left'}}>{row.description}</td>
@@ -2092,7 +2176,7 @@ function App() {
         </div>
       </div>
 
-      {/* 6. Редакторский режим */}
+      {/* 7. Редакторский режим */}
       {!isClient && (
         <div className="editor-block">
           <div className="card">
@@ -2233,7 +2317,7 @@ function App() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
