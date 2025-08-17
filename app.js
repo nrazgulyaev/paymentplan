@@ -837,7 +837,7 @@ const totalLeaseholdTerm = useMemo(() => {
   return { years: maxYears, months: maxMonths };
 }, [lines, startMonth, handoverMonth]);
 
-// НОВАЯ ФУНКЦИЯ: Расчет точки выхода с максимальным ROI
+// УПРОЩЕННАЯ ФУНКЦИЯ: Расчет точки выхода с максимальным ROI
 const calculateOptimalExitPoint = useMemo(() => {
   if (lines.length === 0) return { year: 0, totalValue: 0, roi: 0, annualRoi: 0 };
   
@@ -850,10 +850,10 @@ const calculateOptimalExitPoint = useMemo(() => {
   const pricingData = generatePricingData(selectedVilla);
   let maxTotalValue = 0;
   let optimalYear = 0;
-  let cumulativeRentalIncome = 0;
   
+  // ПРОСТОЙ РАСЧЕТ: находим год с максимальным общим капиталом
   pricingData.forEach((data, index) => {
-    // Доходность от аренды для этого года
+    // Доходность от аренды для этого года (тот же код, что и в таблице)
     const rentalIncome = lines.reduce((total, line) => {
       if (data.year < 0) return 0;
       
@@ -882,15 +882,12 @@ const calculateOptimalExitPoint = useMemo(() => {
       return total + yearIncome;
     }, 0);
     
-    // Накопительный доход от аренды
-    cumulativeRentalIncome += rentalIncome;
-    
-    // Общая стоимость: Final Price + накопительный доход от аренды
-    const totalValue = data.finalPrice + cumulativeRentalIncome;
+    // Общий капитал инвестора = Final Price + доход от аренды
+    const totalInvestorCapital = data.finalPrice + rentalIncome;
     
     // Находим максимальное значение
-    if (totalValue > maxTotalValue) {
-      maxTotalValue = totalValue;
+    if (totalInvestorCapital > maxTotalValue) {
+      maxTotalValue = totalInvestorCapital;
       optimalYear = data.year;
     }
   });
@@ -909,9 +906,6 @@ const calculateOptimalExitPoint = useMemo(() => {
     annualRoi: annualRoi
   };
 }, [lines, catalog, handoverMonth, startMonth, project.totals.baseUSD]);
-
-
-
 
   
   // Функции для работы с линиями (ВОССТАНОВЛЕНЫ СТАРЫЕ)
@@ -1781,6 +1775,7 @@ const calculateOptimalExitPoint = useMemo(() => {
 </div>
 
 {/* Таблица факторов - ИСПРАВЛЕННЫЙ РАСЧЕТ С ПРАВИЛЬНЫМИ ГОДАМИ */}
+{/* Таблица факторов - С НОВЫМ СТОЛБЦОМ */}
 <div className="factors-table-container">
   <h4>Таблица факторов</h4>
   <div className="factors-table-scroll">
@@ -1794,6 +1789,7 @@ const calculateOptimalExitPoint = useMemo(() => {
           <th>Коэффициент инфляции</th>
           <th>Final Price</th>
           <th>Доходность от аренды</th>
+          <th>Общий капитал инвестора</th>
         </tr>
       </thead>
       <tbody>
@@ -1845,6 +1841,9 @@ const calculateOptimalExitPoint = useMemo(() => {
                 return total + yearIncome;
               }, 0);
               
+              // НОВЫЙ РАСЧЕТ: Общий капитал инвестора
+              const totalInvestorCapital = data.finalPrice + rentalIncome;
+              
               return (
                 <tr key={index}>
                   <td>{displayYear}</td>
@@ -1854,6 +1853,7 @@ const calculateOptimalExitPoint = useMemo(() => {
                   <td>{Math.pow(1 + pricingConfig.inflationRatePct / 100, data.year).toFixed(3)}</td>
                   <td className="price-cell">{fmtMoney(data.finalPrice)}</td>
                   <td className="rental-cell">{fmtMoney(rentalIncome)}</td>
+                  <td className="total-capital-cell">{fmtMoney(totalInvestorCapital)}</td>
                 </tr>
               );
             }) : null;
