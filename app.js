@@ -663,114 +663,545 @@ function App() {
   };
 
   // ОБНОВЛЕННАЯ ФУНКЦИЯ: Генерация месячных данных для таблицы факторов 2
-const generateMonthlyPricingData = (villa) => {
-  try {
-    if (!villa || !villa.leaseholdEndDate) return [];
-    
-    const selectedLine = lines.find(l => l.villaId === villa.villaId);
-    if (!selectedLine) return [];
-    
-    // Общее количество месяцев от подписания до окончания рассрочки
-    const totalMonths = months + handoverMonth;
-    
-    // Рыночная цена на ключах
-    const marketPriceAtHandover = calculateMarketPriceAtHandover(villa, selectedLine);
-    
-    // Получаем данные по линии для расчета платежей
-    const lineData = linesData.find(ld => ld.line.id === selectedLine.id);
-    if (!lineData) return [];
-    
-    const monthlyData = [];
-    
-    for (let month = 0; month <= totalMonths; month++) {
-      let leaseFactorValue = 1;
-      let ageFactorValue = 1;
-      let brandFactorValue = 1;
-      let inflationFactor = 1;
-      let finalPrice = 0;
-      let rentalIncome = 0;
-      let paymentAmount = 0;
+  const generateMonthlyPricingData = (villa) => {
+    try {
+      if (!villa || !villa.leaseholdEndDate) return [];
       
-      if (month <= handoverMonth) {
-        // ДО получения ключей: только месячный рост цены
-        const monthlyGrowthRate = (selectedLine.monthlyPriceGrowthPct || 2) / 100;
-        finalPrice = villa.baseUSD * Math.pow(1 + monthlyGrowthRate, month);
+      const selectedLine = lines.find(l => l.villaId === villa.villaId);
+      if (!selectedLine) return [];
+      
+      // Общее количество месяцев от подписания до окончания рассрочки
+      const totalMonths = months + handoverMonth;
+      
+      // РАСШИРЯЕМ ПЕРИОД: добавляем месяцы до конца года окончания рассрочки
+      const endYear = Math.floor((startMonth.getMonth() + totalMonths) / 12);
+      const endMonthInYear = (startMonth.getMonth() + totalMonths) % 12;
+      const monthsToYearEnd = 12 - endMonthInYear;
+      const totalDisplayMonths = totalMonths + monthsToYearEnd;
+      
+      // Общий период лизхолда в месяцах
+      const totalLeaseholdMonths = (villa.leaseholdEndDate.getFullYear() - startMonth.getFullYear()) * 12 + 
+        (villa.leaseholdEndDate.getMonth() - startMonth.getMonth());
+      
+      const data = [];
+      
+      for (let month = 0; month <= totalDisplayMonths; month++) {
+        // РАСЧЕТ РЕАЛЬНЫХ МЕСЯЦА И ГОДА
+        const currentDate = new Date(startMonth);
+        currentDate.setMonth(currentDate.getMonth() + month);
+        const displayMonth = currentDate.getMonth() + 1;
+        const displayYear = currentDate.getFullYear();
         
-        // Платежи по этапам рассрочки
-        const stagePayment = lineData.preSchedule.find(s => s.month === month);
-        if (stagePayment) {
-          paymentAmount = stagePayment.amountUSD;
-        }
-      } else {
-        // ПОСЛЕ получения ключей: все факторы работают
-        const yearOffset = (month - handoverMonth) / 12;
+        let finalPrice = 0;
+        let leaseFactorValue = 1;
+        let ageFactorValue = 1;
+        let brandFactorValue = 1;
+        let inflationFactorValue = 1;
+        let rentalIncome = 0;
+        let paymentAmount = 0;
         
-        // Месячные коэффициенты (делим годовые на 12)
-        leaseFactorValue = leaseFactor(yearOffset, totalMonths / 12, pricingConfig.leaseAlpha);
-        ageFactorValue = ageFactor(yearOffset, pricingConfig.agingBeta / 12);
-        brandFactorValue = brandFactor(yearOffset, pricingConfig);
-        inflationFactor = Math.pow(1 + pricingConfig.inflationRatePct / 100, yearOffset);
-        
-        // Final Price с учетом всех факторов
-        finalPrice = marketPriceAtHandover * inflationFactor * leaseFactorValue * ageFactorValue * brandFactorValue;
-        
-        // Доходность от аренды (начинается через 3 месяца после ключей)
-        if (month >= handoverMonth + 3) {
-          const indexedPrice = getIndexedRentalPrice(selectedLine.dailyRateUSD, selectedLine.rentalPriceIndexPct, yearOffset);
-          const daysInMonth = getDaysInMonth(month);
-          rentalIncome = indexedPrice * 0.55 * (selectedLine.occupancyPct / 100) * daysInMonth * selectedLine.qty;
-        }
-        
-        // Платежи по рассрочке после ключей
-        if (month <= handoverMonth + lineData.vMonths) {
-          const postMonth = month - handoverMonth;
-          const postPayment = lineData.postRows.find(r => r.month === month);
-          if (postPayment) {
-            paymentAmount = postPayment.paymentUSD;
+        if (month <= handoverMonth) {
+          // ДО ПОЛУЧЕНИЯ КЛЮЧЕЙ: только рост цены
+          const monthlyGrowth = (selectedLine.monthlyPriceGrowthPct || 2) / 100;
+          finalPrice = villa.baseUSD * Math.pow(1 + monthlyGrowth, month);
+        } else {
+          // ПОСЛЕ ПОЛУЧЕНИЯ КЛЮЧЕЙ: все факторы + аренда
+          const yearOffset = (month - handoverMonth) / 12;
+          
+          // Рыночная цена на ключах
+          const marketPriceAtHandover = calculateMarketPriceAtHandover(villa, selectedLine);
+          
+          // ИСПРАВЛЕНО: Факторы рассчитываются на весь период лизхолда
+          leaseFactorValue = leaseFactor(yearOffset, totalLeaseholdMonths / 12, pricingConfig.leaseAlpha);
+          ageFactorValue = ageFactor(yearOffset, pricingConfig.agingBeta);
+          brandFactorValue = brandFactor(yearOffset, pricingConfig);
+          inflationFactorValue = Math.pow(1 + pricingConfig.inflationRatePct / 100, yearOffset);
+          
+          // Итоговая цена
+          finalPrice = marketPriceAtHandover * leaseFactorValue * ageFactorValue * brandFactorValue * inflationFactorValue;
+          
+          // Доходность от аренды (начиная с 3-го месяца после получения ключей)
+          if (month >= handoverMonth + 3) {
+            const rentalYearOffset = (month - handoverMonth) / 12;
+            const indexedPrice = getIndexedRentalPrice(selectedLine.dailyRateUSD, selectedLine.rentalPriceIndexPct, rentalYearOffset);
+            const daysInMonth = getDaysInMonth(month);
+            rentalIncome = indexedPrice * 0.55 * (selectedLine.occupancyPct / 100) * daysInMonth * selectedLine.qty;
           }
         }
-        // Если рассрочка закончилась, но месяц еще в пределах года - платеж = 0
-        else if (month <= totalMonths) {
-          paymentAmount = 0;
+        
+        // РАСЧЕТ ПЛАТЕЖЕЙ ПО РАССРОЧКЕ
+        if (month <= totalMonths) {
+          const lineData = linesData.find(ld => ld.line.id === selectedLine.id);
+          if (lineData) {
+            if (month <= handoverMonth) {
+              // Платежи по этапам рассрочки
+              const stagePayment = lineData.preSchedule.find(s => s.month === month);
+              if (stagePayment) {
+                paymentAmount = stagePayment.amountUSD;
+              }
+            } else {
+              // Ежемесячные платежи по рассрочке
+              const postMonth = month - handoverMonth;
+              const postPayment = lineData.postRows.find(r => r.month === postMonth);
+              if (postPayment) {
+                paymentAmount = postPayment.paymentUSD;
+              }
+            }
+          }
         }
+        
+        // РАСЧЕТ ТЕКУЩЕГО ИНВЕСТИРОВАННОГО КАПИТАЛА
+        let currentInvestedCapital = 0;
+        for (let m = 0; m <= month; m++) {
+          let monthPayment = 0;
+          
+          if (m <= handoverMonth) {
+            const lineData = linesData.find(ld => ld.line.id === selectedLine.id);
+            if (lineData) {
+              const stagePayment = lineData.preSchedule.find(s => s.month === m);
+              if (stagePayment) {
+                monthPayment = stagePayment.amountUSD;
+              }
+            }
+          } else {
+            const postMonth = m - handoverMonth;
+            const lineData = linesData.find(ld => ld.line.id === selectedLine.id);
+            if (lineData) {
+              const postPayment = lineData.postRows.find(r => r.month === postMonth);
+              if (postPayment) {
+                monthPayment = postPayment.paymentUSD;
+              }
+            }
+          }
+          currentInvestedCapital += monthPayment;
+        }
+        
+        // НОВЫЕ РАСЧЕТЫ: ROI и IRR по месяцам
+        let monthlyRoi = 0;
+        let cumulativeRoi = 0;
+        let irr = 0;
+        
+        if (month > 0) {
+          // ROI за месяц = (аренда за месяц + ΔЦена) / сумма платежей с начала до данного месяца × 100%
+          const previousFinalPrice = month === 0 ? villa.baseUSD : 
+            (month <= handoverMonth ? 
+              villa.baseUSD * Math.pow(1 + (selectedLine.monthlyPriceGrowthPct || 2) / 100, month - 1) :
+              generateMonthlyPricingData(villa)[month - 1]?.finalPrice || 0);
+          
+          if (previousFinalPrice > 0 && currentInvestedCapital > 0) {
+            const priceChange = finalPrice - previousFinalPrice;
+            monthlyRoi = ((rentalIncome + priceChange) / currentInvestedCapital) * 100;
+          }
+          
+          // Итоговый ROI = (сумма аренды + (текущая цена - итоговая цена из KPI)) / текущий инвестированный капитал × 100%
+          const finalPriceFromKPI = project?.totals.finalUSD || 0;
+          if (currentInvestedCapital > 0) {
+            // Сумма аренды с начала до текущего месяца
+            let cumulativeRentalIncome = 0;
+            for (let m = 0; m <= month; m++) {
+              if (m >= handoverMonth + 3) {
+                const rentalYearOffset = (m - handoverMonth) / 12;
+                const indexedPrice = getIndexedRentalPrice(selectedLine.dailyRateUSD, selectedLine.rentalPriceIndexPct, rentalYearOffset);
+                const daysInMonth = getDaysInMonth(m);
+                cumulativeRentalIncome += indexedPrice * 0.55 * (daysInMonth / 30.44) * selectedLine.qty;
+              }
+            }
+            cumulativeRoi = ((cumulativeRentalIncome + (finalPrice - finalPriceFromKPI)) / currentInvestedCapital) * 100;
+          }
+          
+          // IRR - внутренняя норма доходности
+          if (currentInvestedCapital > 0) {
+            // Собираем все денежные потоки
+            const cashFlows = [];
+            cashFlows.push(-currentInvestedCapital); // CF₀ - текущие инвестиции (отрицательный поток)
+            
+            for (let i = 0; i <= month; i++) {
+              let monthRentalIncome = 0;
+              if (i >= handoverMonth + 3) {
+                const iYearOffset = (i - handoverMonth) / 12;
+                const iIndexedPrice = getIndexedRentalPrice(selectedLine.dailyRateUSD, selectedLine.rentalPriceIndexPct, iYearOffset);
+                const iDaysInMonth = getDaysInMonth(i);
+                monthRentalIncome = iIndexedPrice * 0.55 * (iDaysInMonth / 30.44) * selectedLine.qty;
+              }
+              cashFlows.push(monthRentalIncome);
+            }
+            
+            // В последнем месяце добавляем Final Price
+            cashFlows[cashFlows.length - 1] += finalPrice;
+            
+            // Упрощенный расчет IRR
+            irr = calculateMonthlyIRR(cashFlows);
+          }
+        }
+        
+        data.push({
+          month: displayMonth,
+          year: displayYear,
+          finalPrice,
+          leaseFactor: leaseFactorValue,
+          ageFactor: ageFactorValue,
+          brandFactor: brandFactorValue,
+          inflationFactor: inflationFactorValue,
+          rentalIncome,
+          paymentAmount,
+          currentInvestedCapital,
+          monthlyRoi,
+          cumulativeRoi,
+          irr
+        });
       }
       
-      // Накопительный доход от аренды
-      let cumulativeRentalIncome = 0;
-      if (month >= handoverMonth + 3) {
-        for (let m = handoverMonth + 3; m <= month; m++) {
-          const mYearOffset = (m - handoverMonth) / 12;
-          const mIndexedPrice = getIndexedRentalPrice(selectedLine.dailyRateUSD, selectedLine.rentalPriceIndexPct, mYearOffset);
-          const mDaysInMonth = getDaysInMonth(m);
-          const mRentalIncome = mIndexedPrice * 0.55 * (selectedLine.occupancyPct / 100) * mDaysInMonth * selectedLine.qty;
-          cumulativeRentalIncome += mRentalIncome;
-        }
-      }
-      
-      // Общий капитал инвестора
-      const totalInvestorCapital = finalPrice + cumulativeRentalIncome;
-      
-      monthlyData.push({
-        month,
-        year: Math.floor(month / 12),
-        leaseFactor: leaseFactorValue,
-        ageFactor: ageFactorValue,
-        brandFactor: brandFactorValue,
-        inflationFactor,
-        finalPrice,
-        rentalIncome,
-        cumulativeRentalIncome,
-        totalInvestorCapital,
-        paymentAmount
-      });
+      return data;
+    } catch (error) {
+      console.error('Ошибка в generateMonthlyPricingData:', error);
+      return [];
     }
+  };
+
+  // НОВАЯ ФУНКЦИЯ: Расчет месячного IRR
+  const calculateMonthlyIRR = (cashFlows) => {
+    if (cashFlows.length < 2) return 0;
     
-    return monthlyData;
-  } catch (error) {
-    console.error('Ошибка в generateMonthlyPricingData:', error);
-    return [];
-  }
-};
+    // Упрощенный расчет IRR на основе ROI
+    const investment = Math.abs(cashFlows[0]);
+    const totalReturn = cashFlows.slice(1).reduce((sum, cf) => sum + cf, 0);
+    
+    if (investment <= 0) return 0;
+    
+    const totalRoi = ((totalReturn - investment) / investment) * 100;
+    const months = cashFlows.length - 1;
+    
+    // Примерная IRR на основе ROI и времени
+    return totalRoi / (months / 12);
+  };
+
+  // НОВАЯ ФУНКЦИЯ: Расчет точки выхода с максимальным IRR
+  const calculateOptimalExitPoint = useMemo(() => {
+    if (lines.length === 0) return { year: 0, totalValue: 0, irr: 0, cumulativeRoi: 0 };
+    
+    const selectedVilla = catalog
+      .flatMap(p => p.villas)
+      .find(v => v.villaId === lines[0]?.villaId);
+    
+    if (!selectedVilla || !selectedVilla.leaseholdEndDate) return { year: 0, totalValue: 0, irr: 0, cumulativeRoi: 0 };
+    
+    const factorsData = generateFactorsData(selectedVilla);
+    let maxIrr = -Infinity;
+    let optimalYear = 0;
+    let optimalTotalValue = 0;
+    let optimalCumulativeRoi = 0;
+    
+    factorsData.forEach((data, index) => {
+      if (data.irr > maxIrr) {
+        maxIrr = data.irr;
+        optimalYear = data.year;
+        optimalTotalValue = data.finalPrice;
+        optimalCumulativeRoi = data.cumulativeRoi;
+      }
+    });
+    
+    return {
+      year: optimalYear,
+      totalValue: optimalTotalValue,
+      irr: maxIrr,
+      cumulativeRoi: optimalCumulativeRoi
+    };
+  }, [lines, catalog, startMonth, months, handoverMonth, pricingConfig]);
+
+  // НОВАЯ ФУНКЦИЯ: Генерация данных для таблицы факторов
+  const generateFactorsData = (villa) => {
+    try {
+      if (!villa || !villa.leaseholdEndDate) return [];
+      
+      const selectedLine = lines.find(l => l.villaId === villa.villaId);
+      if (!selectedLine) return [];
+      
+      const totalYears = Math.ceil((villa.leaseholdEndDate.getFullYear() - startMonth.getFullYear() - months / 12));
+      const data = [];
+      
+      for (let year = -1; year <= totalYears; year++) {
+        const yearOffset = year < 0 ? 0 : year;
+                const totalLeaseholdYears = (villa.leaseholdEndDate.getFullYear() - startMonth.getFullYear() - months / 12);
+        
+        let finalPrice = 0;
+        let leaseFactorValue = 1;
+        let ageFactorValue = 1;
+        let brandFactorValue = 1;
+        let inflationFactorValue = 1;
+        
+        if (year >= 0) {
+          // Рыночная цена на ключах
+          const marketPriceAtHandover = calculateMarketPriceAtHandover(villa, selectedLine);
+          
+          // Факторы ценообразования
+          leaseFactorValue = leaseFactor(yearOffset, totalLeaseholdYears, pricingConfig.leaseAlpha);
+          ageFactorValue = ageFactor(yearOffset, pricingConfig.agingBeta);
+          brandFactorValue = brandFactor(yearOffset, pricingConfig);
+          inflationFactorValue = Math.pow(1 + pricingConfig.inflationRatePct / 100, yearOffset);
+          
+          // Итоговая цена
+          finalPrice = marketPriceAtHandover * leaseFactorValue * ageFactorValue * brandFactorValue * inflationFactorValue;
+        } else {
+          // До получения ключей: базовая цена с ростом
+          const monthsToHandover = handoverMonth + year + 1;
+          const monthlyGrowth = (selectedLine.monthlyPriceGrowthPct || 2) / 100;
+          finalPrice = villa.baseUSD * Math.pow(1 + monthlyGrowth, monthsToHandover);
+        }
+        
+        // Доходность от аренды
+        const rentalIncome = calculateRentalIncomeForYear(lines, year, handoverMonth, startMonth);
+        
+        // ROI расчеты
+        let annualRoi = 0;
+        let cumulativeRoi = 0;
+        let irr = 0;
+        
+        if (year >= 0) {
+          // ROI за год
+          const previousFinalPrice = year === 0 ? 
+            calculateMarketPriceAtHandover(villa, selectedLine) :
+            generateFactorsData(villa)[year]?.finalPrice || 0;
+          
+          if (previousFinalPrice > 0) {
+            annualRoi = ((rentalIncome + (finalPrice - previousFinalPrice)) / previousFinalPrice) * 100;
+          }
+          
+          // Итоговый ROI
+          const totalInvestment = project?.totals.finalUSD || 0;
+          if (totalInvestment > 0) {
+            cumulativeRoi = ((rentalIncome + finalPrice - totalInvestment) / totalInvestment) * 100;
+          }
+          
+          // IRR (упрощенный)
+          irr = calculateIRR(totalInvestment, rentalIncome, finalPrice, year + 1);
+        }
+        
+        data.push({
+          year,
+          finalPrice,
+          leaseFactor: leaseFactorValue,
+          ageFactor: ageFactorValue,
+          brandFactor: brandFactorValue,
+          inflationFactor: inflationFactorValue,
+          rentalIncome,
+          annualRoi,
+          cumulativeRoi,
+          irr
+        });
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Ошибка в generateFactorsData:', error);
+      return [];
+    }
+  };
+
+  // НОВАЯ ФУНКЦИЯ: Расчет доходности от аренды для конкретного года
+  const calculateRentalIncomeForYear = (lines, year, handoverMonth, startMonth) => {
+    return lines.reduce((total, line) => {
+      if (year < 0) return total;
+      
+      const villa = catalog
+        .flatMap(p => p.villas)
+        .find(v => v.villaId === line.villaId);
+      
+      if (!villa) return total;
+      
+      let yearRentalIncome = 0;
+      
+      if (year === 0) {
+        // ГОД ПОЛУЧЕНИЯ КЛЮЧЕЙ: считаем месяцы с ноября по декабрь
+        const yearStartMonth = handoverMonth + 3; // ноябрь
+        const yearEndMonth = 12; // декабрь
+        
+        for (let month = yearStartMonth; month <= yearEndMonth; month++) {
+          const indexedPrice = getIndexedRentalPrice(villa.dailyRateUSD, villa.rentalPriceIndexPct, 0);
+          const daysInMonth = getDaysInMonth(month);
+          const monthlyRental = indexedPrice * 0.55 * (daysInMonth / 30.44) * line.qty;
+          yearRentalIncome += monthlyRental;
+        }
+      } else {
+        // ПОСЛЕДУЮЩИЕ ГОДЫ: полный год аренды
+        const yearStartMonth = handoverMonth + 3 + (year - 1) * 12;
+        const yearEndMonth = yearStartMonth + 11;
+        
+        for (let month = yearStartMonth; month <= yearEndMonth; month++) {
+          const yearOffset = (month - handoverMonth) / 12;
+          const indexedPrice = getIndexedRentalPrice(villa.dailyRateUSD, villa.rentalPriceIndexPct, yearOffset);
+          const daysInMonth = getDaysInMonth(month);
+          const monthlyRental = indexedPrice * 0.55 * (daysInMonth / 30.44) * line.qty;
+          yearRentalIncome += monthlyRental;
+        }
+      }
+      
+      return total + yearRentalIncome;
+    }, 0);
+  };
+
+  // Расчет данных по строкам (ОБНОВЛЕН С НОВОЙ ЛОГИКОЙ АРЕНДЫ)
+  const linesData = useMemo(() => lines.map(line => {
+    const base0 = line.snapshot?.baseUSD ?? ((line.snapshot?.area || 0) * (line.snapshot?.ppsm || 0));
+    const disc = clamp(+line.discountPct || 0, 0, 20);
+    const base = base0 * (1 - disc / 100);
+    const prePct = clamp(line.prePct ?? 0, 50, 100);
+    const k = stagesSumPct === 0 ? 0 : prePct / stagesSumPct;
+    const preSchedule = stages.map(s => ({
+      month: Math.max(0, Math.min(handoverMonth, Math.round(+s.month || 0))),
+      label: s.label,
+      amountUSD: base * (((+s.pct || 0) * k) / 100),
+    })).filter(r => r.amountUSD > 0).sort((a, b) => a.month - b.month);
+    const preTotalOne = preSchedule.reduce((s, r) => s + r.amountUSD, 0);
+
+    const vMonths = line.ownTerms && line.months ? line.months : months;
+    const rate = (line.ownTerms && line.monthlyRatePct != null) ? (line.monthlyRatePct / 100) : (monthlyRatePct / 100);
+    const firstPostUSD = Math.max(0, +line.firstPostUSD || 0);
+    const principalBase = Math.max(0, base - preTotalOne - firstPostUSD);
+
+    let bal = principalBase, totalInterest = 0;
+    const principalShare = vMonths > 0 ? principalBase / vMonths : 0;
+    const postRows = [];
+    for (let i = 1; i <= vMonths; i++) {
+      const interest = bal * rate;
+      totalInterest += interest;
+      const payment = principalShare + interest;
+      postRows.push({
+        month: handoverMonth + i,
+        label: `${t.month} ${i}`,
+        principalUSD: principalShare,
+        interestUSD: interest,
+        paymentUSD: payment,
+        balanceAfterUSD: Math.max(0, bal - principalShare)
+      });
+      bal -= principalShare;
+    }
+    const lineTotalOne = base + totalInterest;
+
+    const qty = Math.max(1, parseInt(line.qty || 1, 10));
+    const preScheduleQ = preSchedule.map(r => ({...r, amountUSD: r.amountUSD * qty}));
+    const postRowsQ = postRows.map(r => ({
+      ...r,
+      principalUSD: r.principalUSD * qty,
+      interestUSD: r.interestUSD * qty,
+      paymentUSD: r.paymentUSD * qty
+    }));
+    const preTotal = preTotalOne * qty;
+    const firstPostQ = firstPostUSD * qty;
+    const baseQ = base * qty;
+    const lineTotal = lineTotalOne * qty;
+
+    return {
+      line, qty, baseOne: base, base: baseQ, preSchedule: preScheduleQ, preTotal,
+      firstPostUSD: firstPostQ, postRows: postRowsQ, lineTotal, vMonths, rate,
+      discountPct: disc, prePct: prePct
+    };
+  }), [lines, stages, stagesSumPct, handoverMonth, months, monthlyRatePct, t.month]);
+
+  // Расчет проекта (ОБНОВЛЕН С НОВОЙ ЛОГИКОЙ АРЕНДЫ С ИНДЕКСАЦИЕЙ)
+  const project = useMemo(() => {
+    if (lines.length === 0) return null;
+    
+    const linesData = calculateLinesData();
+    if (!linesData || linesData.length === 0) return null;
+    
+    // Базовые расчеты
+    const base = linesData.reduce((sum, ld) => sum + ld.base, 0);
+    const preTotal = linesData.reduce((sum, ld) => sum + ld.preTotal, 0);
+    const firstPostUSD = linesData.reduce((sum, ld) => sum + ld.firstPostUSD, 0);
+    const postTotal = linesData.reduce((sum, ld) => 
+      sum + ld.postRows.reduce((postSum, pr) => postSum + pr.paymentUSD, 0), 0);
+    
+    // НОВАЯ ЛОГИКА: Расчет итоговой цены с учетом всех факторов
+    const finalUSD = linesData.reduce((total, ld) => {
+      const villa = catalog
+        .flatMap(p => p.villas)
+        .find(v => v.villaId === ld.line.villaId);
+      
+      if (!villa) return total;
+      
+      // Рыночная цена на ключах
+      const marketPriceAtHandover = calculateMarketPriceAtHandover(villa, ld.line);
+      
+      // Итоговая цена с учетом всех факторов
+      const finalPrice = marketPriceAtHandover * 
+        Math.pow(1 + pricingConfig.inflationRatePct / 100, months / 12) *
+        leaseFactor(months / 12, (villa.leaseholdEndDate.getFullYear() - startMonth.getFullYear() - months / 12), pricingConfig.leaseAlpha) *
+        ageFactor(months / 12, pricingConfig.agingBeta) *
+        brandFactor(months / 12, pricingConfig.brandPeak, pricingConfig.brandRampYears, pricingConfig.brandPlateauYears, pricingConfig.brandDecayYears, pricingConfig.brandTail);
+      
+      return total + (finalPrice * ld.qty);
+    }, 0);
+    
+    // НОВАЯ ЛОГИКА: Расчет доходности от аренды с индексацией
+    const rentalIncome = linesData.reduce((total, ld) => {
+      const villa = catalog
+        .flatMap(p => p.villas)
+        .find(v => v.villaId === ld.line.villaId);
+      
+      if (!villa) return total;
+      
+      let totalRentalIncome = 0;
+      
+      // Расчет аренды по месяцам после получения ключей
+      for (let month = handoverMonth + 3; month <= handoverMonth + months; month++) {
+        const yearOffset = (month - handoverMonth) / 12;
+        const indexedPrice = getIndexedRentalPrice(villa.dailyRateUSD, villa.rentalPriceIndexPct, yearOffset);
+        const daysInMonth = getDaysInMonth(month);
+        const monthlyRental = indexedPrice * 0.55 * (daysInMonth / 30.44) * ld.qty;
+        totalRentalIncome += monthlyRental;
+      }
+      
+      return total + totalRentalIncome;
+    }, 0);
+    
+    // НОВАЯ ЛОГИКА: Расчет ROI и IRR
+    const totalInvestment = preTotal + firstPostUSD + postTotal;
+    const totalReturn = finalUSD + rentalIncome;
+    const totalRoi = totalInvestment > 0 ? ((totalReturn - totalInvestment) / totalInvestment) * 100 : 0;
+    
+    // IRR расчет (упрощенный)
+    const irr = calculateIRR(totalInvestment, rentalIncome, finalUSD, months);
+    
+    return {
+      lines: linesData,
+      totals: {
+        base, preTotal, firstPostUSD, postTotal, finalUSD, rentalIncome, totalInvestment, totalReturn, totalRoi, irr
+      }
+    };
+  }, [lines, stages, stagesSumPct, handoverMonth, months, monthlyRatePct, catalog, pricingConfig, startMonth]);
+
+  // НОВАЯ ФУНКЦИЯ: Расчет IRR (упрощенная версия)
+  const calculateIRR = (investment, rentalIncome, finalPrice, months) => {
+    if (investment <= 0) return 0;
+    
+    // Упрощенный расчет IRR на основе ROI
+    const totalReturn = rentalIncome + finalPrice;
+    const totalRoi = ((totalReturn - investment) / investment) * 100;
+    
+    // Примерная IRR на основе ROI и времени
+    return totalRoi / (months / 12);
+  };
+
+  // НОВАЯ ФУНКЦИЯ: Расчет рыночной цены на ключах
+  const calculateMarketPriceAtHandover = (villa, line) => {
+    const basePrice = villa.baseUSD;
+    const monthsToHandover = handoverMonth;
+    const monthlyGrowth = (line.monthlyPriceGrowthPct || 2) / 100;
+    
+    return basePrice * Math.pow(1 + monthlyGrowth, monthsToHandover);
+  };
+
+  // НОВАЯ ФУНКЦИЯ: Получение индексированной цены аренды
+  const getIndexedRentalPrice = (baseDailyRate, annualIndexPct, yearOffset) => {
+    return baseDailyRate * Math.pow(1 + annualIndexPct / 100, yearOffset);
+  };
+
+  // НОВАЯ ФУНКЦИЯ: Получение количества дней в месяце
+  const getDaysInMonth = (month) => {
+    const date = new Date(startMonth);
+    date.setMonth(date.getMonth() + month);
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
 
   // Функции для работы с проектами (ВОССТАНОВЛЕНЫ СТАРЫЕ)
   const addProject = () => {
@@ -903,265 +1334,6 @@ const generateMonthlyPricingData = (villa) => {
     setShowAddVillaModal(true);
   };
 
-  // Расчет данных по строкам (ОБНОВЛЕН С НОВОЙ ЛОГИКОЙ АРЕНДЫ)
-  const linesData = useMemo(() => lines.map(line => {
-    const base0 = line.snapshot?.baseUSD ?? ((line.snapshot?.area || 0) * (line.snapshot?.ppsm || 0));
-    const disc = clamp(+line.discountPct || 0, 0, 20);
-    const base = base0 * (1 - disc / 100);
-    const prePct = clamp(line.prePct ?? 0, 50, 100);
-    const k = stagesSumPct === 0 ? 0 : prePct / stagesSumPct;
-    const preSchedule = stages.map(s => ({
-      month: Math.max(0, Math.min(handoverMonth, Math.round(+s.month || 0))),
-      label: s.label,
-      amountUSD: base * (((+s.pct || 0) * k) / 100),
-    })).filter(r => r.amountUSD > 0).sort((a, b) => a.month - b.month);
-    const preTotalOne = preSchedule.reduce((s, r) => s + r.amountUSD, 0);
-
-    const vMonths = line.ownTerms && line.months ? line.months : months;
-    const rate = (line.ownTerms && line.monthlyRatePct != null) ? (line.monthlyRatePct / 100) : (monthlyRatePct / 100);
-    const firstPostUSD = Math.max(0, +line.firstPostUSD || 0);
-    const principalBase = Math.max(0, base - preTotalOne - firstPostUSD);
-
-    let bal = principalBase, totalInterest = 0;
-    const principalShare = vMonths > 0 ? principalBase / vMonths : 0;
-    const postRows = [];
-    for (let i = 1; i <= vMonths; i++) {
-      const interest = bal * rate;
-      totalInterest += interest;
-      const payment = principalShare + interest;
-      postRows.push({
-        month: handoverMonth + i,
-        label: `${t.month} ${i}`,
-        principalUSD: principalShare,
-        interestUSD: interest,
-        paymentUSD: payment,
-        balanceAfterUSD: Math.max(0, bal - principalShare)
-      });
-      bal -= principalShare;
-    }
-    const lineTotalOne = base + totalInterest;
-
-    const qty = Math.max(1, parseInt(line.qty || 1, 10));
-    const preScheduleQ = preSchedule.map(r => ({...r, amountUSD: r.amountUSD * qty}));
-       const postRowsQ = postRows.map(r => ({
-      ...r,
-      principalUSD: r.principalUSD * qty,
-      interestUSD: r.interestUSD * qty,
-      paymentUSD: r.paymentUSD * qty
-    }));
-    const preTotal = preTotalOne * qty;
-    const firstPostQ = firstPostUSD * qty;
-    const baseQ = base * qty;
-    const lineTotal = lineTotalOne * qty;
-
-    return {
-      line, qty, baseOne: base, base: baseQ, preSchedule: preScheduleQ, preTotal,
-      firstPostUSD: firstPostQ, postRows: postRowsQ, lineTotal, vMonths, rate,
-      discountPct: disc, prePct: prePct
-    };
-  }), [lines, stages, stagesSumPct, handoverMonth, months, monthlyRatePct, t.month]);
-
-  // Расчет проекта (ОБНОВЛЕН С НОВОЙ ЛОГИКОЙ АРЕНДЫ С ИНДЕКСАЦИЕЙ)
-  const project = useMemo(() => {
-    const totals = {
-      baseUSD: linesData.reduce((s, x) => s + x.base, 0),
-      preUSD: linesData.reduce((s, x) => s + x.preTotal, 0),
-      finalUSD: linesData.reduce((s, x) => s + x.lineTotal, 0),
-    };
-    totals.interestUSD = totals.finalUSD - totals.baseUSD;
-    totals.afterUSD = totals.finalUSD - totals.preUSD;
-
-    const m = new Map();
-    const push = (month, amt, desc) => {
-      if (amt <= 0) return;
-      const prev = m.get(month) || {month, items: [], amountUSD: 0};
-      prev.items.push(desc);
-      prev.amountUSD += amt;
-      m.set(month, prev);
-    };
-
-    linesData.forEach(ld => {
-      ld.preSchedule.forEach(r => push(r.month, r.amountUSD, `${ld.line.snapshot?.name || 'Villa'} ×${ld.qty}: ${r.label}`));
-      if (ld.firstPostUSD > 0) push(handoverMonth + 1, ld.firstPostUSD, `${ld.line.snapshot?.name || 'Villa'} ×${ld.qty}: ${t.firstPayment}`);
-      ld.postRows.forEach(r => push(r.month, r.paymentUSD, `${ld.line.snapshot?.name || 'Villa'} ×${ld.qty}: ${r.label}`));
-    });
-
-    // ОБНОВЛЕНО: Расчет арендного дохода с индексацией по годам
-    const rentalIncomeMap = new Map();
-    linesData.forEach(ld => {
-      // Арендный доход начинается через 3 месяца после получения ключей
-      const startRentalMonth = handoverMonth + 3;
-      
-      for (let month = startRentalMonth; month <= handoverMonth + months; month++) {
-        const yearOffset = Math.floor((month - handoverMonth) / 12);
-        const indexedPrice = getIndexedRentalPrice(ld.line.dailyRateUSD, ld.line.rentalPriceIndexPct, yearOffset);
-        const daysInMonth = getDaysInMonth(month);
-        const rentalIncome = indexedPrice * 0.55 * ld.line.occupancyPct / 100 * daysInMonth * ld.qty;
-        
-        if (rentalIncome > 0) {
-          const prev = rentalIncomeMap.get(month) || 0;
-          rentalIncomeMap.set(month, prev + rentalIncome);
-        }
-      }
-    });
-
-    // Объединяем платежи и арендный доход
-    const raw = [...m.values()].sort((a, b) => a.month - b.month);
-    let cumulative = 0;
-    const cashflow = raw.map(row => {
-      cumulative += row.amountUSD;
-      const balanceUSD = Math.max(0, totals.finalUSD - cumulative);
-      
-      // Добавляем арендный доход для этого месяца
-      const rentalIncome = rentalIncomeMap.get(row.month) || 0;
-      const netPayment = row.amountUSD - rentalIncome;
-      
-      return {
-        ...row, 
-        cumulativeUSD: cumulative, 
-        balanceUSD,
-        rentalIncome, // НОВОЕ ПОЛЕ
-        netPayment    // НОВОЕ ПОЛЕ
-      };
-    });
-
-    return {totals, cashflow};
-  }, [linesData, handoverMonth, months, t.firstPayment, startMonth]);
-
-  // НОВЫЙ РАСЧЕТ: Годовая доходность от аренды
-  const yearlyRentalData = useMemo(() => {
-    return getCumulativeRentalIncome(lines);
-  }, [lines, startMonth, handoverMonth]);
-
-    // НОВЫЙ РАСЧЕТ: Общий чистый срок лизхолда
-  const totalLeaseholdTerm = useMemo(() => {
-    const allTerms = lines.map(line => {
-      if (!line.snapshot?.leaseholdEndDate) return { years: 0, months: 0 };
-      return getCleanLeaseholdTerm(line.snapshot.leaseholdEndDate);
-    });
-    
-    const maxYears = Math.max(...allTerms.map(t => t.years));
-    const maxMonths = Math.max(...allTerms.map(t => t.months));
-    
-    return { years: maxYears, months: maxMonths };
-  }, [lines, startMonth, handoverMonth]);
-
-  // НОВАЯ ФУНКЦИЯ: Расчет точки выхода с максимальным IRR
-  const calculateOptimalExitPoint = useMemo(() => {
-    if (lines.length === 0) return { year: 0, totalValue: 0, irr: 0 };
-    
-    const selectedVilla = catalog
-      .flatMap(p => p.villas)
-      .find(v => v.villaId === lines[0]?.villaId);
-    
-    if (!selectedVilla || !selectedVilla.leaseholdEndDate) return { year: 0, totalValue: 0, irr: 0 };
-    
-    const pricingData = generatePricingData(selectedVilla);
-    let maxIrr = -Infinity;
-    let optimalYear = 0;
-    let optimalTotalValue = 0;
-    
-    // Находим год с максимальным IRR
-    pricingData.forEach((data, index) => {
-      if (index === 0) return; // Пропускаем год 0, так как IRR рассчитывается только с года 1
-      
-      // Доходность от аренды для этого года
-      const rentalIncome = lines.reduce((total, line) => {
-        if (data.year < 0) return total;
-        
-        let yearStartMonth, yearEndMonth;
-        
-        if (data.year === 0) {
-          yearStartMonth = handoverMonth + 3;
-          yearEndMonth = 12;
-        } else {
-          yearStartMonth = 1;
-          yearEndMonth = 12;
-        }
-        
-        const leaseholdEndMonth = Math.floor((line.snapshot?.leaseholdEndDate - startMonth) / (30 * 24 * 60 * 60 * 1000));
-        const actualEndMonth = Math.min(yearEndMonth, leaseholdEndMonth);
-        
-        if (yearStartMonth >= actualEndMonth) return total;
-        
-        const workingMonths = Math.max(0, actualEndMonth - yearStartMonth + 1);
-        const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, data.year);
-        const avgDaysPerMonth = 30.44;
-        const occupancyDays = avgDaysPerMonth * (line.occupancyPct / 100);
-        const monthlyIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
-        const yearIncome = monthlyIncome * workingMonths;
-        
-        return total + yearIncome;
-      }, 0);
-      
-      // Final Price = рыночная цена на ключах × коэффициенты × инфляция
-      const finalPrice = data.finalPrice;
-
-      // Общий капитал инвестора = Final Price + доход от аренды
-      const totalInvestorCapital = finalPrice + rentalIncome;
-      
-      // Расчет IRR для этого года
-      const cashFlows = [];
-      cashFlows.push(-project.totals.finalUSD); // CF₀ - начальные инвестиции
-      
-      for (let i = 0; i <= index; i++) {
-        const yearData = pricingData[i];
-        // Расчет доходности от аренды для года i
-        const yearRentalIncome = lines.reduce((total, line) => {
-          if (yearData.year < 0) return total;
-          
-          let yearStartMonth, yearEndMonth;
-          
-          if (yearData.year === 0) {
-            yearStartMonth = handoverMonth + 3;
-            yearEndMonth = 12;
-          } else {
-            yearStartMonth = 1;
-            yearEndMonth = 12;
-          }
-          
-          const leaseholdEndMonth = Math.floor((line.snapshot?.leaseholdEndDate - startMonth) / (30 * 24 * 60 * 60 * 1000));
-          const actualEndMonth = Math.min(yearEndMonth, leaseholdEndMonth);
-          
-          if (yearStartMonth >= actualEndMonth) return total;
-          
-          const workingMonths = Math.max(0, actualEndMonth - yearStartMonth + 1);
-          const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, yearData.year);
-          const avgDaysPerMonth = 30.44;
-          const occupancyDays = avgDaysPerMonth * (line.occupancyPct / 100);
-          const monthlyIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
-          const yearIncome = monthlyIncome * workingMonths;
-          
-          return total + yearIncome;
-        }, 0);
-        
-        if (i === index) {
-          // Последний год: аренда + Final Price
-          cashFlows.push(yearRentalIncome + yearData.finalPrice);
-        } else {
-          // Обычные годы: только аренда
-          cashFlows.push(yearRentalIncome);
-        }
-      }
-      
-      // Расчет IRR
-      const irr = calculateIRR(cashFlows);
-      
-      // Находим максимальное значение IRR
-      if (irr > maxIrr) {
-        maxIrr = irr;
-        optimalYear = data.year;
-        optimalTotalValue = totalInvestorCapital;
-      }
-    });
-    
-    return {
-      year: optimalYear,
-      totalValue: optimalTotalValue,
-      irr: maxIrr
-    };
-  }, [lines, catalog, handoverMonth, startMonth, project.totals.finalUSD]);
-  
   // Функции для работы с линиями (ВОССТАНОВЛЕНЫ СТАРЫЕ)
   const updLine = (id, patch) => setLines(prev => prev.map(l => l.id === id ? {...l, ...patch} : l));
   const delLine = (id) => setLines(prev => prev.filter(l => l.id !== id));
@@ -1211,13 +1383,14 @@ const generateMonthlyPricingData = (villa) => {
         fmtMoney(c.balanceUSD, currency)
       ])
     ];
-    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+    const csv = rows.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `arconique_cashflow_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.href = url;
+    a.download = 'cashflow.csv';
     a.click();
-    URL.revokeObjectURL(a.href);
+    URL.revokeObjectURL(url);
   };
 
   // ИСПРАВЛЕНО: Добавлена проверка на XLSX
@@ -1681,7 +1854,7 @@ const generateMonthlyPricingData = (villa) => {
       <div className="card">
         <div className="row" style={{justifyContent: 'space-between', alignItems: 'baseline'}}>
           <div className="row">
-            <span className="badge">{t.lines}: {lines.length}</span>
+                       <span className="badge">{t.lines}: {lines.length}</span>
             <span className="badge">{t.keys} {handoverMonth} {lang === 'ru' ? 'мес.' : 'mo.'}</span>
             <span className="badge">{lang === 'ru' ? 'Срок:' : 'Term:'} {months} {lang === 'ru' ? 'мес.' : 'mo.'}</span>
           </div>
@@ -1741,7 +1914,7 @@ const generateMonthlyPricingData = (villa) => {
                 
                 if (!selectedVilla) return '0.0%';
                 
-                const pricingData = generatePricingData(selectedVilla);
+                const pricingData = generateFactorsData(selectedVilla);
                 const yearData = pricingData[calculateOptimalExitPoint.year];
                 
                 if (!yearData) return '0.0%';
@@ -1869,7 +2042,7 @@ const generateMonthlyPricingData = (villa) => {
             <div className="export-buttons">
               <button className="btn" onClick={exportCSV}>{t.exportCSV}</button>
               <button className="btn" onClick={exportXLSX}>{t.exportXLSX}</button>
-                          <button className="btn" onClick={exportPDF}>{t.exportPDF}</button>
+              <button className="btn" onClick={exportPDF}>{t.exportPDF}</button>
             </div>
           </div>
           
@@ -2131,7 +2304,7 @@ const generateMonthlyPricingData = (villa) => {
                       .flatMap(p => p.villas)
                       .find(v => v.villaId === lines[0]?.villaId);
                     return selectedVilla && selectedVilla.leaseholdEndDate ? 
-                      generatePricingData(selectedVilla).map((data, index) => {
+                      generateFactorsData(selectedVilla).map((data, index) => {
                         // ВСЕ переменные должны быть определены здесь, внутри map
                         const realYear = startMonth.getFullYear() + handoverMonth / 12 + data.year;
                         const displayYear = Math.floor(realYear);
@@ -2188,7 +2361,7 @@ const generateMonthlyPricingData = (villa) => {
                         // 1. ROI за год = (аренда за год + (Final Price в данном году - Final Price в прошлом году)) / Final Price в прошлом году
                         let yearlyRoi = 0;
                         if (index > 0) {
-                          const previousFinalPrice = generatePricingData(selectedVilla)[index - 1].finalPrice;
+                          const previousFinalPrice = generateFactorsData(selectedVilla)[index - 1].finalPrice;
                           const priceChange = finalPrice - previousFinalPrice;
                           yearlyRoi = ((rentalIncome + priceChange) / previousFinalPrice) * 100;
                         }
@@ -2198,7 +2371,7 @@ const generateMonthlyPricingData = (villa) => {
                         if (index > 0) {
                           let totalRentalIncome = 0;
                           for (let i = 0; i <= index; i++) {
-                            const yearData = generatePricingData(selectedVilla)[i];
+                            const yearData = generateFactorsData(selectedVilla)[i];
                             // Расчет доходности от аренды для года i
                             const yearRentalIncome = lines.reduce((total, line) => {
                               if (yearData.year < 0) return total;
@@ -2240,7 +2413,7 @@ const generateMonthlyPricingData = (villa) => {
                           cashFlows.push(-project.totals.finalUSD); // CF₀ - начальные инвестиции
                           
                           for (let i = 0; i <= index; i++) {
-                            const yearData = generatePricingData(selectedVilla)[i];
+                            const yearData = generateFactorsData(selectedVilla)[i];
                             // Расчет доходности от аренды для года i
                             const yearRentalIncome = lines.reduce((total, line) => {
                               if (yearData.year < 0) return total;
@@ -2324,6 +2497,9 @@ const generateMonthlyPricingData = (villa) => {
                     <th>Доходность от аренды</th>
                     <th>Общий капитал инвестора</th>
                     <th>Сумма к оплате</th>
+                    <th>ROI за месяц (%)</th>
+                    <th>Итоговый ROI (%)</th>
+                    <th>IRR (%)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2346,6 +2522,9 @@ const generateMonthlyPricingData = (villa) => {
                           <td className="payment-cell">
                             {data.paymentAmount > 0 ? fmtMoney(data.paymentAmount) : '-'}
                           </td>
+                          <td className="monthly-roi-cell">{data.monthlyRoi.toFixed(2)}%</td>
+                          <td className="cumulative-roi-cell">{data.cumulativeRoi.toFixed(2)}%</td>
+                          <td className="irr-cell">{data.irr.toFixed(2)}%</td>
                         </tr>
                       )) : null;
                   })()}
@@ -2627,7 +2806,7 @@ function CatalogManager({
       setCatalog(prev => prev.map(p => 
         p.projectId === projectId 
           ? { ...p, villas: p.villas.filter(v => v.villaId !== villaId) }
-          : p
+                    : p
       ));
     }
   };
@@ -2866,6 +3045,3 @@ function CatalogManager({
 // ===== РЕНДЕРИНГ ПРИЛОЖЕНИЯ =====
 const root = createRoot(document.getElementById('root'));
 root.render(<App />);
-
-
-    
