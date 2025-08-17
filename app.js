@@ -852,7 +852,7 @@ const calculateOptimalExitPoint = useMemo(() => {
   let optimalYear = 0;
   
   // ПРОСТОЙ РАСЧЕТ: находим год с максимальным общим капиталом
-  pricingData.forEach((data, index) => {
+  pricingData.forEach((data) => {
     // Доходность от аренды для этого года (тот же код, что и в таблице)
     const rentalIncome = lines.reduce((total, line) => {
       if (data.year < 0) return 0;
