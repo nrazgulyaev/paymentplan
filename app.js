@@ -1371,6 +1371,19 @@ const generatePricingData = (villa) => {
             <div className="muted">{t.cleanLeaseholdTerm}</div>
             <div className="v">{totalLeaseholdTerm.years} {t.years} {totalLeaseholdTerm.months} {t.months}</div>
           </div>
+ <div className="kpi">
+    <div className="muted">Точка выхода с макс. ROI</div>
+    <div className="v">
+      {(() => {
+        const realYear = startMonth.getFullYear() + handoverMonth / 12 + calculateOptimalExitPoint.year;
+        return Math.floor(realYear);
+      })()}
+    </div>
+    <div className="muted" style={{fontSize: '0.8em'}}>
+      Годовой ROI: {calculateOptimalExitPoint.annualRoi.toFixed(1)}%
+    </div>
+  </div>
+            
         </div>
       </div>
 
