@@ -2518,100 +2518,101 @@ monthlyData.push({
         </div>
       )}
 
-      {showAddVillaModal && (
-        <div className="modal-overlay" onClick={() => setShowAddVillaModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3>{t.addVilla}</h3>
-            <div className="form-group">
-              <label>{t.villaName}:</label>
-              <input 
-                type="text" 
-                value={newVillaForm.name} 
-                onChange={e => setNewVillaForm(prev => ({...prev, name: e.target.value}))}
-                placeholder="Название виллы"
-                className="input"
-              />
-            </div>
-            <div className="form-group">
-              <label>{t.villaArea}:</label>
-              <input 
-                type="number" 
-                value={newVillaForm.area} 
-                onChange={e => setNewVillaForm(prev => ({...prev, area: +e.target.value}))}
-                placeholder="Площадь"
-                className="input"
-              />
-            </div>
-            <div className="form-group">
-              <label>{t.villaPpsm}:</label>
-              <input 
-                type="number" 
-                value={newVillaForm.ppsm} 
-                onChange={e => setNewVillaForm(prev => ({...prev, ppsm: +e.target.value}))}
-                placeholder="Цена за м²"
-                className="input"
-              />
-            </div>
-            <div className="form-group">
-              <label>{t.villaBasePrice}:</label>
-              <input 
-                type="number" 
-                value={newVillaForm.baseUSD} 
-                onChange={e => setNewVillaForm(prev => ({...prev, baseUSD: +e.target.value}))}
-                placeholder="Базовая цена"
-                className="input"
-              />
-            </div>
-            {/* НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей */}
-            <div className="form-group">
-              <label>{t.monthlyPriceGrowth}:</label>
-              <input 
-                type="number" 
-                min="0" 
-                max="50" 
-                step="0.1" 
-                value={newVillaForm.monthlyPriceGrowthPct} 
-                onChange={e => setNewVillaForm(prev => ({...prev, monthlyPriceGrowthPct: +e.target.value}))}
-                placeholder="Месячный рост цены (%)"
-                className="input"
-              />
-            </div>
-            {/* НОВЫЕ ПОЛЯ ДЛЯ ЛИЗХОЛДА И АРЕНДЫ */}
-            <div className="form-group">
-              <label>{t.leaseholdEndDate}:</label>
-              <input 
-                type="date" 
-                value={newVillaForm.leaseholdEndDate ? newVillaForm.leaseholdEndDate.toISOString().split('T')[0] : ''} 
-                onChange={e => setNewVillaForm(prev => ({...prev, leaseholdEndDate: new Date(e.target.value)}))}
-                className="input"
-              />
-            </div>
-            <div className="form-group">
-              <label>{t.dailyRate}:</label>
-              <input 
-                type="number" 
-                value={newVillaForm.dailyRateUSD} 
-                onChange={e => setNewVillaForm(prev => ({...prev, dailyRateUSD: +e.target.value}))}
-                placeholder="Стоимость ночи"
-                className="input"
-              />
-            </div>
-            <div className="form-group">
-              <label>{t.rentalPriceIndex}:</label>
-              <input 
-                type="number" 
-                value={newVillaForm.rentalPriceIndexPct} 
-                onChange={e => setNewVillaForm(prev => ({...prev, rentalPriceIndexPct: +e.target.value}))}
-                placeholder="Индексация в год (%)"
-                className="input"
-              />
-            </div>
-            <div className="modal-actions">
-              <button onClick={saveVilla} className="btn primary">{t.save}</button>
-              <button onClick={() => setShowAddVillaModal(false)} className="btn">{t.cancel}</button>
-            </div>
-          </div>
+     {showAddVillaModal && (
+  <div className="modal-overlay" onClick={() => setShowAddVillaModal(false)}>
+    <div className="modal-content" onClick={e => e.stopPropagation()}>
+      <h3>{t.addVilla}</h3>
+      <div className="villa-form-fields">
+        <div className="form-group">
+          <label>{t.villaName}:</label>
+          <input 
+            type="text" 
+            value={newVillaForm.name} 
+            onChange={e => setNewVillaForm(prev => ({...prev, name: e.target.value}))}
+            placeholder="Название виллы"
+            className="input"
+          />
         </div>
+        <div className="form-group">
+          <label>{t.villaArea}:</label>
+          <input 
+            type="number" 
+            value={newVillaForm.area} 
+            onChange={e => setNewVillaForm(prev => ({...prev, area: +e.target.value}))}
+            placeholder="Площадь"
+            className="input"
+          />
+        </div>
+        <div className="form-group">
+          <label>{t.villaPpsm}:</label>
+          <input 
+            type="number" 
+            value={newVillaForm.ppsm} 
+            onChange={e => setNewVillaForm(prev => ({...prev, ppsm: +e.target.value}))}
+            placeholder="Цена за м²"
+            className="input"
+          />
+        </div>
+        <div className="form-group">
+          <label>{t.villaBasePrice}:</label>
+          <input 
+            type="number" 
+            value={newVillaForm.baseUSD} 
+            onChange={e => setNewVillaForm(prev => ({...prev, baseUSD: +e.target.value}))}
+            placeholder="Базовая цена"
+            className="input"
+          />
+        </div>
+        <div className="form-group">
+          <label>{t.monthlyPriceGrowth}:</label>
+          <input 
+            type="number" 
+            min="0" 
+            max="50" 
+            step="0.1" 
+            value={newVillaForm.monthlyPriceGrowthPct} 
+            onChange={e => setNewVillaForm(prev => ({...prev, monthlyPriceGrowthPct: +e.target.value}))}
+            placeholder="Месячный рост цены (%)"
+            className="input"
+          />
+        </div>
+        <div className="form-group">
+          <label>{t.leaseholdEndDate}:</label>
+          <input 
+            type="date" 
+            value={newVillaForm.leaseholdEndDate ? newVillaForm.leaseholdEndDate.toISOString().split('T')[0] : ''} 
+            onChange={e => setNewVillaForm(prev => ({...prev, leaseholdEndDate: new Date(e.target.value)}))}
+            className="input"
+          />
+        </div>
+        <div className="form-group">
+          <label>{t.dailyRate}:</label>
+          <input 
+            type="number" 
+            value={newVillaForm.dailyRateUSD} 
+            onChange={e => setNewVillaForm(prev => ({...prev, dailyRateUSD: +e.target.value}))}
+            placeholder="Стоимость ночи"
+            className="input"
+          />
+        </div>
+        <div className="form-group">
+          <label>{t.rentalPriceIndex}:</label>
+          <input 
+            type="number" 
+            value={newVillaForm.rentalPriceIndexPct} 
+            onChange={e => setNewVillaForm(prev => ({...prev, rentalPriceIndexPct: +e.target.value}))}
+            placeholder="Индексация в год (%)"
+            className="input"
+          />
+        </div>
+      </div>
+      <div className="modal-actions">
+        <button onClick={saveVilla} className="btn primary">{t.save}</button>
+        <button onClick={() => setShowAddVillaModal(false)} className="btn">{t.cancel}</button>
+      </div>
+    </div>
+  </div>
+
       )}
     </>
   );
