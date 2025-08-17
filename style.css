@@ -2414,4 +2414,16 @@ h1 {
   height: auto;
 }
 
+.yearly-roi-cell, .cumulative-roi-cell, .irr-cell {
+  text-align: right;
+  font-weight: 500;
+}
+
+.yearly-roi-cell.positive { color: #28a745; }
+.yearly-roi-cell.negative { color: #dc3545; }
+.cumulative-roi-cell.positive { color: #28a745; }
+.cumulative-roi-cell.negative { color: #dc3545; }
+.irr-cell.positive { color: #28a745; }
+.irr-cell.negative { color: #dc3545; }
+
 /* ===== КОНЕЦ СТИЛЕЙ ===== */
