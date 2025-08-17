@@ -662,6 +662,116 @@ function App() {
     }
   };
 
+  // НОВАЯ ФУНКЦИЯ: Генерация месячных данных для таблицы факторов 2
+  const generateMonthlyPricingData = (villa) => {
+    try {
+      if (!villa || !villa.leaseholdEndDate) return [];
+      
+      const selectedLine = lines.find(l => l.villaId === villa.villaId);
+      if (!selectedLine) return [];
+      
+      // Общее количество месяцев от подписания до окончания рассрочки
+      const totalMonths = months + handoverMonth;
+      
+      // Рыночная цена на ключах
+      const marketPriceAtHandover = calculateMarketPriceAtHandover(villa, selectedLine);
+      
+      // Получаем данные по линии для расчета платежей
+      const lineData = linesData.find(ld => ld.line.id === selectedLine.id);
+      if (!lineData) return [];
+      
+      const monthlyData = [];
+      
+      for (let month = 0; month <= totalMonths; month++) {
+        let leaseFactor = 1;
+        let ageFactor = 1;
+        let brandFactor = 1;
+        let inflationFactor = 1;
+        let finalPrice = 0;
+        let rentalIncome = 0;
+        let paymentAmount = 0;
+        
+        if (month <= handoverMonth) {
+          // ДО получения ключей: только месячный рост цены
+          const monthlyGrowthRate = (selectedLine.monthlyPriceGrowthPct || 2) / 100;
+          finalPrice = villa.baseUSD * Math.pow(1 + monthlyGrowthRate, month);
+          
+          // Платежи по этапам рассрочки
+          const stagePayment = lineData.preSchedule.find(s => s.month === month);
+          if (stagePayment) {
+            paymentAmount = stagePayment.amountUSD;
+          }
+        } else {
+          // ПОСЛЕ получения ключей: все факторы работают
+          const yearOffset = (month - handoverMonth) / 12;
+          
+          // Месячные коэффициенты (делим годовые на 12)
+          leaseFactor = leaseFactor(yearOffset, totalMonths / 12, pricingConfig.leaseAlpha);
+          ageFactor = ageFactor(yearOffset, pricingConfig.agingBeta / 12);
+          brandFactor = brandFactor(yearOffset, pricingConfig);
+          inflationFactor = Math.pow(1 + pricingConfig.inflationRatePct / 100, yearOffset);
+          
+          // Final Price с учетом всех факторов
+          finalPrice = marketPriceAtHandover * inflationFactor * leaseFactor * ageFactor * brandFactor;
+          
+          // Доходность от аренды (начинается через 3 месяца после ключей)
+          if (month >= handoverMonth + 3) {
+            const indexedPrice = getIndexedRentalPrice(selectedLine.dailyRateUSD, selectedLine.rentalPriceIndexPct, yearOffset);
+            const daysInMonth = getDaysInMonth(month);
+            rentalIncome = indexedPrice * 0.55 * (selectedLine.occupancyPct / 100) * daysInMonth * selectedLine.qty;
+          }
+          
+          // Платежи по рассрочке после ключей
+          if (month <= handoverMonth + lineData.vMonths) {
+            const postMonth = month - handoverMonth;
+            const postPayment = lineData.postRows.find(r => r.month === month);
+            if (postPayment) {
+              paymentAmount = postPayment.paymentUSD;
+            }
+          }
+          // Если рассрочка закончилась, но месяц еще в пределах года - платеж = 0
+          else if (month <= totalMonths) {
+            paymentAmount = 0;
+          }
+        }
+        
+        // Накопительный доход от аренды
+        let cumulativeRentalIncome = 0;
+        if (month >= handoverMonth + 3) {
+          for (let m = handoverMonth + 3; m <= month; m++) {
+            const mYearOffset = (m - handoverMonth) / 12;
+            const mIndexedPrice = getIndexedRentalPrice(selectedLine.dailyRateUSD, selectedLine.rentalPriceIndexPct, mYearOffset);
+            const mDaysInMonth = getDaysInMonth(m);
+            const mRentalIncome = mIndexedPrice * 0.55 * (selectedLine.occupancyPct / 100) * mDaysInMonth * selectedLine.qty;
+            cumulativeRentalIncome += mRentalIncome;
+          }
+        }
+        
+        // Общий капитал инвестора
+        const totalInvestorCapital = finalPrice + cumulativeRentalIncome;
+        
+        monthlyData.push({
+          month,
+          year: Math.floor(month / 12),
+          leaseFactor,
+          ageFactor,
+          brandFactor,
+          inflationFactor,
+          finalPrice,
+          rentalIncome,
+          cumulativeRentalIncome,
+          totalInvestorCapital,
+          paymentAmount
+        });
+      }
+      
+      return monthlyData;
+    } catch (error) {
+      console.error('Ошибка в generateMonthlyPricingData:', error);
+      return [];
+    }
+  };
+
   // Функции для работы с проектами (ВОССТАНОВЛЕНЫ СТАРЫЕ)
   const addProject = () => {
     setNewProjectForm({
@@ -833,7 +943,7 @@ function App() {
 
     const qty = Math.max(1, parseInt(line.qty || 1, 10));
     const preScheduleQ = preSchedule.map(r => ({...r, amountUSD: r.amountUSD * qty}));
-    const postRowsQ = postRows.map(r => ({
+       const postRowsQ = postRows.map(r => ({
       ...r,
       principalUSD: r.principalUSD * qty,
       interestUSD: r.interestUSD * qty,
@@ -936,7 +1046,7 @@ function App() {
     return { years: maxYears, months: maxMonths };
   }, [lines, startMonth, handoverMonth]);
 
-   // НОВАЯ ФУНКЦИЯ: Расчет точки выхода с максимальным IRR
+  // НОВАЯ ФУНКЦИЯ: Расчет точки выхода с максимальным IRR
   const calculateOptimalExitPoint = useMemo(() => {
     if (lines.length === 0) return { year: 0, totalValue: 0, irr: 0 };
     
@@ -1609,7 +1719,7 @@ function App() {
             <div className="muted">{t.cleanLeaseholdTerm}</div>
             <div className="v">{totalLeaseholdTerm.years} {t.years} {totalLeaseholdTerm.months} {t.months}</div>
           </div>
-                             {/* НОВЫЙ ПАРАМЕТР: Точка выхода с максимальным IRR */}
+          {/* НОВЫЙ ПАРАМЕТР: Точка выхода с максимальным IRR */}
           <div className="kpi">
             <div className="muted">Точка выхода с макс. IRR</div>
             <div className="v">
@@ -1759,7 +1869,7 @@ function App() {
             <div className="export-buttons">
               <button className="btn" onClick={exportCSV}>{t.exportCSV}</button>
               <button className="btn" onClick={exportXLSX}>{t.exportXLSX}</button>
-              <button className="btn" onClick={exportPDF}>{t.exportPDF}</button>
+                          <button className="btn" onClick={exportPDF}>{t.exportPDF}</button>
             </div>
           </div>
           
@@ -1940,7 +2050,7 @@ function App() {
                           <line className="x-axis" x1="50" y1="250" x2="750" y2="250" stroke="#666" strokeWidth="1"/>
                         </g>
                         
-                                               {/* ПОДПИСИ ПО ОСИ Y - ОБЩИЙ диапазон */}
+                        {/* ПОДПИСИ ПО ОСИ Y - ОБЩИЙ диапазон */}
                         <g className="y-labels">
                           {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
                             // ОБЩИЙ диапазон для обеих линий
@@ -2191,6 +2301,53 @@ function App() {
                           </tr>
                         );
                       }) : null;
+                  })()}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Таблица факторов 2 - месячная детализация */}
+          <div className="factors-table-container">
+            <h4>Таблица факторов 2 (месячная детализация)</h4>
+            <div className="factors-table-scroll">
+              <table className="factors-table">
+                <thead>
+                  <tr>
+                    <th>Месяц</th>
+                    <th>Год</th>
+                    <th>Lease Factor</th>
+                    <th>Age Factor</th>
+                    <th>Brand Factor</th>
+                    <th>Коэффициент инфляции</th>
+                    <th>Final Price</th>
+                    <th>Доходность от аренды</th>
+                    <th>Общий капитал инвестора</th>
+                    <th>Сумма к оплате</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    const selectedVilla = catalog
+                      .flatMap(p => p.villas)
+                      .find(v => v.villaId === lines[0]?.villaId);
+                    return selectedVilla && selectedVilla.leaseholdEndDate ? 
+                      generateMonthlyPricingData(selectedVilla).map((data) => (
+                        <tr key={data.month}>
+                          <td>{data.month}</td>
+                          <td>{data.year}</td>
+                          <td>{data.leaseFactor.toFixed(3)}</td>
+                          <td>{data.ageFactor.toFixed(3)}</td>
+                          <td>{data.brandFactor.toFixed(3)}</td>
+                          <td>{data.inflationFactor.toFixed(3)}</td>
+                          <td className="price-cell">{fmtMoney(data.finalPrice)}</td>
+                          <td className="rental-cell">{fmtMoney(data.rentalIncome)}</td>
+                          <td className="total-capital-cell">{fmtMoney(data.totalInvestorCapital)}</td>
+                          <td className="payment-cell">
+                            {data.paymentAmount > 0 ? fmtMoney(data.paymentAmount) : '-'}
+                          </td>
+                        </tr>
+                      )) : null;
                   })()}
                 </tbody>
               </table>
@@ -2709,3 +2866,6 @@ function CatalogManager({
 // ===== РЕНДЕРИНГ ПРИЛОЖЕНИЯ =====
 const root = createRoot(document.getElementById('root'));
 root.render(<App />);
+
+
+    
