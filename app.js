@@ -751,21 +751,83 @@ const totalLeaseholdYears = Math.ceil((villa.leaseholdEndDate - startMonth) / (3
       }
       
       // Общий капитал инвестора
-      const totalInvestorCapital = finalPrice + cumulativeRentalIncome;
-      
-      monthlyData.push({
-        month,
-        year: Math.floor(month / 12),
-        leaseFactor: leaseFactorValue,
-        ageFactor: ageFactorValue,
-        brandFactor: brandFactorValue,
-        inflationFactor,
-        finalPrice,
-        rentalIncome,
-        cumulativeRentalIncome,
-        totalInvestorCapital,
-        paymentAmount
-      });
+  // Общий капитал инвестора
+const totalInvestorCapital = finalPrice + cumulativeRentalIncome;
+
+// НОВЫЕ РАСЧЕТЫ для каждой строки:
+
+// 1. Сумма всех Сумм к оплате от начала до данного месяца
+let totalPaymentsToDate = 0;
+for (let m = 0; m <= month; m++) {
+  const monthData = monthlyData[m];
+  if (monthData && monthData.paymentAmount > 0) {
+    totalPaymentsToDate += monthData.paymentAmount;
+  }
+}
+
+// 2. ROI за месяц (переводим в годовой показатель)
+let monthlyRoi = 0;
+if (month > 0 && totalPaymentsToDate > 0) {
+  const previousMonthData = monthlyData[month - 1];
+  if (previousMonthData) {
+    const priceChange = finalPrice - previousMonthData.finalPrice;
+    const monthlyRoiRaw = ((rentalIncome + priceChange) / totalPaymentsToDate) * 100;
+    // Переводим в годовой показатель: месячный ROI × 12
+    monthlyRoi = monthlyRoiRaw * 12;
+  }
+}
+
+// 3. Итоговый ROI (переводим в годовой показатель)
+let cumulativeRoi = 0;
+if (totalPaymentsToDate > 0) {
+  const cumulativeRoiRaw = ((cumulativeRentalIncome + finalPrice - project.totals.finalUSD) / totalPaymentsToDate) * 100;
+  // Переводим в годовой показатель: итоговый ROI × (12 / количество месяцев)
+  const monthsElapsed = month + 1;
+  cumulativeRoi = cumulativeRoiRaw * (12 / monthsElapsed);
+}
+
+// 4. IRR (переводим в годовой показатель)
+let irr = 0;
+if (month > 0) {
+  const cashFlows = [];
+  cashFlows.push(-totalPaymentsToDate); // CF₀
+  
+  for (let m = 0; m <= month; m++) {
+    const monthData = monthlyData[m];
+    if (monthData) {
+      if (m === month) {
+        // Последний месяц: аренда + Final Price
+        cashFlows.push(monthData.rentalIncome + monthData.finalPrice);
+      } else {
+        // Обычные месяцы: только аренда
+        cashFlows.push(monthData.rentalIncome || 0);
+      }
+    }
+  }
+  
+  // IRR рассчитывается в месячных периодах, переводим в годовой
+  const monthlyIrr = calculateIRR(cashFlows);
+  irr = monthlyIrr * 12; // Переводим в годовой показатель
+}
+
+monthlyData.push({
+  month,
+  year: Math.floor(month / 12),
+  leaseFactor: leaseFactorValue,
+  ageFactor: ageFactorValue,
+  brandFactor: brandFactorValue,
+  inflationFactor,
+  finalPrice,
+  rentalIncome,
+  cumulativeRentalIncome,
+  totalInvestorCapital,
+  paymentAmount,
+  // НОВЫЕ ПОЛЯ:
+  totalPaymentsToDate,
+  monthlyRoi,
+  cumulativeRoi,
+  irr
+});
     }
     
     return monthlyData;
@@ -2327,6 +2389,9 @@ const totalLeaseholdYears = Math.ceil((villa.leaseholdEndDate - startMonth) / (3
                     <th>Доходность от аренды</th>
                     <th>Общий капитал инвестора</th>
                     <th>Сумма к оплате</th>
+<th>ROI за месяц (%)</th>
+<th>Итоговый ROI (%)</th>
+<th>IRR (%)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2346,9 +2411,13 @@ const totalLeaseholdYears = Math.ceil((villa.leaseholdEndDate - startMonth) / (3
                           <td className="price-cell">{fmtMoney(data.finalPrice)}</td>
                           <td className="rental-cell">{fmtMoney(data.rentalIncome)}</td>
                           <td className="total-capital-cell">{fmtMoney(data.totalInvestorCapital)}</td>
-                          <td className="payment-cell">
-                            {data.paymentAmount > 0 ? fmtMoney(data.paymentAmount) : '-'}
-                          </td>
+                         <td className="payment-cell">
+  {data.paymentAmount > 0 ? fmtMoney(data.paymentAmount) : '-'}
+</td>
+{/* НОВЫЕ КОЛОНКИ */}
+<td className="monthly-roi-cell">{data.monthlyRoi.toFixed(2)}%</td>
+<td className="cumulative-roi-cell">{data.cumulativeRoi.toFixed(2)}%</td>
+<td className="irr-cell">{data.irr.toFixed(2)}%</td>
                         </tr>
                       )) : null;
                   })()}
