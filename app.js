@@ -671,7 +671,10 @@ const generateMonthlyPricingData = (villa) => {
     if (!selectedLine) return [];
     
     // Общее количество месяцев от подписания до окончания рассрочки
-    const totalMonths = months + handoverMonth;
+const totalMonths = months + handoverMonth;
+
+// ИСПРАВЛЕНИЕ: Правильный расчет общего срока лизхолда в годах
+const totalLeaseholdYears = Math.ceil((villa.leaseholdEndDate - startMonth) / (365 * 24 * 60 * 60 * 1000));
     
     // Рыночная цена на ключах
     const marketPriceAtHandover = calculateMarketPriceAtHandover(villa, selectedLine);
@@ -706,7 +709,7 @@ const generateMonthlyPricingData = (villa) => {
         const yearOffset = (month - handoverMonth) / 12;
         
         // Месячные коэффициенты (делим годовые на 12)
-        leaseFactorValue = leaseFactor(yearOffset, totalMonths / 12, pricingConfig.leaseAlpha);
+       leaseFactorValue = leaseFactor(yearOffset, totalLeaseholdYears, pricingConfig.leaseAlpha);
         ageFactorValue = ageFactor(yearOffset, pricingConfig.agingBeta / 12);
         brandFactorValue = brandFactor(yearOffset, pricingConfig);
         inflationFactor = Math.pow(1 + pricingConfig.inflationRatePct / 100, yearOffset);
