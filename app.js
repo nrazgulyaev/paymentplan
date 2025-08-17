@@ -936,23 +936,26 @@ function App() {
     return { years: maxYears, months: maxMonths };
   }, [lines, startMonth, handoverMonth]);
 
-  // УПРОЩЕННАЯ ФУНКЦИЯ: Расчет точки выхода с максимальным ROI
+   // НОВАЯ ФУНКЦИЯ: Расчет точки выхода с максимальным IRR
   const calculateOptimalExitPoint = useMemo(() => {
-    if (lines.length === 0) return { year: 0, totalValue: 0, roi: 0, annualRoi: 0 };
+    if (lines.length === 0) return { year: 0, totalValue: 0, irr: 0 };
     
     const selectedVilla = catalog
       .flatMap(p => p.villas)
       .find(v => v.villaId === lines[0]?.villaId);
     
-    if (!selectedVilla || !selectedVilla.leaseholdEndDate) return { year: 0, totalValue: 0, roi: 0, annualRoi: 0 };
+    if (!selectedVilla || !selectedVilla.leaseholdEndDate) return { year: 0, totalValue: 0, irr: 0 };
     
     const pricingData = generatePricingData(selectedVilla);
-    let maxTotalValue = 0;
+    let maxIrr = -Infinity;
     let optimalYear = 0;
+    let optimalTotalValue = 0;
     
-    // ПРОСТОЙ РАСЧЕТ: находим год с максимальным общим капиталом
-    pricingData.forEach((data) => {
-      // Доходность от аренды для этого года (тот же код, что и в таблице)
+    // Находим год с максимальным IRR
+    pricingData.forEach((data, index) => {
+      if (index === 0) return; // Пропускаем год 0, так как IRR рассчитывается только с года 1
+      
+      // Доходность от аренды для этого года
       const rentalIncome = lines.reduce((total, line) => {
         if (data.year < 0) return total;
         
@@ -987,27 +990,67 @@ function App() {
       // Общий капитал инвестора = Final Price + доход от аренды
       const totalInvestorCapital = finalPrice + rentalIncome;
       
-      // Находим максимальное значение
-      if (totalInvestorCapital > maxTotalValue) {
-        maxTotalValue = totalInvestorCapital;
+      // Расчет IRR для этого года
+      const cashFlows = [];
+      cashFlows.push(-project.totals.finalUSD); // CF₀ - начальные инвестиции
+      
+      for (let i = 0; i <= index; i++) {
+        const yearData = pricingData[i];
+        // Расчет доходности от аренды для года i
+        const yearRentalIncome = lines.reduce((total, line) => {
+          if (yearData.year < 0) return total;
+          
+          let yearStartMonth, yearEndMonth;
+          
+          if (yearData.year === 0) {
+            yearStartMonth = handoverMonth + 3;
+            yearEndMonth = 12;
+          } else {
+            yearStartMonth = 1;
+            yearEndMonth = 12;
+          }
+          
+          const leaseholdEndMonth = Math.floor((line.snapshot?.leaseholdEndDate - startMonth) / (30 * 24 * 60 * 60 * 1000));
+          const actualEndMonth = Math.min(yearEndMonth, leaseholdEndMonth);
+          
+          if (yearStartMonth >= actualEndMonth) return total;
+          
+          const workingMonths = Math.max(0, actualEndMonth - yearStartMonth + 1);
+          const indexedPrice = getIndexedRentalPrice(line.dailyRateUSD, line.rentalPriceIndexPct, yearData.year);
+          const avgDaysPerMonth = 30.44;
+          const occupancyDays = avgDaysPerMonth * (line.occupancyPct / 100);
+          const monthlyIncome = indexedPrice * 0.55 * occupancyDays * line.qty;
+          const yearIncome = monthlyIncome * workingMonths;
+          
+          return total + yearIncome;
+        }, 0);
+        
+        if (i === index) {
+          // Последний год: аренда + Final Price
+          cashFlows.push(yearRentalIncome + yearData.finalPrice);
+        } else {
+          // Обычные годы: только аренда
+          cashFlows.push(yearRentalIncome);
+        }
+      }
+      
+      // Расчет IRR
+      const irr = calculateIRR(cashFlows);
+      
+      // Находим максимальное значение IRR
+      if (irr > maxIrr) {
+        maxIrr = irr;
         optimalYear = data.year;
+        optimalTotalValue = totalInvestorCapital;
       }
     });
     
-    // Расчет ROI
-    const initialInvestment = project.totals.baseUSD;
-    const totalRoi = ((maxTotalValue - initialInvestment) / initialInvestment) * 100;
-    
-    // ГОДОВОЙ ROI = общий ROI / количество лет
-    const annualRoi = optimalYear > 0 ? totalRoi / optimalYear : 0;
-    
     return {
       year: optimalYear,
-      totalValue: maxTotalValue,
-      roi: totalRoi,
-      annualRoi: annualRoi
+      totalValue: optimalTotalValue,
+      irr: maxIrr
     };
-  }, [lines, catalog, handoverMonth, startMonth, project.totals.baseUSD]);
+  }, [lines, catalog, handoverMonth, startMonth, project.totals.finalUSD]);
   
   // Функции для работы с линиями (ВОССТАНОВЛЕНЫ СТАРЫЕ)
   const updLine = (id, patch) => setLines(prev => prev.map(l => l.id === id ? {...l, ...patch} : l));
@@ -1566,8 +1609,9 @@ function App() {
             <div className="muted">{t.cleanLeaseholdTerm}</div>
             <div className="v">{totalLeaseholdTerm.years} {t.years} {totalLeaseholdTerm.months} {t.months}</div>
           </div>
+                   {/* НОВЫЙ ПАРАМЕТР: Точка выхода с максимальным IRR */}
           <div className="kpi">
-            <div className="muted">Точка выхода с макс. ROI</div>
+            <div className="muted">Точка выхода с макс. IRR</div>
             <div className="v">
               {(() => {
                 const realYear = startMonth.getFullYear() + handoverMonth / 12 + calculateOptimalExitPoint.year;
@@ -1575,7 +1619,7 @@ function App() {
               })()}
             </div>
             <div className="muted" style={{fontSize: '0.8em'}}>
-              Годовой ROI: {calculateOptimalExitPoint.annualRoi.toFixed(1)}%
+              IRR: {calculateOptimalExitPoint.irr.toFixed(1)}%
             </div>
           </div>
         </div>
