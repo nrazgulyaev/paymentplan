@@ -678,94 +678,98 @@ function App() {
   };
 
   // НОВАЯ ФУНКЦИЯ: Генерация данных для таблицы факторов
-  const generateFactorsData = (villa) => {
-    try {
-      if (!villa || !villa.leaseholdEndDate) return [];
+const generateFactorsData = (villa) => {
+  try {
+    if (!villa || !villa.leaseholdEndDate) return [];
+    
+    const selectedLine = lines.find(l => l.villaId === villa.villaId);
+    if (!selectedLine) return [];
+    
+    const totalYears = Math.ceil((villa.leaseholdEndDate.getFullYear() - startMonth.getFullYear() - months / 12));
+    const data = [];
+    
+    for (let year = -1; year <= totalYears; year++) {
+      const yearOffset = year < 0 ? 0 : year;
+      const totalLeaseholdYears = (villa.leaseholdEndDate.getFullYear() - startMonth.getFullYear() - months / 12);
       
-      const selectedLine = lines.find(l => l.villaId === villa.villaId);
-      if (!selectedLine) return [];
+      let finalPrice = 0;
+      let leaseFactorValue = 1;
+      let ageFactorValue = 1;
+      let brandFactorValue = 1;
+      let inflationFactorValue = 1;
       
-      const totalYears = Math.ceil((villa.leaseholdEndDate.getFullYear() - startMonth.getFullYear() - months / 12));
-      const data = [];
-      
-      for (let year = -1; year <= totalYears; year++) {
-        const yearOffset = year < 0 ? 0 : year;
-        const totalLeaseholdYears = (villa.leaseholdEndDate.getFullYear() - startMonth.getFullYear() - months / 12);
+      if (year >= 0) {
+        // Рыночная цена на ключах
+        const marketPriceAtHandover = calculateMarketPriceAtHandover(villa, selectedLine);
         
-        let finalPrice = 0;
-        let leaseFactorValue = 1;
-        let ageFactorValue = 1;
-        let brandFactorValue = 1;
-        let inflationFactorValue = 1;
+        // Факторы ценообразования
+        leaseFactorValue = leaseFactor(yearOffset, totalLeaseholdYears, pricingConfig.leaseAlpha);
+        ageFactorValue = ageFactor(yearOffset, pricingConfig.agingBeta);
+        brandFactorValue = brandFactor(yearOffset, pricingConfig);
+        inflationFactorValue = Math.pow(1 + pricingConfig.inflationRatePct / 100, yearOffset);
         
-        if (year >= 0) {
-          // Рыночная цена на ключах
-          const marketPriceAtHandover = calculateMarketPriceAtHandover(villa, selectedLine);
-          
-          // Факторы ценообразования
-          leaseFactorValue = leaseFactor(yearOffset, totalLeaseholdYears, pricingConfig.leaseAlpha);
-          ageFactorValue = ageFactor(yearOffset, pricingConfig.agingBeta);
-          brandFactorValue = brandFactor(yearOffset, pricingConfig);
-          inflationFactorValue = Math.pow(1 + pricingConfig.inflationRatePct / 100, yearOffset);
-          
-          // Итоговая цена
-          finalPrice = marketPriceAtHandover * leaseFactorValue * ageFactorValue * brandFactorValue * inflationFactorValue;
-        } else {
-          // До получения ключей: базовая цена с ростом
-          const monthsToHandover = handoverMonth + year + 1;
-          const monthlyGrowth = (selectedLine.monthlyPriceGrowthPct || 2) / 100;
-          finalPrice = villa.baseUSD * Math.pow(1 + monthlyGrowth, monthsToHandover);
-        }
-        
-        // Доходность от аренды
-        const rentalIncome = calculateRentalIncomeForYear(lines, year, handoverMonth, startMonth);
-        
-        // ROI расчеты
-        let annualRoi = 0;
-        let cumulativeRoi = 0;
-        let irr = 0;
-        
-        if (year >= 0) {
-          // ROI за год
-          const previousFinalPrice = year === 0 ? 
-            calculateMarketPriceAtHandover(villa, selectedLine) :
-            generateFactorsData(villa)[year]?.finalPrice || 0;
-          
-          if (previousFinalPrice > 0) {
-            annualRoi = ((rentalIncome + (finalPrice - previousFinalPrice)) / previousFinalPrice) * 100;
-          }
-          
-          // Итоговый ROI
-          const totalInvestment = project?.totals?.finalUSD || 0;
-          if (totalInvestment > 0) {
-            cumulativeRoi = ((rentalIncome + finalPrice - totalInvestment) / totalInvestment) * 100;
-          }
-          
-          // IRR (упрощенный)
-          irr = calculateIRR([-totalInvestment, rentalIncome, finalPrice]);
-        }
-        
-        data.push({
-          year,
-          finalPrice,
-          leaseFactor: leaseFactorValue,
-          ageFactor: ageFactorValue,
-          brandFactor: brandFactorValue,
-          inflationFactor: inflationFactorValue,
-          rentalIncome,
-          annualRoi,
-          cumulativeRoi,
-          irr
-        });
+        // Итоговая цена
+        finalPrice = marketPriceAtHandover * leaseFactorValue * ageFactorValue * brandFactorValue * inflationFactorValue;
+      } else {
+        // До получения ключей: базовая цена с ростом
+        const monthsToHandover = handoverMonth + year + 1;
+        const monthlyGrowth = (selectedLine.monthlyPriceGrowthPct || 2) / 100;
+        finalPrice = villa.baseUSD * Math.pow(1 + monthlyGrowth, monthsToHandover);
       }
       
-      return data;
-    } catch (error) {
-      console.error('Ошибка в generateFactorsData:', error);
-      return [];
+      // Доходность от аренды
+      const rentalIncome = calculateRentalIncomeForYear(lines, year, handoverMonth, startMonth);
+      
+      // ROI расчеты
+      let annualRoi = 0;
+      let cumulativeRoi = 0;
+      let irr = 0;
+      
+      if (year >= 0) {
+        // ROI за год - ИСПРАВЛЕНО: убираем рекурсивный вызов
+        let previousFinalPrice = 0;
+        if (year === 0) {
+          previousFinalPrice = calculateMarketPriceAtHandover(villa, selectedLine);
+        } else {
+          // Используем данные из предыдущей итерации цикла
+          const previousData = data[data.length - 1];
+          previousFinalPrice = previousData ? previousData.finalPrice : 0;
+        }
+        
+        if (previousFinalPrice > 0) {
+          annualRoi = ((rentalIncome + (finalPrice - previousFinalPrice)) / previousFinalPrice) * 100;
+        }
+        
+        // Итоговый ROI
+        const totalInvestment = project?.totals?.finalUSD || 0;
+        if (totalInvestment > 0) {
+          cumulativeRoi = ((rentalIncome + finalPrice - totalInvestment) / totalInvestment) * 100;
+        }
+        
+        // IRR (упрощенный)
+        irr = calculateIRR([-totalInvestment, rentalIncome, finalPrice]);
+      }
+      
+      data.push({
+        year,
+        finalPrice,
+        leaseFactor: leaseFactorValue,
+        ageFactor: ageFactorValue,
+        brandFactor: brandFactorValue,
+        inflationFactor: inflationFactorValue,
+        rentalIncome,
+        annualRoi,
+        cumulativeRoi,
+        irr
+      });
     }
-  };
-
+    
+    return data;
+  } catch (error) {
+    console.error('Ошибка в generateFactorsData:', error);
+    return [];
+  }
+};
   // НОВАЯ ФУНКЦИЯ: Расчет точки выхода с максимальным IRR
   const calculateOptimalExitPoint = useMemo(() => {
     if (lines.length === 0) return { year: 0, totalValue: 0, irr: 0, cumulativeRoi: 0 };
