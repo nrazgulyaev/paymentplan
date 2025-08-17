@@ -778,24 +778,12 @@ if (month > 0 && totalPaymentsToDate > 0) {
 }
 
 // 3. Итоговый ROI (переводим в годовой показатель)
+
 let cumulativeRoi = 0;
 if (totalPaymentsToDate > 0) {
-  // ОТЛАДКА: проверить значения
-  console.log('=== ОТЛАДКА ROI ===');
-  console.log('Месяц:', month);
-  console.log('cumulativeRentalIncome:', cumulativeRentalIncome);
-  console.log('finalPrice:', finalPrice);
-  console.log('project.totals.finalUSD:', project.totals.finalUSD);
-  console.log('totalPaymentsToDate:', totalPaymentsToDate);
-
-  const cumulativeRoiRaw = ((cumulativeRentalIncome + finalPrice - project.totals.finalUSD) / totalPaymentsToDate) * 100;
-  console.log('cumulativeRoiRaw:', cumulativeRoiRaw);
-
+  const cumulativeRoiRaw = ((finalPrice - project.totals.finalUSD) / totalPaymentsToDate) * 100;
   const monthsElapsed = month + 1;
   cumulativeRoi = cumulativeRoiRaw * (12 / monthsElapsed);
-  console.log('monthsElapsed:', monthsElapsed);
-  console.log('cumulativeRoi (годовой):', cumulativeRoi);
-  console.log('========================');
 }
 
 // 4. IRR (переводим в годовой показатель)
