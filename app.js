@@ -558,48 +558,7 @@ function App() {
     }
   };
 
-  // НОВАЯ ФУНКЦИЯ: Расчет IRR (внутренняя норма доходности)
-  const calculateIRR = (cashFlows, maxIterations = 100, tolerance = 0.0001) => {
-    try {
-      if (cashFlows.length < 2) return 0;
-      
-      let guess = 0.1; // Начальное предположение 10%
-      
-      for (let iteration = 0; iteration < maxIterations; iteration++) {
-        let npv = 0;
-        let derivative = 0;
-        
-        for (let i = 0; i < cashFlows.length; i++) {
-          const discountFactor = Math.pow(1 + guess, i);
-          npv += cashFlows[i] / discountFactor;
-          
-          if (i > 0) {
-            derivative -= i * cashFlows[i] / (discountFactor * (1 + guess));
-          }
-        }
-        
-        if (Math.abs(npv) < tolerance) {
-          return guess * 100; // Возвращаем в процентах
-        }
-        
-        if (Math.abs(derivative) < tolerance) {
-          break; // Избегаем деления на ноль
-        }
-        
-        guess = guess - npv / derivative;
-        
-        // Ограничиваем разумными пределами
-        if (guess < -0.99 || guess > 10) {
-          break;
-        }
-      }
-      
-      return guess * 100; // Возвращаем в процентах
-    } catch (error) {
-      console.error('Ошибка расчета IRR:', error);
-      return 0;
-    }
-  };
+ 
 
   // ИСПРАВЛЕНО: Используем startMonth вместо new Date()
   const calculateVillaPrice = (villa, yearOffset) => {
