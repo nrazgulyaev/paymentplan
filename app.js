@@ -1774,7 +1774,7 @@ const calculateOptimalExitPoint = useMemo(() => {
   </div>
 </div>
 
-{/* Таблица факторов - ПРАВИЛЬНЫЙ ПОРЯДОК */}
+{/* Таблица факторов - ИСПРАВЛЕННЫЙ КОД */}
 <div className="factors-table-container">
   <h4>Таблица факторов</h4>
   <div className="factors-table-scroll">
@@ -1798,18 +1798,18 @@ const calculateOptimalExitPoint = useMemo(() => {
             .find(v => v.villaId === lines[0]?.villaId);
           return selectedVilla && selectedVilla.leaseholdEndDate ? 
             generatePricingData(selectedVilla).map((data, index) => {
-              // 1. Сначала вычисляем реальный год
+              // ВСЕ переменные должны быть определены здесь, внутри map
               const realYear = startMonth.getFullYear() + handoverMonth / 12 + data.year;
               const displayYear = Math.floor(realYear);
               
-              // 2. Затем Final Price
+              // Final Price = итоговая цена из KPI × все коэффициенты
               const finalPrice = project.totals.finalUSD * 
                 Math.pow(1 + pricingConfig.inflationRatePct / 100, data.year) * 
                 data.leaseFactor * 
                 data.ageFactor * 
                 data.brandFactor;
               
-              // 3. ПОСЛЕ этого рассчитываем доходность от аренды
+              // Доходность от аренды для этого года
               const rentalIncome = lines.reduce((total, line) => {
                 if (data.year < 0) return total;
                 
@@ -1838,9 +1838,10 @@ const calculateOptimalExitPoint = useMemo(() => {
                 return total + yearIncome;
               }, 0);
               
-              // 4. И ТОЛЬКО ПОСЛЕ этого используем обе переменные
+              // Общий капитал инвестора
               const totalInvestorCapital = finalPrice + rentalIncome;
               
+              // Возвращаем JSX только после определения ВСЕХ переменных
               return (
                 <tr key={index}>
                   <td>{displayYear}</td>
