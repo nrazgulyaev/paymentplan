@@ -539,33 +539,35 @@ function App() {
   };
 
   // ИСПРАВЛЕНО: Используем startMonth вместо new Date()
-  const generatePricingData = (villa) => {
-    try {
-      if (!villa || !villa.leaseholdEndDate) return [];
+  // ИСПРАВЛЕНО: Функция generatePricingData - убрано ограничение по годам
+const generatePricingData = (villa) => {
+  try {
+    if (!villa || !villa.leaseholdEndDate) return [];
+    
+    const totalYears = Math.ceil((villa.leaseholdEndDate - startMonth) / (365 * 24 * 60 * 60 * 1000));
+    const data = [];
+    
+    // УБРАНО ОГРАНИЧЕНИЕ: было Math.min(totalYears, 20), теперь все годы
+    for (let year = 0; year <= totalYears; year++) {
+      const marketPrice = villa.baseUSD * Math.pow(1 + pricingConfig.inflationRatePct / 100, year);
+      const finalPrice = calculateVillaPrice(villa, year);
       
-      const totalYears = Math.ceil((villa.leaseholdEndDate - startMonth) / (365 * 24 * 60 * 60 * 1000));
-      const data = [];
-      
-      for (let year = 0; year <= Math.min(totalYears, 20); year++) {
-        const marketPrice = villa.baseUSD * Math.pow(1 + pricingConfig.inflationRatePct / 100, year);
-        const finalPrice = calculateVillaPrice(villa, year);
-        
-        data.push({
-          year,
-          marketPrice,
-          finalPrice,
-          leaseFactor: leaseFactor(year, totalYears, pricingConfig.leaseAlpha),
-          ageFactor: ageFactor(year, pricingConfig.agingBeta),
-          brandFactor: brandFactor(year, pricingConfig)
-        });
-      }
-      
-      return data;
-    } catch (error) {
-      console.error('Ошибка в generatePricingData:', error);
-      return [];
+      data.push({
+        year,
+        marketPrice,
+        finalPrice,
+        leaseFactor: leaseFactor(year, totalYears, pricingConfig.leaseAlpha),
+        ageFactor: ageFactor(year, pricingConfig.agingBeta),
+        brandFactor: brandFactor(year, pricingConfig)
+      });
     }
-  };
+    
+    return data;
+  } catch (error) {
+    console.error('Ошибка в generatePricingData:', error);
+    return [];
+  }
+};
 
   // Функции для работы с проектами (ВОССТАНОВЛЕНЫ СТАРЫЕ)
   const addProject = () => {
