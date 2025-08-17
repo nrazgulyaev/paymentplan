@@ -581,8 +581,7 @@ const calculateMarketPriceAtHandover = (villa, line) => {
   };
 
   // ИСПРАВЛЕНО: Используем startMonth вместо new Date()
-  // ИСПРАВЛЕНО: Функция generatePricingData - убрано ограничение по годам
-const generatePricingData = (villa) => {
+  const generatePricingData = (villa) => {
   try {
     if (!villa || !villa.leaseholdEndDate) return [];
     
@@ -593,21 +592,20 @@ const generatePricingData = (villa) => {
     for (let year = 0; year <= totalYears; year++) {
     
       // Получаем линию для расчета месячного роста
-const selectedLine = lines.find(l => l.villaId === villa.villaId);
+      const selectedLine = lines.find(l => l.villaId === villa.villaId);
 
-// Рыночная цена на ключах
-const marketPriceAtHandover = calculateMarketPriceAtHandover(villa, selectedLine);
+      // Рыночная цена на ключах
+      const marketPriceAtHandover = calculateMarketPriceAtHandover(villa, selectedLine);
 
-// Final Price = рыночная цена на ключах × коэффициенты × инфляция
-const finalPrice = marketPriceAtHandover * 
-  Math.pow(1 + pricingConfig.inflationRatePct / 100, year) * 
-  leaseFactor(year, totalYears, pricingConfig.leaseAlpha) * 
-  ageFactor(year, pricingConfig.agingBeta) * 
-  brandFactor(year, pricingConfig);
+      // Final Price = рыночная цена на ключах × коэффициенты × инфляция
+      const finalPrice = marketPriceAtHandover * 
+        Math.pow(1 + pricingConfig.inflationRatePct / 100, year) * 
+        leaseFactor(year, totalYears, pricingConfig.leaseAlpha) * 
+        ageFactor(year, pricingConfig.agingBeta) * 
+        brandFactor(year, pricingConfig);
       
       data.push({
         year,
-        marketPrice,
         finalPrice,
         leaseFactor: leaseFactor(year, totalYears, pricingConfig.leaseAlpha),
         ageFactor: ageFactor(year, pricingConfig.agingBeta),
@@ -942,9 +940,24 @@ const calculateOptimalExitPoint = useMemo(() => {
     }, 0);
     
   
+// Получаем виллу для расчета
+const selectedVilla = catalog
+  .flatMap(p => p.villas)
+  .find(v => v.villaId === lines[0]?.villaId);
+
+// Рыночная цена на ключах
+const marketPriceAtHandover = calculateMarketPriceAtHandover(selectedVilla, lines[0]);
+
+// Final Price = рыночная цена на ключах × коэффициенты × инфляция
+const finalPrice = marketPriceAtHandover * 
+  Math.pow(1 + pricingConfig.inflationRatePct / 100, data.year) * 
+  data.leaseFactor * 
+  data.ageFactor * 
+  data.brandFactor;
 
 // Общий капитал инвестора = Final Price + доход от аренды
 const totalInvestorCapital = finalPrice + rentalIncome;
+    
     // Находим максимальное значение
     if (totalInvestorCapital > maxTotalValue) {
             maxTotalValue = totalInvestorCapital;
@@ -1912,23 +1925,7 @@ const totalInvestorCapital = finalPrice + rentalIncome;
                 return total + yearIncome;
               }, 0);
               
-              // Получаем виллу для расчета
-const selectedVilla = catalog
-  .flatMap(p => p.villas)
-  .find(v => v.villaId === lines[0]?.villaId);
-
-// Рыночная цена на ключах
-const marketPriceAtHandover = calculateMarketPriceAtHandover(selectedVilla, lines[0]);
-
-// Final Price = рыночная цена на ключах × коэффициенты × инфляция
-const finalPrice = marketPriceAtHandover * 
-  Math.pow(1 + pricingConfig.inflationRatePct / 100, data.year) * 
-  data.leaseFactor * 
-  data.ageFactor * 
-  data.brandFactor;
-
-// Общий капитал инвестора = Final Price + доход от аренды
-const totalInvestorCapital = finalPrice + rentalIncome;
+            
               
               // Возвращаем JSX только после определения ВСЕХ переменных
               return (
