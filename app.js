@@ -45,7 +45,9 @@ function App() {
           // НОВЫЕ ПОЛЯ ДЛЯ ЛИЗХОЛДА И АРЕНДЫ:
           leaseholdEndDate: new Date(2030, 11, 31), // 31 декабря 2030
           dailyRateUSD: 150,
-          rentalPriceIndexPct: 5 // 5% в год
+          rentalPriceIndexPct: 5, // 5% в год
+          // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
+          monthlyPriceGrowthPct: 2 // 2% в месяц
         },
         {
           villaId: 'ahao-3br', 
@@ -55,7 +57,9 @@ function App() {
           baseUSD: 318500,
           leaseholdEndDate: new Date(2030, 11, 31),
           dailyRateUSD: 180,
-          rentalPriceIndexPct: 5
+          rentalPriceIndexPct: 5,
+          // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
+          monthlyPriceGrowthPct: 2
         }
       ]
     },
@@ -71,7 +75,9 @@ function App() {
           baseUSD: 250000,
           leaseholdEndDate: new Date(2030, 11, 31),
           dailyRateUSD: 150,
-          rentalPriceIndexPct: 5
+          rentalPriceIndexPct: 5,
+          // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
+          monthlyPriceGrowthPct: 2
         },
         {
           villaId: 'enso-3br', 
@@ -81,7 +87,9 @@ function App() {
           baseUSD: 324000,
           leaseholdEndDate: new Date(2030, 11, 31),
           dailyRateUSD: 170,
-          rentalPriceIndexPct: 5
+          rentalPriceIndexPct: 5,
+          // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
+          monthlyPriceGrowthPct: 2
         }
       ]
     }
@@ -108,6 +116,8 @@ function App() {
       monthlyRatePct: null,
       firstPostUSD: 0,
       discountPct: 0,
+      // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
+      monthlyPriceGrowthPct: 2, // 2% в месяц
       // ОБНОВЛЕНО: Новые поля для аренды с индексацией
       dailyRateUSD: 150, // Стоимость проживания в сутки (USD)
       occupancyPct: 75,  // Средняя заполняемость за месяц (%)
@@ -138,6 +148,8 @@ function App() {
     area: 100,
     ppsm: 2500,
     baseUSD: 250000,
+    // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
+    monthlyPriceGrowthPct: 2,
     // НОВЫЕ ПОЛЯ ДЛЯ ЛИЗХОЛДА И АРЕНДЫ:
     leaseholdEndDate: new Date(2030, 11, 31),
     dailyRateUSD: 150,
@@ -258,7 +270,9 @@ function App() {
       rentalIncomeChart: 'График общей доходности от сдачи в аренду',
       totalIncome: 'Общий доход за год',
       cumulativeIncome: 'Накопительный доход',
-      actions: 'Действия'
+      actions: 'Действия',
+      // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
+      monthlyPriceGrowth: 'Месячный рост цены до ключей (%)'
     },
     en: {
       title: 'Arconique / Installments Calculator',
@@ -372,7 +386,9 @@ function App() {
       rentalIncomeChart: 'Chart of total rental income',
       totalIncome: 'Total income per year',
       cumulativeIncome: 'Cumulative income',
-      actions: 'Actions'
+      actions: 'Actions',
+      // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
+      monthlyPriceGrowth: 'Monthly price growth until keys (%)'
     }
   };
 
@@ -614,6 +630,8 @@ const generatePricingData = (villa) => {
       area: 100,
       ppsm: 2500,
       baseUSD: 250000,
+      // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
+      monthlyPriceGrowthPct: 2,
       // НОВЫЕ ПОЛЯ ДЛЯ ЛИЗХОЛДА И АРЕНДЫ:
       leaseholdEndDate: new Date(2030, 11, 31),
       dailyRateUSD: 150,
@@ -652,6 +670,8 @@ const generatePricingData = (villa) => {
       area: newVillaForm.area,
       ppsm: newVillaForm.ppsm,
       baseUSD: newVillaForm.baseUSD,
+      // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
+      monthlyPriceGrowthPct: newVillaForm.monthlyPriceGrowthPct,
       // НОВЫЕ ПОЛЯ ДЛЯ ЛИЗХОЛДА И АРЕНДЫ:
       leaseholdEndDate: newVillaForm.leaseholdEndDate,
       dailyRateUSD: newVillaForm.dailyRateUSD,
@@ -672,6 +692,8 @@ const generatePricingData = (villa) => {
       area: 100, 
       ppsm: 2500, 
       baseUSD: 250000,
+      // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
+      monthlyPriceGrowthPct: 2,
       leaseholdEndDate: new Date(2030, 11, 31),
       dailyRateUSD: 150,
       rentalPriceIndexPct: 5
@@ -686,6 +708,8 @@ const generatePricingData = (villa) => {
       area: villa.area,
       ppsm: villa.ppsm,
       baseUSD: villa.baseUSD,
+      // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
+      monthlyPriceGrowthPct: villa.monthlyPriceGrowthPct || 2,
       leaseholdEndDate: villa.leaseholdEndDate,
       dailyRateUSD: villa.dailyRateUSD,
       rentalPriceIndexPct: villa.rentalPriceIndexPct
@@ -887,7 +911,7 @@ const calculateOptimalExitPoint = useMemo(() => {
     
     // Находим максимальное значение
     if (totalInvestorCapital > maxTotalValue) {
-      maxTotalValue = totalInvestorCapital;
+            maxTotalValue = totalInvestorCapital;
       optimalYear = data.year;
     }
   });
@@ -926,6 +950,8 @@ const calculateOptimalExitPoint = useMemo(() => {
       monthlyRatePct: null,
       firstPostUSD: 0,
       discountPct: 0,
+      // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
+      monthlyPriceGrowthPct: villa.monthlyPriceGrowthPct || 2,
       // ОБНОВЛЕНО: Новые поля для аренды с индексацией
       dailyRateUSD: villa.dailyRateUSD || 150,
       occupancyPct: 75,
@@ -994,6 +1020,7 @@ const calculateOptimalExitPoint = useMemo(() => {
       [t.dailyRate]: ld.line.dailyRateUSD || 0,
       [t.occupancyRate]: ld.line.occupancyPct || 0,
       [t.rentalPriceIndex]: ld.line.rentalPriceIndexPct || 0,
+      [t.monthlyPriceGrowth]: ld.line.monthlyPriceGrowthPct || 0,
       [t.leaseholdEndDate]: ld.line.snapshot?.leaseholdEndDate ? ld.line.snapshot.leaseholdEndDate.toLocaleDateString() : ''    })));
     
     const wb = XLSX.utils.book_new();
@@ -1109,7 +1136,7 @@ const calculateOptimalExitPoint = useMemo(() => {
 
   const delStage = (id) => setStages(prev => prev.filter(s => s.id !== id));
 
-  const updStage = (id, patch) => setStages(prev => prev.map(s => s.id === id ? {...s, ...patch} : s));
+  const updStage = (id, patch) => setStages(prev => prev.map(s => s.id === id ? {...s, ...patch} : l));
 
   return (
     <>
@@ -1253,6 +1280,8 @@ const calculateOptimalExitPoint = useMemo(() => {
                 <th className="col-pre">{t.prePct}</th>
                 {!isClient && <th className="col-months">{t.months}</th>}
                 {!isClient && <th className="col-rate">{t.rate}</th>}
+                {/* НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей (только для редактора) */}
+                {!isClient && <th className="col-monthlyGrowth">{t.monthlyPriceGrowth}</th>}
                 {/* ОБНОВЛЕНО: Новые колонки для аренды с индексацией */}
                 <th className="col-dailyRate">{t.dailyRate}</th>
                 <th className="col-occupancyRate">{t.occupancyRate}</th>
@@ -1349,6 +1378,21 @@ const calculateOptimalExitPoint = useMemo(() => {
                         onChange={e => updLine(ld.line.id, {monthlyRatePct: clamp(parseFloat(e.target.value || 0), 0, 1000)})}
                         disabled={!ld.line.ownTerms}
                         style={{width: '100%', minWidth: '60px'}}
+                      />
+                    </td>
+                  )}
+                  
+                  {/* НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей (только для редактора) */}
+                  {!isClient && (
+                    <td className="col-monthlyGrowth">
+                      <input 
+                        type="number" 
+                        min="0" 
+                        max="50" 
+                        step="0.1" 
+                        value={ld.line.monthlyPriceGrowthPct || 2} 
+                        onChange={e => updLine(ld.line.id, {monthlyPriceGrowthPct: clamp(parseFloat(e.target.value || 0), 0, 50)})}
+                        style={{width: '100%', minWidth: '50px'}}
                       />
                     </td>
                   )}
@@ -1805,7 +1849,7 @@ const calculateOptimalExitPoint = useMemo(() => {
               // Final Price = итоговая цена из KPI × все коэффициенты
               const finalPrice = project.totals.finalUSD * 
                 Math.pow(1 + pricingConfig.inflationRatePct / 100, data.year) * 
-                data.leaseFactor * 
+                             data.leaseFactor * 
                 data.ageFactor * 
                 data.brandFactor;
               
@@ -1906,7 +1950,7 @@ const calculateOptimalExitPoint = useMemo(() => {
                       <div className="villa-info">
                         <strong>{villa.name}</strong>
                         <span>{villa.area} м² × ${villa.ppsm} = {fmtMoney(villa.baseUSD, 'USD')}</span>
-                        <span>{t.dailyRate}: ${villa.dailyRateUSD} | {t.rentalPriceIndex}: {villa.rentalPriceIndexPct}%</span>
+                        <span>{t.dailyRate}: ${villa.dailyRateUSD} | {t.rentalPriceIndex}: {villa.rentalPriceIndexPct}% | {t.monthlyPriceGrowth}: {villa.monthlyPriceGrowthPct}%</span>
                       </div>
                       <button className="btn primary small">{t.addSelected}</button>
                     </div>
@@ -1982,6 +2026,20 @@ const calculateOptimalExitPoint = useMemo(() => {
                 value={newVillaForm.baseUSD} 
                 onChange={e => setNewVillaForm(prev => ({...prev, baseUSD: +e.target.value}))}
                 placeholder="Базовая цена"
+                className="input"
+              />
+            </div>
+            {/* НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей */}
+            <div className="form-group">
+              <label>{t.monthlyPriceGrowth}:</label>
+              <input 
+                type="number" 
+                min="0" 
+                max="50" 
+                step="0.1" 
+                value={newVillaForm.monthlyPriceGrowthPct} 
+                onChange={e => setNewVillaForm(prev => ({...prev, monthlyPriceGrowthPct: +e.target.value}))}
+                placeholder="Месячный рост цены (%)"
                 className="input"
               />
             </div>
@@ -2290,6 +2348,11 @@ function CatalogManager({
                       <span className="label">{t.villaBasePrice}:</span>
                       <span className="value">{fmtMoney(villa.baseUSD, 'USD')}</span>
                     </div>
+                    {/* НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей */}
+                    <div className="detail-row">
+                      <span className="label">{t.monthlyPriceGrowth}:</span>
+                      <span className="value">{villa.monthlyPriceGrowthPct || 2}%</span>
+                    </div>
                     {/* НОВЫЕ ПОЛЯ ДЛЯ ЛИЗХОЛДА И АРЕНДЫ */}
                     <div className="detail-row">
                       <span className="label">{t.leaseholdEndDate}:</span>
@@ -2353,3 +2416,5 @@ function CatalogManager({
 // ===== РЕНДЕРИНГ ПРИЛОЖЕНИЯ =====
 const root = createRoot(document.getElementById('root'));
 root.render(<App />);
+                
+      
