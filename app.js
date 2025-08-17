@@ -2393,7 +2393,6 @@ monthlyData.push({
                 <thead>
                   <tr>
                     <th>Месяц</th>
-                    <th>Год</th>
                     <th>Lease Factor</th>
                     <th>Age Factor</th>
                     <th>Brand Factor</th>
