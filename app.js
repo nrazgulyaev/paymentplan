@@ -473,6 +473,8 @@ function App() {
     return yearlyIncome;
   };
 
+  
+
   // НОВЫЕ ФУНКЦИИ ЦЕНООБРАЗОВАНИЯ - ИСПРАВЛЕНЫ
   const leaseFactor = (year, totalYears, alpha) => {
     try {
@@ -907,6 +909,10 @@ const calculateOptimalExitPoint = useMemo(() => {
     annualRoi: annualRoi
   };
 }, [lines, catalog, handoverMonth, startMonth, project.totals.baseUSD]);
+
+
+
+
   
   // Функции для работы с линиями (ВОССТАНОВЛЕНЫ СТАРЫЕ)
   const updLine = (id, patch) => setLines(prev => prev.map(l => l.id === id ? {...l, ...patch} : l));
