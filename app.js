@@ -159,36 +159,36 @@ function App() {
   // ОБНОВЛЕНО: Переводы с новыми полями
   const T = {
     ru: {
-      title: 'Arconique / Калькулятор рассрочки для любимых клиентов',
+      title: 'Arconique / Калькулятор рассрочки и финмодель',
       lang: 'Язык интерфейса',
       currencyDisplay: 'Валюта отображения',
       idrRate: 'IDR за 1 USD',
       eurRate: 'EUR за 1 USD',
-      handoverMonth: 'Месяц получения ключей',
+      handoverMonth: 'Срок строительства',
       globalTerm: 'Глобальный срок post‑handover (6–24 мес)',
       globalRate: 'Глобальная ставка, %/мес',
-      clientTerm: 'Срок post‑handover (мес)',
-      startMonth: 'Начальный месяц',
-      stagesTitle: 'Базовая рассрочка',
+      clientTerm: 'Post‑handover рассрочка (мес)',
+      startMonth: 'Заключение договора',
+      stagesTitle: 'Рассрочка до получения ключей (установите комфортный план оплаты)',
       stage: 'Этап',
       percent: '%',
       month: 'Месяц',
       addStage: 'Добавить этап',
       delete: 'Удалить',
-      villasTitle: 'Расчёт (позиции)',
+      villasTitle: 'Объект недвижимости',
       project: 'Проект',
       villa: 'Вилла',
       qty: 'Кол-во',
       area: 'м²',
       ppsm: '$ / м²',
-      price: 'Базовая стоимость (USD)',
+      price: 'Текущая стоимость (USD)',
       discount: 'Скидка, %',
       prePct: 'До ключей, %',
       months: 'Срок рассрочки, мес',
       rate: 'Ставка, %/мес',
-      lineTotal: 'Итоговая стоимость',
+      lineTotal: 'Итоговая стоимость (с учетом выбранного плана рассрочки)',
       addFromCatalog: 'Добавить из каталога',
-      cashflowTitle: 'Сводный кэшфлоу по месяцам',
+      cashflowTitle: 'Полный график платежей',
       exportCSV: 'Экспорт CSV',
       exportXLSX: 'Экспорт Excel',
       exportPDF: 'Сохранить в PDF',
@@ -196,7 +196,7 @@ function App() {
       keys: 'Ключи через',
       client: 'Клиент',
       editor: 'Редактор',
-      catalogTitle: 'Каталог проектов и вилл (редактор)',
+      catalogTitle: 'Каталог проектов (редактор)',
       addProject: 'Добавить проект',
       addVilla: 'Добавить виллу',
       importJSON: 'Импорт JSON',
@@ -248,23 +248,23 @@ function App() {
       reportCreated: 'Отчет создан:',
       projectSummary: 'Сводка проекта',
       totalAmount: 'Общая сумма:',
-      finalPrice: 'Итоговая цена:',
+      finalPrice: 'Итоговая стоимость:',
       interest: 'Проценты:',
       monthlyCashflow: 'Денежный поток по месяцам',
       month: 'Месяц',
       description: 'Описание',
-      amountDue: 'Сумма к оплате',
-      remainingBalance: 'Остаток долга',
-      after: 'После ключей',
+      amountDue: 'Платеж',
+      remainingBalance: 'Остаток по договору',
+      after: 'Оплата после ключей',
       firstPayment: 'Первый платёж',
       // ОБНОВЛЕНО: Новые переводы для лизхолда и индексации
       dailyRate: 'Стоимость проживания в сутки (USD)',
       occupancyRate: 'Средняя заполняемость за месяц (%)',
-      rentalIncome: 'Прогнозируемый доход от аренды в месяц',
+      rentalIncome: 'Прогнозируемый доход от аренды',
       netPayment: 'Чистый платеж/доход в месяц',
       leaseholdEndDate: 'Дата окончания лизхолда',
-      rentalPriceIndex: 'Индексация цены аренды в год (%)',
-      cleanLeaseholdTerm: 'Чистый срок лизхолда',
+      rentalPriceIndex: 'Рост цены аренды в год (%)',
+      cleanLeaseholdTerm: 'Чистый срок лизхолда (с момента получения ключей)',
       years: 'лет',
       months: 'месяцев',
       rentalIncomeChart: 'График общей доходности от сдачи в аренду',
@@ -275,36 +275,36 @@ function App() {
       monthlyPriceGrowth: 'Месячный рост цены до ключей (%)'
     },
     en: {
-      title: 'Arconique / Installments Calculator',
+      title: 'Arconique / Installments Calculator & Financial Model',
       lang: 'Language',
       currencyDisplay: 'Display currency',
       idrRate: 'IDR per 1 USD',
       eurRate: 'EUR per 1 USD',
-      handoverMonth: 'Handover month',
+      handoverMonth: 'Construction period',
       globalTerm: 'Global post‑handover term (6–24 mo)',
       globalRate: 'Global rate, %/month',
-      clientTerm: 'Post‑handover term (months)',
-      startMonth: 'Start month',
-      stagesTitle: 'Basic installments',
+      clientTerm: 'Post‑handover installments (months)',
+      startMonth: 'Contract signing',
+      stagesTitle: 'Pre-handover installments (set comfortable payment plan)',
       stage: 'Stage',
       percent: '%',
       month: 'Month',
       addStage: 'Add stage',
       delete: 'Delete',
-      villasTitle: 'Calculation (lines)',
+      villasTitle: 'Real estate object',
       project: 'Project',
       villa: 'Villa',
       qty: 'Qty',
       area: 'sqm',
       ppsm: '$ / sqm',
-      price: 'Base Price (USD)',
+      price: 'Current value (USD)',
       discount: 'Discount, %',
       prePct: 'Pre‑handover, %',
       months: 'Installment term, mo',
       rate: 'Rate, %/mo',
-      lineTotal: 'Final price',
+      lineTotal: 'Final value (considering selected installment plan)',
       addFromCatalog: 'Add from catalog',
-      cashflowTitle: 'Monthly consolidated cashflow',
+      cashflowTitle: 'Complete payment schedule',
       exportCSV: 'Export CSV',
       exportXLSX: 'Export Excel',
       exportPDF: 'Save to PDF',
@@ -312,7 +312,7 @@ function App() {
       keys: 'Keys in',
       client: 'Client',
       editor: 'Editor',
-      catalogTitle: 'Projects & Villas Catalog (editor)',
+      catalogTitle: 'Projects Catalog (editor)',
       addProject: 'Add project',
       addVilla: 'Add villa',
       importJSON: 'Import JSON',
@@ -364,23 +364,23 @@ function App() {
       reportCreated: 'Report created:',
       projectSummary: 'Project Summary',
       totalAmount: 'Total amount:',
-      finalPrice: 'Final price:',
+      finalPrice: 'Final value:',
       interest: 'Interest:',
       monthlyCashflow: 'Monthly cashflow',
       month: 'Month',
       description: 'Description',
-      amountDue: 'Amount due',
-      remainingBalance: 'Remaining balance',
-      after: 'After keys',
+      amountDue: 'Payment',
+      remainingBalance: 'Contract balance',
+      after: 'Payment after keys',
       firstPayment: 'First payment',
       // ОБНОВЛЕНО: Новые переводы для лизхолда и индексации
       dailyRate: 'Daily accommodation rate (USD)',
       occupancyRate: 'Average monthly occupancy (%)',
-      rentalIncome: 'Projected monthly rental income',
+      rentalIncome: 'Projected rental income',
       netPayment: 'Net payment/income per month',
       leaseholdEndDate: 'Leasehold end date',
-      rentalPriceIndex: 'Rental price indexation per year (%)',
-      cleanLeaseholdTerm: 'Clean leasehold term',
+      rentalPriceIndex: 'Rental price growth per year (%)',
+      cleanLeaseholdTerm: 'Clean leasehold term (from key handover)',
       years: 'years',
       months: 'months',
       rentalIncomeChart: 'Chart of total rental income',
@@ -950,7 +950,7 @@ monthlyData.push({
     });
   };
 
-  // НОВАЯ ФУНКЦИЯ: Редактирование виллы
+    // НОВАЯ ФУНКЦИЯ: Редактирование виллы
   const editVilla = (villa, projectId) => {
     setNewVillaForm({
       villaId: villa.villaId,
@@ -1748,7 +1748,7 @@ monthlyData.push({
           <div className="row">
             <span className="badge">{t.lines}: {lines.length}</span>
             <span className="badge">{t.keys} {handoverMonth} {lang === 'ru' ? 'мес.' : 'mo.'}</span>
-            <span className="badge">{lang === 'ru' ? 'Срок:' : 'Term:'} {months} {lang === 'ru' ? 'мес.' : 'mo.'}</span>
+            <span className="badge">Срок рассрочки после получения ключей: {months} {lang === 'ru' ? 'мес.' : 'mo.'}</span>
           </div>
           <div className="muted">{isClient ? t.client : t.editor}</div>
         </div>
@@ -1762,11 +1762,11 @@ monthlyData.push({
             </div>
           )}
           <div className="kpi">
-            <div className="muted">{t.amountDue}</div>
+            <div className="muted">Оплата до ключей</div>
             <div className="v">{fmtMoney(project.totals.preUSD, currency)}</div>
           </div>
           <div className="kpi">
-            <div className="muted">{t.after}</div>
+            <div className="muted">Оплата после ключей</div>
             <div className="v">{fmtMoney(project.totals.afterUSD, currency)}</div>
           </div>
           {!isClient && (
@@ -1776,7 +1776,7 @@ monthlyData.push({
             </div>
           )}
           <div className="kpi">
-  <div className="muted">{t.finalPrice}</div>
+  <div className="muted">Итоговая стоимость</div>
   <div className="v">{fmtMoney(project.totals.finalUSD, currency)}</div>
 </div>
 
@@ -1851,11 +1851,11 @@ monthlyData.push({
                 return Math.floor(realYear);
               })()}
             </div>
-            <div className="muted" style={{fontSize: '0.8em'}}>
+                        <div className="muted" style={{fontSize: '0.8em'}}>
               IRR: {calculateOptimalExitPoint.irr.toFixed(1)}%
             </div>
             <div className="muted" style={{fontSize: '0.8em'}}>
-              Итоговый ROI: {(() => {
+              Итоговый ROI (накопительный): {(() => {
                 if (calculateOptimalExitPoint.year === 0) return '0.0%';
                 
                 const selectedVilla = catalog
@@ -2035,7 +2035,7 @@ monthlyData.push({
       {/* 7. НОВЫЙ БЛОК: Параметры расчёта и график ценообразования */}
       {lines.length > 0 && (
         <div className="card">
-          <h3>📊 Параметры расчёта</h3>
+          <h3>Финмодель доходности инвестиций</h3>
           
           {/* Параметры расчёта (read-only) */}
           <div className="calculation-params-compact">
@@ -2059,7 +2059,7 @@ monthlyData.push({
           
           {/* График ценообразования - С ОБЩИМ МАСШТАБОМ ДЛЯ ОБЕИХ ЛИНИЙ */}
           <div className="pricing-chart-container">
-            <h4>Динамика цены виллы</h4>
+            <h4>Динамика стоимости виллы и арендного дохода</h4>
             <p className="chart-subtitle">Влияние факторов на цену и доходность от аренды</p>
             <div className="pricing-chart-svg" id="pricing-chart-svg">
               <svg width="100%" height="300" viewBox="0 0 800 300">
@@ -2215,9 +2215,9 @@ monthlyData.push({
                         {/* Легенда - ОБЕ ЛИНИИ */}
                         <g className="chart-legend">
                           <rect x="600" y="20" width="15" height="15" fill="#2196F3"/>
-                          <text x="620" y="32" fontSize="12" fill="#333">Final Price</text>
+                          <text x="620" y="32" fontSize="12" fill="#333">Рыночная стоимость</text>
                           <rect x="600" y="40" width="15" height="15" fill="#4CAF50"/>
-                          <text x="620" y="52" fontSize="12" fill="#333">Доходность от аренды</text>
+                          <text x="620" y="52" fontSize="12" fill="#333">Арендный доход</text>
                         </g>
                       </>
                     );
@@ -2229,7 +2229,7 @@ monthlyData.push({
 
           {/* Таблица факторов - ОБНОВЛЕННАЯ С ТРЕМЯ НОВЫМИ СТОЛБЦАМИ */}
           <div className="factors-table-container">
-            <h4>Таблица факторов</h4>
+            <h4>Расчет показателей (годовой)</h4>
             <div className="factors-table-scroll">
               <table className="factors-table">
                 <thead>
@@ -2239,9 +2239,9 @@ monthlyData.push({
                     <th>Age Factor</th>
                     <th>Brand Factor</th>
                     <th>Коэффициент инфляции</th>
-                    <th>Final Price</th>
-                    <th>Доходность от аренды</th>
-                    <th>Общий капитал инвестора</th>
+                    <th>Рыночная стоимость</th>
+                    <th>Арендный доход</th>
+                    <th>Совокупная капитализация</th>
                     {/* НОВЫЕ СТОЛБЦЫ */}
                     <th>ROI за год (%)</th>
                     <th>Итоговый ROI (%)</th>
@@ -2432,20 +2432,20 @@ monthlyData.push({
 
           {/* Таблица факторов 2 - месячная детализация */}
           <div className="factors-table-container">
-            <h4>Таблица факторов 2 (месячная детализация)</h4>
+            <h4>Расчет показателей (на период рассрочки)</h4>
             <div className="factors-table-scroll">
               <table className="factors-table">
                 <thead>
                   <tr>
-                    <th>Месяц</th>
+                    <th>Период</th>
                     <th>Lease Factor</th>
                     <th>Age Factor</th>
                     <th>Brand Factor</th>
                     <th>Коэффициент инфляции</th>
-                    <th>Final Price</th>
-                    <th>Доходность от аренды</th>
-                    <th>Общий капитал инвестора</th>
-                    <th>Сумма к оплате</th>
+                    <th>Рыночная стоимость</th>
+                    <th>Арендный доход</th>
+                    <th>Совокупная капитализация</th>
+                    <th>Платеж по рассрочке</th>
 <th>ROI за месяц (%)</th>
 <th>Итоговый ROI (%)</th>
 <th>IRR (%)</th>
@@ -2848,7 +2848,7 @@ function CatalogManager({
               className="filter-input"
             />
           </div>
-        </div>
+               </div>
         
         <div className="catalog-actions">
           <button onClick={() => setShowAddProjectModal(true)} className="btn primary">
@@ -2996,6 +2996,4 @@ function CatalogManager({
 // ===== РЕНДЕРИНГ ПРИЛОЖЕНИЯ =====
 const root = createRoot(document.getElementById('root'));
 root.render(<App />);
-
-
     
