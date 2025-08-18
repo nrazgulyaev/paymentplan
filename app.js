@@ -11,11 +11,11 @@ function App() {
   const [lang, setLang] = useState('ru');
   const [isClient, setIsClient] = useState(true); // По умолчанию клиентский режим
   const [currency, setCurrency] = useState('USD');
-  const [idrPerUsd, setIdrPerUsd] = useState(16500);
-  const [eurPerUsd, setEurPerUsd] = useState(0.92);
+  const [idrPerUsd, setIdrPerUsd] = useState(16300);
+  const [eurPerUsd, setEurPerUsd] = useState(0.88);
   const [handoverMonth, setHandoverMonth] = useState(12);
   const [months, setMonths] = useState(12);
-  const [monthlyRatePct, setMonthlyRatePct] = useState(8.33);
+  const [monthlyRatePct, setMonthlyRatePct] = useState(4);
   const [startMonth, setStartMonth] = useState(new Date());
   
   // НОВЫЕ ПАРАМЕТРЫ ЦЕНООБРАЗОВАНИЯ
