@@ -1997,7 +1997,7 @@ monthlyData.push({
           </div>
           
           <div className="cashflow-scroll">
-            <table className="cashflow-table">
+            <table className="factors-table">
               <thead>
                 <tr>
                   <th>{t.month}</th>
