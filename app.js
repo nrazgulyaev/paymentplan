@@ -6,6 +6,9 @@ const { createRoot } = ReactDOM;
 // PIN для редакторского режима
 const PIN_CODE = '334346';
 
+// Импортируем стандартный каталог
+import { defaultCatalog } from './catalog-data.js';
+
 // Основной компонент приложения
 function App() {
   const [lang, setLang] = useState('ru');
@@ -30,70 +33,8 @@ function App() {
     brandTail: 1.0             // финальное значение 100%
   });
   
-  // ОБНОВЛЕНО: Правильная структура каталога с проектами и виллами + ЛИЗХОЛД
-  const [catalog, setCatalog] = useState([
-    {
-      projectId: 'ahao',
-      projectName: 'AHAO Gardens',
-      villas: [
-        {
-          villaId: 'ahao-2br', 
-          name: '2BR Garden Villa', 
-          area: 100, 
-          ppsm: 2500, 
-          baseUSD: 250000,
-          // НОВЫЕ ПОЛЯ ДЛЯ ЛИЗХОЛДА И АРЕНДЫ:
-          leaseholdEndDate: new Date(2030, 11, 31), // 31 декабря 2030
-          dailyRateUSD: 150,
-          rentalPriceIndexPct: 5, // 5% в год
-          // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
-          monthlyPriceGrowthPct: 2 // 2% в месяц
-        },
-        {
-          villaId: 'ahao-3br', 
-          name: '3BR Garden Villa', 
-          area: 130, 
-          ppsm: 2450, 
-          baseUSD: 318500,
-          leaseholdEndDate: new Date(2030, 11, 31),
-          dailyRateUSD: 180,
-          rentalPriceIndexPct: 5,
-          // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
-          monthlyPriceGrowthPct: 2
-        }
-      ]
-    },
-    {
-      projectId: 'enso',
-      projectName: 'Enso Villas',
-      villas: [
-        {
-          villaId: 'enso-2br', 
-          name: 'Enso 2BR', 
-          area: 100, 
-          ppsm: 2500, 
-          baseUSD: 250000,
-          leaseholdEndDate: new Date(2030, 11, 31),
-          dailyRateUSD: 150,
-          rentalPriceIndexPct: 5,
-          // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
-          monthlyPriceGrowthPct: 2
-        },
-        {
-          villaId: 'enso-3br', 
-          name: 'Enso 3BR', 
-          area: 120, 
-          ppsm: 2700, 
-          baseUSD: 324000,
-          leaseholdEndDate: new Date(2030, 11, 31),
-          dailyRateUSD: 170,
-          rentalPriceIndexPct: 5,
-          // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
-          monthlyPriceGrowthPct: 2
-        }
-      ]
-    }
-  ]);
+// ОБНОВЛЕНО: Правильная структура каталога с проектами и виллами + ЛИЗХОЛД
+const [catalog, setCatalog] = useState(defaultCatalog);
   
   // Правильная структура этапов рассрочки
   const [stages, setStages] = useState([
@@ -2902,26 +2843,34 @@ function CatalogManager({
           </div>
                </div>
         
-        <div className="catalog-actions">
-          <button onClick={() => setShowAddProjectModal(true)} className="btn primary">
-            {t.addProject}
-          </button>
-          <button onClick={() => setShowAddVillaModal(true)} className="btn success">
-            {t.addVilla}
-          </button>
-          <button onClick={exportCatalog} className="btn">
-            Экспорт JSON
-          </button>
-          <label className="btn import-btn">
-            Импорт JSON
-            <input 
-              type="file" 
-              accept=".json" 
-              onChange={importCatalog} 
-              style={{display: 'none'}}
-            />
-          </label>
-        </div>
+     <div className="catalog-actions">
+  <button onClick={() => setShowAddProjectModal(true)} className="btn primary">
+    {t.addProject}
+  </button>
+  <button onClick={() => setShowAddVillaModal(true)} className="btn success">
+    {t.addVilla}
+  </button>
+  <button onClick={() => {
+    if (confirm('Загрузить стандартный каталог? Все текущие изменения будут потеряны.')) {
+      setCatalog(defaultCatalog);
+      alert('Стандартный каталог загружен');
+    }
+  }} className="btn warning">
+    Загрузить стандартный
+  </button>
+  <button onClick={exportCatalog} className="btn">
+    Экспорт JSON
+  </button>
+  <label className="btn import-btn">
+    Импорт JSON
+    <input 
+      type="file" 
+      accept=".json" 
+      onChange={importCatalog} 
+      style={{display: 'none'}}
+    />
+  </label>
+</div>
       </div>
 
       {/* Список проектов и вилл */}
