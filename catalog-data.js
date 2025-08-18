@@ -1,5 +1,5 @@
 // catalog-data.js
-export const defaultCatalog = [
+const defaultCatalog = [
   {
     projectId: 'ahao',
     projectName: 'AHAO Gardens',
@@ -56,7 +56,6 @@ export const defaultCatalog = [
       }
     ]
   },
-  // Добавить больше стандартных проектов и вилл
   {
     projectId: 'bali-luxury',
     projectName: 'Bali Luxury Estates',
