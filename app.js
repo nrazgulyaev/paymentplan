@@ -19,19 +19,31 @@ function App() {
   const [handoverMonth, setHandoverMonth] = useState(12);
   const [months, setMonths] = useState(12);
   const [monthlyRatePct, setMonthlyRatePct] = useState(8.33);
-  const [startMonth, setStartMonth] = useState(new Date());
-  
-  // НОВЫЕ ПАРАМЕТРЫ ЦЕНООБРАЗОВАНИЯ
-  const [pricingConfig, setPricingConfig] = useState({
-    inflationRatePct: 10,      // 10% годовой рост
-    leaseAlpha: 1,             // линейное убывание
-    agingBeta: 0.025,          // 2.5% в год
-    brandPeak: 1.2,            // пик бренда 120%
-    brandRampYears: 3,         // рост за 3 года
-    brandPlateauYears: 4,      // плато 4 года
-    brandDecayYears: 8,        // спад за 8 лет
-    brandTail: 1.0             // финальное значение 100%
+const [startMonth, setStartMonth] = useState(new Date());
+
+// НОВОЕ: Состояние для месячных платежей рассрочки до ключей
+const [monthlyPayments, setMonthlyPayments] = useState(Array(12).fill(0));
+
+// НОВАЯ ФУНКЦИЯ: Обновление месячного платежа
+const updateMonthlyPayment = (monthIndex, amount) => {
+  setMonthlyPayments(prev => {
+    const newPayments = [...prev];
+    newPayments[monthIndex] = amount;
+    return newPayments;
   });
+};
+  
+// НОВЫЕ ПАРАМЕТРЫ ЦЕНООБРАЗОВАНИЯ
+const [pricingConfig, setPricingConfig] = useState({
+  inflationRatePct: 10,      // 10% годовой рост
+  leaseAlpha: 1,             // линейное убывание
+  agingBeta: 0.025,          // 2.5% в год
+  brandPeak: 1.2,            // пик бренда 120%
+  brandRampYears: 3,         // рост за 3 года
+  brandPlateauYears: 4,      // плато 4 года
+  brandDecayYears: 8,        // спад за 8 лет
+  brandTail: 1.0             // финальное значение 100%
+});
   
 // ОБНОВЛЕНО: Правильная структура каталога с проектами и виллами + ЛИЗХОЛД
 const [catalog, setCatalog] = useState(defaultCatalog);
