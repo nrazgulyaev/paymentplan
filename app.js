@@ -1835,14 +1835,16 @@ monthlyData.push({
               <div className="v">{fmtMoney(project.totals.baseUSD, currency)}</div>
             </div>
           )}
-          <div className="kpi">
-            <div className="muted">Оплата до ключей</div>
-            <div className="v">{fmtMoney(project.totals.preUSD, currency)}</div>
-          </div>
-          <div className="kpi">
-            <div className="muted">Оплата после ключей</div>
-            <div className="v">{fmtMoney(project.totals.afterUSD, currency)}</div>
-          </div>
+         <div className="kpi payment-schedule-kpi">
+    <div className="payment-item">
+      <div className="muted">Оплата до ключей</div>
+      <div className="v">{fmtMoney(project.totals.preUSD, currency)}</div>
+    </div>
+    <div className="payment-item">
+      <div className="muted">Оплата после ключей</div>
+      <div className="v">{fmtMoney(project.totals.afterUSD, currency)}</div>
+    </div>
+  </div>
           {!isClient && (
             <div className="kpi">
               <div className="muted">{t.interest}</div>
