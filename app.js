@@ -3,11 +3,11 @@
 const { useState, useEffect, useMemo, useRef } = React;
 const { createRoot } = ReactDOM;
 
-// PIN для редакторского режима
-const PIN_CODE = '334346';
-
 // Импортируем стандартный каталог
 import { defaultCatalog } from './catalog-data.js';
+
+// PIN для редакторского режима
+const PIN_CODE = '334346';
 
 // Основной компонент приложения
 function App() {
