@@ -1776,9 +1776,40 @@ monthlyData.push({
             </div>
           )}
           <div className="kpi">
-            <div className="muted">{t.finalPrice}</div>
-            <div className="v">{fmtMoney(project.totals.finalUSD, currency)}</div>
-          </div>
+  <div className="muted">{t.finalPrice}</div>
+  <div className="v">{fmtMoney(project.totals.finalUSD, currency)}</div>
+</div>
+{/* НОВЫЙ KPI: ROI при продаже перед ключами */}
+<div className="kpi">
+  <div className="muted">ROI при продаже перед ключами</div>
+  <div className="v">
+    {(() => {
+      // Находим месяц перед получением ключей
+      const monthBeforeKeys = handoverMonth - 1;
+      
+      // Получаем данные из таблицы факторов 2 для этого месяца
+      if (lines.length > 0) {
+        const selectedVilla = catalog
+          .flatMap(p => p.villas)
+          .find(v => v.villaId === lines[0]?.villaId);
+        
+        if (selectedVilla && selectedVilla.leaseholdEndDate) {
+          const monthlyData = generateMonthlyPricingData(selectedVilla);
+          const monthData = monthlyData.find(d => d.month === monthBeforeKeys);
+          
+          if (monthData) {
+            // ROI = ((Final Price - Итоговая цена KPI) / Сумма всех платежей) × 100%
+            const roiRaw = ((monthData.finalPrice - project.totals.finalUSD) / monthData.totalPaymentsToDate) * 100;
+            // Переводим в годовые
+            const roiAnnual = roiRaw * (12 / (monthBeforeKeys + 1));
+            return roiAnnual.toFixed(1) + '%';
+          }
+        }
+      }
+      return '0.0%';
+    })()}
+  </div>
+</div>
           {/* НОВЫЙ ПАРАМЕТР: Чистый срок лизхолда */}
           <div className="kpi">
             <div className="muted">{t.cleanLeaseholdTerm}</div>
