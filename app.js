@@ -533,7 +533,28 @@ function App() {
 
   // ИСПРАВЛЕНИЕ: Добавить недостающие функции и переменные
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-  const fmtMoney = (n, c = 'USD') => new Intl.NumberFormat('en-US', {style: 'currency', currency: c, maximumFractionDigits: 2}).format(n || 0);
+  // Новая функция конвертации валют
+const convertCurrency = (amountUSD, targetCurrency) => {
+  switch (targetCurrency) {
+    case 'IDR':
+      return amountUSD * idrPerUsd;
+    case 'EUR':
+      return amountUSD * eurPerUsd;
+    case 'USD':
+    default:
+      return amountUSD;
+  }
+};
+
+// Обновленная функция форматирования денег
+const fmtMoney = (n, c = 'USD') => {
+  const convertedAmount = convertCurrency(n, c);
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency', 
+    currency: c, 
+    maximumFractionDigits: 2
+  }).format(convertedAmount || 0);
+};
   // Сумма этапов (как было)
 const stagesSumPct = stages.reduce((s, x) => s + (+x.pct || 0), 0);
 
