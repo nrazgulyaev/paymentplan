@@ -2547,5 +2547,28 @@ h1 {
   background: #555;
 }
 
+.top-sections-container {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 30px;
+  align-items: flex-start;
+}
 
+.settings-section {
+  flex: 1;
+  min-width: 0;
+}
+
+.installment-section {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .top-sections-container {
+    flex-direction: column;
+    gap: 20px;
+  }
+}
 /* ===== КОНЕЦ СТИЛЕЙ ===== */
