@@ -1148,7 +1148,7 @@ const lineTotalOne = base + totalInterest;
 const preSchedule = stages.map(s => ({
   month: Math.max(0, Math.min(handoverMonth, Math.round(+s.month || 0))),
   label: s.label,
-  amountUSD: lineTotalOne * (((+s.pct || 0) * k) / 100), // ✅ НОВОЕ: от lineTotalOne
+ amountUSD: base * (((+s.pct || 0) * k) / 100), // ✅ НОВОЕ: от lineTotalOne
 })).filter(r => r.amountUSD > 0).sort((a, b) => a.month - b.month);
 const preTotalOne = preSchedule.reduce((s, r) => s + r.amountUSD, 0);
 
