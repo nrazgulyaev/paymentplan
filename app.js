@@ -1432,12 +1432,14 @@ const preTotalOne = preSchedule.reduce((s, r) => s + r.amountUSD, 0);
   };
 
   // ИСПРАВЛЕНО: Добавлена проверка на XLSX
-  const exportXLSX = () => {
-    if (typeof XLSX === 'undefined') {
-      alert(t.xlsxNotLoaded);
-      return;
-    }
-    
+const exportXLSX = () => {
+  if (typeof XLSX === 'undefined') {
+    alert('Библиотека XLSX не загружена. Проверьте подключение к интернету.');
+    return;
+  }
+  
+  try {
+    // Лист 1: Кэшфлоу
     const ws1 = XLSX.utils.json_to_sheet(project.cashflow.map(c => ({
       [t.month]: formatMonth(c.month),
       [t.description]: (c.items || []).join(' + '),
@@ -1447,6 +1449,7 @@ const preTotalOne = preSchedule.reduce((s, r) => s + r.amountUSD, 0);
       [t.remainingBalance]: c.balanceUSD
     })));
     
+    // Лист 2: Детали по линиям
     const ws2 = XLSX.utils.json_to_sheet(linesData.map(ld => ({
       [t.project]: catalog.find(p => p.projectId === ld.line.projectId)?.projectName || ld.line.projectId,
       [t.villa]: ld.line.snapshot?.name,
@@ -1455,29 +1458,62 @@ const preTotalOne = preSchedule.reduce((s, r) => s + r.amountUSD, 0);
       [t.ppsm]: ld.line.snapshot?.ppsm,
       [t.price]: ld.base,
       [t.discount]: (ld.discountPct || 0) + '%',
-      [t.prePct]: ld.prePct,
+      [t.prePct]: ld.prePct + '%',
       [t.months]: ld.vMonths,
       [t.lineTotal]: ld.lineTotal,
       [t.dailyRate]: ld.line.dailyRateUSD || 0,
       [t.occupancyRate]: ld.line.occupancyPct || 0,
       [t.rentalPriceIndex]: ld.line.rentalPriceIndexPct || 0,
-      [t.monthlyPriceGrowth]: ld.line.monthlyPriceGrowthPct || 0,
-      [t.leaseholdEndDate]: ld.line.snapshot?.leaseholdEndDate ? ld.line.snapshot.leaseholdEndDate.toLocaleDateString() : ''
+      [t.monthlyPriceGrowth]: ld.line.monthlyPriceGrowthPct || 0
     })));
     
+    // Настройка ширины колонок
+    ws1['!cols'] = [
+      { width: 15 }, // Месяц
+      { width: 40 }, // Описание
+      { width: 15 }, // Платеж
+      { width: 15 }, // Аренда
+      { width: 15 }, // Чистый платеж
+      { width: 15 }  // Остаток
+    ];
+    
+    ws2['!cols'] = [
+      { width: 20 }, // Проект
+      { width: 25 }, // Вилла
+      { width: 8 },  // Количество
+      { width: 10 }, // Площадь
+      { width: 12 }, // Цена за м²
+      { width: 15 }, // Цена
+      { width: 12 }, // Скидка
+      { width: 12 }, // До ключей
+      { width: 10 }, // Месяцы
+      { width: 15 }, // Итого
+      { width: 12 }, // Стоимость ночи
+      { width: 12 }, // Заполняемость
+      { width: 15 }, // Индексация
+      { width: 15 }  // Рост цены
+    ];
+    
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws1, 'Cashflow');
-    XLSX.utils.book_append_sheet(wb, ws2, 'Lines');
+    XLSX.utils.book_append_sheet(wb, ws1, 'Кэшфлоу');
+    XLSX.utils.book_append_sheet(wb, ws2, 'Детали');
+    
     XLSX.writeFile(wb, `arconique_installments_${new Date().toISOString().slice(0, 10)}.xlsx`);
-  };
+  } catch (error) {
+    console.error('Ошибка экспорта Excel:', error);
+    alert('Ошибка при экспорте Excel: ' + error.message);
+  }
+};
 
   // ИСПРАВЛЕНО: Добавлена проверка на html2pdf
-  const exportPDF = () => {
-    if (typeof html2pdf === 'undefined') {
-      alert(t.html2pdfNotLoaded);
-      return;
-    }
-    
+const exportPDF = () => {
+  if (typeof html2pdf === 'undefined') {
+    alert('Библиотека html2pdf не загружена. Проверьте подключение к интернету.');
+    return;
+  }
+  
+  try {
+    // Создаем чистый HTML для PDF
     const pdfContent = `
       <!DOCTYPE html>
       <html>
@@ -1485,18 +1521,70 @@ const preTotalOne = preSchedule.reduce((s, r) => s + r.amountUSD, 0);
         <meta charset="UTF-8">
         <title>${t.reportTitle}</title>
         <style>
-          body { font-family: Arial, sans-serif; margin: 20px; }
-          .header { text-align: center; margin-bottom: 30px; }
-          .header h1 { color: #333; margin: 0; }
-          .header .date { color: #666; margin-top: 10px; }
-          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-          th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-          th { background-color: #f5f5f5; font-weight: bold; }
-          .summary { margin: 20px 0; padding: 20px; background: #f9f9f9; }
-          .summary h3 { margin-top: 0; }
-          .amount { font-weight: bold; color: #2c5aa0; }
-          .positive { color: #dc3545; font-weight: bold; }
-          .negative { color: #28a745; font-weight: bold; }
+          body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            font-size: 12px;
+            line-height: 1.4;
+          }
+          .header { 
+            text-align: center; 
+            margin-bottom: 30px; 
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+          }
+          .header h1 { 
+            color: #333; 
+            margin: 0; 
+            font-size: 24px;
+          }
+          .header .date { 
+            color: #666; 
+            margin-top: 10px; 
+            font-size: 14px;
+          }
+          table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 20px 0; 
+            font-size: 11px;
+          }
+          th, td { 
+            border: 1px solid #ddd; 
+            padding: 8px; 
+            text-align: left; 
+            vertical-align: top;
+          }
+          th { 
+            background-color: #f5f5f5; 
+            font-weight: bold; 
+            text-align: center;
+          }
+          .summary { 
+            margin: 20px 0; 
+            padding: 20px; 
+            background: #f9f9f9; 
+            border: 1px solid #ddd;
+          }
+          .summary h3 { 
+            margin-top: 0; 
+            color: #333;
+          }
+          .amount { 
+            font-weight: bold; 
+            color: #2c5aa0; 
+          }
+          .positive { 
+            color: #dc3545; 
+            font-weight: bold; 
+          }
+          .negative { 
+            color: #28a745; 
+            font-weight: bold; 
+          }
+          .page-break { 
+            page-break-before: always; 
+          }
         </style>
       </head>
       <body>
@@ -1538,6 +1626,42 @@ const preTotalOne = preSchedule.reduce((s, r) => s + r.amountUSD, 0);
             `).join('')}
           </tbody>
         </table>
+        
+        <div class="page-break"></div>
+        
+        <h3>Детали по линиям</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>${t.project}</th>
+              <th>${t.villa}</th>
+              <th>${t.qty}</th>
+              <th>${t.area}</th>
+              <th>${t.ppsm}</th>
+              <th>${t.price}</th>
+              <th>${t.discount}</th>
+              <th>${t.prePct}</th>
+              <th>${t.months}</th>
+              <th>${t.lineTotal}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${linesData.map(ld => `
+              <tr>
+                <td>${catalog.find(p => p.projectId === ld.line.projectId)?.projectName || ld.line.projectId}</td>
+                <td>${ld.line.snapshot?.name}</td>
+                <td>${ld.qty}</td>
+                <td>${ld.line.snapshot?.area}</td>
+                <td>${ld.line.snapshot?.ppsm}</td>
+                <td>${fmtMoney(ld.base, 'USD')}</td>
+                <td>${ld.discountPct || 0}%</td>
+                <td>${ld.prePct}%</td>
+                <td>${ld.vMonths}</td>
+                <td>${fmtMoney(ld.lineTotal, 'USD')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
       </body>
       </html>
     `;
@@ -1546,13 +1670,39 @@ const preTotalOne = preSchedule.reduce((s, r) => s + r.amountUSD, 0);
     element.innerHTML = pdfContent;
     document.body.appendChild(element);
     
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: `arconique-cashflow-${new Date().toISOString().slice(0, 10)}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { 
+        scale: 2,
+        useCORS: true,
+        letterRendering: true
+      },
+      jsPDF: { 
+        unit: 'mm', 
+        format: 'a4', 
+        orientation: 'landscape' 
+      }
+    };
+    
     html2pdf()
       .from(element)
-      .save(`arconique-cashflow-${new Date().toISOString().slice(0, 10)}.pdf`)
+      .set(opt)
+      .save()
       .then(() => {
         document.body.removeChild(element);
+      })
+      .catch(error => {
+        console.error('Ошибка экспорта PDF:', error);
+        alert('Ошибка при экспорте PDF: ' + error.message);
+        document.body.removeChild(element);
       });
-  };
+  } catch (error) {
+    console.error('Ошибка экспорта PDF:', error);
+    alert('Ошибка при экспорте PDF: ' + error.message);
+  }
+};
 
   // Функция переключения режима (ВОССТАНОВЛЕНА СТАРАЯ)
   const toggleMode = () => {
