@@ -1517,19 +1517,22 @@ const addStage = () => {
           />
         </td>
         <td>
-          <input 
-            type="text" 
-            value={stage.pct} 
-            onChange={e => {
-              const value = parseFloat(e.target.value);
-              if (!isNaN(value) && value >= 0 && value <= 100) {
-                updStage(stage.id, {pct: value});
-              }
-            }}
-            placeholder="%"
-            className="stage-input-small"
-          />
-        </td>
+  <input 
+    type="number" 
+    value={stage.pct} 
+    onChange={e => {
+      const value = parseFloat(e.target.value);
+      if (!isNaN(value) && value >= 0 && value <= 100) {
+        updStage(stage.id, {pct: value});
+      }
+    }}
+    min="0"
+    max="100"
+    step="0.01"
+    placeholder="%"
+    className="stage-input-small"
+  />
+</td>
         <td>
           <input 
             type="number" 
