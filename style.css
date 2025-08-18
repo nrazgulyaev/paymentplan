@@ -2571,4 +2571,13 @@ h1 {
     gap: 20px;
   }
 }
+
+.btn.warning {
+  background: #ff9800;
+  color: white;
+}
+
+.btn.warning:hover {
+  background: #f57c00;
+}
 /* ===== КОНЕЦ СТИЛЕЙ ===== */
