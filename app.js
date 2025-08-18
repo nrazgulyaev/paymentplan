@@ -1991,75 +1991,7 @@ monthlyData.push({
         </div>
       </div>
 
-      {/* 4. Базовая рассрочка - ВОССТАНОВЛЕН СТАРЫЙ ДИЗАЙН (БЕЗ БЕЛЫХ ПРЯМОУГОЛЬНИКОВ) */}
-      <div className="card">
-        <div className="stages-section">
-          <h3>{t.stagesTitle}</h3>
-          
-          {/* ПРОСТАЯ ТАБЛИЦА БЕЗ БЕЛЫХ ПРЯМОУГОЛЬНИКОВ - ВОССТАНОВЛЕНО СТАРОЕ */}
-          <table className="stages-table">
-            <thead>
-              <tr>
-                <th>{t.stage}</th>
-                <th>{t.percent}</th>
-                <th>{t.month}</th>
-                <th>{t.actions}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stages.map(stage => (
-                <tr key={stage.id}>
-                  <td>
-                    <input 
-                      type="text" 
-                      value={stage.label} 
-                      onChange={e => updStage(stage.id, {label: e.target.value})}
-                      placeholder="Название этапа"
-                      className="stage-input"
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="number" 
-                      value={stage.pct} 
-                      onChange={e => updStage(stage.id, {pct: +e.target.value})}
-                      placeholder="%"
-                      className="stage-input-small"
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="number" 
-                      value={stage.month} 
-                      onChange={e => updStage(stage.id, {month: +e.target.value})}
-                      placeholder="Месяц"
-                      className="stage-input-small"
-                    />
-                  </td>
-                  <td>
-                    <button onClick={() => delStage(stage.id)} className="btn danger small">
-                      {t.delete}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          
-          <div className="row" style={{marginTop: 8, alignItems: 'center', justifyContent: 'space-between'}}>
-            <button className="btn primary" onClick={addStage}>{t.addStage}</button>
-            <div className="pill">
-              {t.stagesSum} {Math.round(stagesSumPct * 100) / 100}%
-              {stagesSumPct !== 100 && (
-                <span className="warning">
-                  {stagesSumPct < 100 ? t.notEnough : t.exceeds} 100%
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
+     
       {/* 5. Сводный кэшфлоу по месяцам - ОБНОВЛЕН С НОВЫМИ КОЛОНКАМИ */}
       <div className="cashflow-block">
         <div className="card">
