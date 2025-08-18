@@ -1771,13 +1771,15 @@ const addStage = () => {
   <>
     {/* НОВАЯ СТРУКТУРА: Настройки справа, Рассрочка слева на одной линии */}
     <div className="top-section">
-      {/* ЛЕВАЯ ЧАСТЬ: Рассрочка до получения ключей */}
      {/* ЛЕВАЯ ЧАСТЬ: Рассрочка до получения ключей */}
 <div className="card stages-card">
-  <div className="stages-section">
-    <h3>{t.stagesTitle}</h3>
-    
-    <table className="stages-table">
+  <div className="card-header">
+    <h3 style={{margin: '6px 0'}}>{t.stagesTitle}</h3>
+    <button className="btn primary small" onClick={addStage}>{t.addStage}</button>
+  </div>
+  
+  <div className="stages-scroll">
+    <table className="factors-table">
       <thead>
         <tr>
           <th>{t.stage}</th>
@@ -1795,7 +1797,7 @@ const addStage = () => {
                 value={stage.label} 
                 onChange={e => updStage(stage.id, {label: e.target.value})}
                 placeholder="Название этапа"
-                className="stage-input-small"
+                className="compact-input"
               />
             </td>
             <td>
@@ -1812,7 +1814,7 @@ const addStage = () => {
                 max="100"
                 step="0.01"
                 placeholder="%"
-                className="stage-input-small"
+                className="compact-input"
               />
             </td>
             <td>
@@ -1821,29 +1823,26 @@ const addStage = () => {
                 value={stage.month} 
                 onChange={e => updStage(stage.id, {month: +e.target.value})}
                 placeholder="Месяц"
-                className="stage-input-small"
+                className="compact-input"
               />
             </td>
             <td>
-              <button onClick={() => delStage(stage.id)} className="btn danger small">
-                {t.delete}
-              </button>
+              <button onClick={() => delStage(stage.id)} className="btn danger icon small">🗑️</button>
             </td>
           </tr>
         ))}
       </tbody>
     </table>
-    
-    <div className="row" style={{marginTop: 8, alignItems: 'center', justifyContent: 'space-between'}}>
-      <button className="btn primary" onClick={addStage}>{t.addStage}</button>
-      <div className="pill">
-        {t.stagesSum} {stagesSumPct.toFixed(2)}%
-        {lines.length > 0 && stagesSumPct !== targetPrePct && (
-          <span className="warning">
-            {stagesSumPct < targetPrePct ? t.notEnough : t.exceeds} {targetPrePct.toFixed(2)}%
-          </span>
-        )}
-      </div>
+  </div>
+  
+  <div className="stages-summary">
+    <div className="pill">
+      {t.stagesSum} {stagesSumPct.toFixed(2)}%
+      {lines.length > 0 && stagesSumPct !== targetPrePct && (
+        <span className="warning">
+          {stagesSumPct < targetPrePct ? t.notEnough : t.exceeds} {targetPrePct.toFixed(2)}%
+        </span>
+      )}
     </div>
   </div>
 </div>
