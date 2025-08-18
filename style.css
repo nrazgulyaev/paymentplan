@@ -2763,4 +2763,31 @@ h1 {
   padding: 4px 8px;
   font-size: 12px;
 }
+
+.stages-header {
+  margin-bottom: 16px;
+}
+
+.stages-title-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.stages-title {
+  margin: 6px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.add-stage-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 /* ===== КОНЕЦ СТИЛЕЙ ===== */
