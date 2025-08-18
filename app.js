@@ -15,7 +15,7 @@ function App() {
   const [eurPerUsd, setEurPerUsd] = useState(0.88);
   const [handoverMonth, setHandoverMonth] = useState(12);
   const [months, setMonths] = useState(12);
-  const [monthlyRatePct, setMonthlyRatePct] = useState(8,33);
+  const [monthlyRatePct, setMonthlyRatePct] = useState(8.33);
   const [startMonth, setStartMonth] = useState(new Date());
   
   // НОВЫЕ ПАРАМЕТРЫ ЦЕНООБРАЗОВАНИЯ
