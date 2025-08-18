@@ -6,6 +6,65 @@ const { createRoot } = ReactDOM;
 // PIN для редакторского режима
 const PIN_CODE = '334346';
 
+// Импортируем стандартный каталог
+const defaultCatalog = [
+  {
+    projectId: 'ahao',
+    projectName: 'AHAO Gardens',
+    villas: [
+      {
+        villaId: 'ahao-2br',
+        name: '2BR Garden Villa',
+        area: 100,
+        ppsm: 2500,
+        baseUSD: 250000,
+        leaseholdEndDate: new Date(2030, 11, 31),
+        dailyRateUSD: 150,
+        rentalPriceIndexPct: 5,
+        monthlyPriceGrowthPct: 2
+      },
+      {
+        villaId: 'ahao-3br',
+        name: '3BR Garden Villa',
+        area: 130,
+        ppsm: 2450,
+        baseUSD: 318500,
+        leaseholdEndDate: new Date(2030, 11, 31),
+        dailyRateUSD: 180,
+        rentalPriceIndexPct: 5,
+        monthlyPriceGrowthPct: 2
+      }
+    ]
+  },
+  {
+    projectId: 'enso',
+    projectName: 'Enso Villas',
+    villas: [
+      {
+        villaId: 'enso-2br',
+        name: 'Enso 2BR',
+        area: 100,
+        ppsm: 2500,
+        baseUSD: 250000,
+        leaseholdEndDate: new Date(2030, 11, 31),
+        dailyRateUSD: 150,
+        rentalPriceIndexPct: 5,
+        monthlyPriceGrowthPct: 2
+      },
+      {
+        villaId: 'enso-3br',
+        name: 'Enso 3BR',
+        area: 120,
+        ppsm: 2700,
+        baseUSD: 324000,
+        leaseholdEndDate: new Date(2030, 11, 31),
+        dailyRateUSD: 170,
+        rentalPriceIndexPct: 5,
+        monthlyPriceGrowthPct: 2
+      }
+    ]
+  }
+];
 // Основной компонент приложения
 function App() {
   const [lang, setLang] = useState('ru');
@@ -1386,8 +1445,8 @@ monthlyData.push({
 
   return (
     <>
-      {/* Внизу по порядку: */}
-      {/* Контейнер для двух блоков на одной линии */}
+     
+           {/* Контейнер для двух блоков на одной линии */}
       <div className="top-sections-container">
         {/* ЛЕВЫЙ БЛОК: Настройки */}
         <div className="card">
