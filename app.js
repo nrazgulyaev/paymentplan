@@ -160,33 +160,7 @@ function App() {
     {id: 5, label: 'Ключи', pct: 5, month: 12},
   ]);
   
-  const [lines, setLines] = useState([
-    {
-      id: 1,
-      projectId: 'enso',
-      villaId: 'enso-2br',
-      qty: 1,
-      prePct: 70,
-      ownTerms: false,
-      months: null,
-      monthlyRatePct: null,
-      firstPostUSD: 0,
-      discountPct: 0,
-      // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
-      monthlyPriceGrowthPct: 2, // 2% в месяц
-      // ОБНОВЛЕНО: Новые поля для аренды с индексацией
-      dailyRateUSD: 150, // Стоимость проживания в сутки (USD)
-      occupancyPct: 75,  // Средняя заполняемость за месяц (%)
-      rentalPriceIndexPct: 5, // Индексация цены аренды в год (%)
-      snapshot: {
-        name: 'Enso 2BR', 
-        area: 100, 
-        ppsm: 2500, 
-        baseUSD: 250000,
-        leaseholdEndDate: new Date(2030, 11, 31) // Дата окончания лизхолда
-      }
-    }
-  ]);
+  const [lines, setLines] = useState([]);
 
   // Состояния для модальных окон
   const [modalOpen, setModalOpen] = useState(false);
