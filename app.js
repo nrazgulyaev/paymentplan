@@ -1688,8 +1688,36 @@ monthlyData.push({
                     <div className="ppsm-display">{ld.line.snapshot?.ppsm || 0}</div>
                   </td>
                   <td className="col-base base-strong">
-                    {fmtMoney(ld.base, currency)}
-                  </td>
+  {!isClient ? (
+    <input 
+      type="number" 
+      min="0" 
+      step="1000" 
+      value={ld.base} 
+      onChange={e => {
+        const newBase = clamp(parseFloat(e.target.value || 0), 0, 10000000);
+        // Обновляем базовую стоимость в линии
+        updLine(ld.line.id, { 
+          // Пересчитываем базовую стоимость на единицу
+          baseUSD: newBase / ld.qty 
+        });
+      }}
+      style={{
+        width: '100%', 
+        minWidth: '80px',
+        textAlign: 'center',
+        background: 'var(--card)',
+        border: '1px solid var(--line)',
+        borderRadius: 'var(--radius-sm)',
+        color: 'var(--ink)',
+        padding: '8px 12px',
+        fontSize: '14px'
+      }}
+    />
+  ) : (
+    fmtMoney(ld.base, currency)
+  )}
+</td>
                   {!isClient && (
                     <td className="col-disc">
                       <input 
