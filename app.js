@@ -1779,6 +1779,7 @@ monthlyData.push({
   <div className="muted">{t.finalPrice}</div>
   <div className="v">{fmtMoney(project.totals.finalUSD, currency)}</div>
 </div>
+
 {/* НОВЫЙ KPI: ROI при продаже перед ключами */}
 <div className="kpi">
   <div className="muted">ROI при продаже перед ключами</div>
@@ -1807,6 +1808,32 @@ monthlyData.push({
         }
       }
       return '0.0%';
+    })()}
+  </div>
+  {/* НОВОЕ ПОЛЕ: Чистый доход */}
+  <div className="muted" style={{fontSize: '0.8em', marginTop: '4px'}}>
+    Чистый доход: {(() => {
+      // Находим месяц перед получением ключами
+      const monthBeforeKeys = handoverMonth - 1;
+      
+      // Получаем данные из таблицы факторов 2 для этого месяца
+      if (lines.length > 0) {
+        const selectedVilla = catalog
+          .flatMap(p => p.villas)
+          .find(v => v.villaId === lines[0]?.villaId);
+        
+        if (selectedVilla && selectedVilla.leaseholdEndDate) {
+          const monthlyData = generateMonthlyPricingData(selectedVilla);
+          const monthData = monthlyData.find(d => d.month === monthBeforeKeys);
+          
+          if (monthData) {
+            // Чистый доход = Final Price в месяц перед ключами - Итоговая цена из KPI
+            const netIncome = monthData.finalPrice - project.totals.finalUSD;
+            return fmtMoney(netIncome, currency);
+          }
+        }
+      }
+      return fmtMoney(0, currency);
     })()}
   </div>
 </div>
