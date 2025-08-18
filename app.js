@@ -7,7 +7,7 @@ const { createRoot } = ReactDOM;
 const PIN_CODE = '334346';
 
 // Импортируем стандартный каталог
-const defaultCatalog = [
+const initialCatalog = [
   {
     projectId: 'ahao',
     projectName: 'AHAO Gardens',
@@ -101,8 +101,7 @@ const [pricingConfig, setPricingConfig] = useState({
   brandTail: 1.0             // финальное значение 100%
 });
   
-// ОБНОВЛЕНО: Правильная структура каталога с проектами и виллами + ЛИЗХОЛД
-const [catalog, setCatalog] = useState(defaultCatalog);
+const [catalog, setCatalog] = useState(initialCatalog);
   
   // Правильная структура этапов рассрочки
   const [stages, setStages] = useState([
@@ -2919,7 +2918,7 @@ function CatalogManager({
   </button>
   <button onClick={() => {
     if (confirm('Загрузить стандартный каталог? Все текущие изменения будут потеряны.')) {
-      setCatalog(defaultCatalog);
+     setCatalog(initialCatalog);
       alert('Стандартный каталог загружен');
     }
   }} className="btn warning">
