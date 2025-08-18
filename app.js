@@ -31,69 +31,125 @@ function App() {
   });
   
   // ОБНОВЛЕНО: Правильная структура каталога с проектами и виллами + ЛИЗХОЛД
-  const [catalog, setCatalog] = useState([
-    {
-      projectId: 'ahao',
-      projectName: 'AHAO Gardens',
-      villas: [
-        {
-          villaId: 'ahao-2br', 
-          name: '2BR Garden Villa', 
-          area: 100, 
-          ppsm: 2500, 
-          baseUSD: 250000,
-          // НОВЫЕ ПОЛЯ ДЛЯ ЛИЗХОЛДА И АРЕНДЫ:
-          leaseholdEndDate: new Date(2030, 11, 31), // 31 декабря 2030
-          dailyRateUSD: 150,
-          rentalPriceIndexPct: 5, // 5% в год
-          // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
-          monthlyPriceGrowthPct: 2 // 2% в месяц
-        },
-        {
-          villaId: 'ahao-3br', 
-          name: '3BR Garden Villa', 
-          area: 130, 
-          ppsm: 2450, 
-          baseUSD: 318500,
-          leaseholdEndDate: new Date(2030, 11, 31),
-          dailyRateUSD: 180,
-          rentalPriceIndexPct: 5,
-          // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
-          monthlyPriceGrowthPct: 2
-        }
-      ]
-    },
-    {
-      projectId: 'enso',
-      projectName: 'Enso Villas',
-      villas: [
-        {
-          villaId: 'enso-2br', 
-          name: 'Enso 2BR', 
-          area: 100, 
-          ppsm: 2500, 
-          baseUSD: 250000,
-          leaseholdEndDate: new Date(2030, 11, 31),
-          dailyRateUSD: 150,
-          rentalPriceIndexPct: 5,
-          // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
-          monthlyPriceGrowthPct: 2
-        },
-        {
-          villaId: 'enso-3br', 
-          name: 'Enso 3BR', 
-          area: 120, 
-          ppsm: 2700, 
-          baseUSD: 324000,
-          leaseholdEndDate: new Date(2030, 11, 31),
-          dailyRateUSD: 170,
-          rentalPriceIndexPct: 5,
-          // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
-          monthlyPriceGrowthPct: 2
-        }
-      ]
-    }
-  ]);
+ const [catalog, setCatalog] = useState([
+  {
+    projectId: 'eternal-villas',
+    projectName: 'Eternal Villas by Arconique',
+    villas: [
+      {
+        villaId: 'eternal-premium-3br', 
+        name: 'Premium 3 bedroom', 
+        area: 218, 
+        ppsm: 2197, // $479000 / 218 м²
+        baseUSD: 479000,
+        monthlyPriceGrowthPct: 1.5,
+        leaseholdEndDate: new Date(2055, 0, 1), // 01.01.2055
+        dailyRateUSD: 550,
+        rentalPriceIndexPct: 5
+      },
+      {
+        villaId: 'eternal-master-2br', 
+        name: 'Master 2 bedroom', 
+        area: 141.7, 
+        ppsm: 2451, // $347307 / 141.7 м²
+        baseUSD: 347307,
+        monthlyPriceGrowthPct: 1.5,
+        leaseholdEndDate: new Date(2052, 0, 1), // 01.01.2052
+        dailyRateUSD: 400,
+        rentalPriceIndexPct: 5
+      }
+    ]
+  },
+  {
+    projectId: 'enso-villas',
+    projectName: 'Enso Villas by Arconique',
+    villas: [
+      {
+        villaId: 'enso-l-type-2br', 
+        name: 'L type 2 bedroom', 
+        area: 104.1, 
+        ppsm: 2610, // $271701 / 104.1 м²
+        baseUSD: 271701,
+        monthlyPriceGrowthPct: 1.5,
+        leaseholdEndDate: new Date(2054, 11, 1), // 01.12.2054
+        dailyRateUSD: 220,
+        rentalPriceIndexPct: 5
+      },
+      {
+        villaId: 'enso-v-type-2br', 
+        name: 'V type 2 bedroom', 
+        area: 114.1, 
+        ppsm: 2548, // $290840 / 114.1 м²
+        baseUSD: 290840,
+        monthlyPriceGrowthPct: 1.5,
+        leaseholdEndDate: new Date(2054, 11, 1), // 01.12.2054
+        dailyRateUSD: 220,
+        rentalPriceIndexPct: 5
+      },
+      {
+        villaId: 'enso-q-type-2br', 
+        name: 'Q type 2 bedroom', 
+        area: 95.7, 
+        ppsm: 2549, // Указано в данных
+        baseUSD: 243939, // 95.7 м² × $2549
+        monthlyPriceGrowthPct: 1.5,
+        leaseholdEndDate: new Date(2054, 11, 1), // 01.12.2054
+        dailyRateUSD: 220,
+        rentalPriceIndexPct: 5
+      },
+      {
+        villaId: 'enso-r-type-3br', 
+        name: 'R type 3 bedroom', 
+        area: 134.2, 
+        ppsm: 2554, // $342720 / 134.2 м²
+        baseUSD: 342720,
+        monthlyPriceGrowthPct: 1.5,
+        leaseholdEndDate: new Date(2054, 11, 1), // 01.12.2054
+        dailyRateUSD: 270,
+        rentalPriceIndexPct: 5
+      }
+    ]
+  },
+  {
+    projectId: 'ahau-gardens',
+    projectName: 'Ahau Gardens by Arconique',
+    villas: [
+      {
+        villaId: 'ahau-type-a-2br', 
+        name: 'Type A 2 bedroom', 
+        area: 142.7, 
+        ppsm: 2200, // $313940 / 142.7 м²
+        baseUSD: 313940,
+        monthlyPriceGrowthPct: 1.5,
+        leaseholdEndDate: new Date(2055, 0, 1), // 01.01.2055
+        dailyRateUSD: 220,
+        rentalPriceIndexPct: 5
+      },
+      {
+        villaId: 'ahau-type-b-2br', 
+        name: 'Type B 2 bedroom', 
+        area: 192, 
+        ppsm: 2250, // Указано в данных
+        baseUSD: 432000, // 192 м² × $2250
+        monthlyPriceGrowthPct: 1.5,
+        leaseholdEndDate: new Date(2055, 0, 1), // 01.01.2055
+        dailyRateUSD: 280,
+        rentalPriceIndexPct: 5
+      },
+      {
+        villaId: 'ahau-type-bq-2br', 
+        name: 'Type BQ 2 bedroom', 
+        area: 201, 
+        ppsm: 2041, // $410290 / 201 м²
+        baseUSD: 410290,
+        monthlyPriceGrowthPct: 1.5,
+        leaseholdEndDate: new Date(2055, 0, 1), // 01.01.2055
+        dailyRateUSD: 280,
+        rentalPriceIndexPct: 5
+      }
+    ]
+  }
+]);
   
   // Правильная структура этапов рассрочки
   const [stages, setStages] = useState([
