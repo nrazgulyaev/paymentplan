@@ -2657,5 +2657,78 @@ h1 {
   gap: 16px;
   margin: 20px 0;
 }
+/* Стили для объединенного KPI блока */
+.combined-roi-kpi {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  min-height: 100px; /* Увеличиваем высоту для двух секций */
+}
 
+.roi-section,
+.net-income-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+}
+
+.divider-line {
+  width: 80%;
+  height: 1px;
+  background: var(--line);
+  opacity: 0.5;
+}
+
+/* Стили для адаптивного текста в KPI */
+.adaptive-text {
+  font-size: clamp(10px, 2.5vw, 12px) !important;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-align: center;
+}
+
+/* Стили для значений ROI и чистого дохода */
+.roi-value,
+.net-income-value {
+  font-size: 1.3em !important;
+  font-weight: 700 !important;
+  color: var(--primary) !important;
+  text-align: center;
+  margin: 6px 0;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 480px) {
+  .adaptive-text {
+    font-size: 10px !important;
+  }
+  
+  .roi-value,
+  .net-income-value {
+    font-size: 1.1em !important;
+  }
+  
+  .combined-roi-kpi {
+    min-height: 90px;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .adaptive-text {
+    font-size: 11px !important;
+  }
+  
+  .roi-value,
+  .net-income-value {
+    font-size: 1.2em !important;
+  }
+}
 /* ===== КОНЕЦ СТИЛЕЙ ===== */
