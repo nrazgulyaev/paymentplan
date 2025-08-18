@@ -1481,14 +1481,30 @@ monthlyData.push({
   };
 
   // Функции для работы с этапами (ВОССТАНОВЛЕНЫ СТАРЫЕ)
-  const addStage = () => {
-    const newId = stages.length + 1;
-    setStages(prev => [...prev, {id: newId, label: lang === 'ru' ? 'Новый этап' : 'New stage', pct: 5, month: 0}]);
-  };
+const addStage = () => {
+  const newId = stages.length + 1;
+  setStages(prev => [...prev, {
+    id: newId, 
+    label: lang === 'ru' ? 'Новый этап' : 'New stage', 
+    pct: 0.00, // Начинаем с 0.00 вместо 5
+    month: 0
+  }]);
+};
 
   const delStage = (id) => setStages(prev => prev.filter(s => s.id !== id));
 
-  const updStage = (id, patch) => setStages(prev => prev.map(s => s.id === id ? {...s, ...patch} : s));
+  const updStage = (id, patch) => {
+  // Если обновляется процент, проверяем валидность
+  if (patch.pct !== undefined) {
+    const pct = parseFloat(patch.pct);
+    if (isNaN(pct) || pct < 0 || pct > 100) {
+      return; // Не обновляем, если значение невалидно
+    }
+    patch.pct = pct; // Сохраняем как число
+  }
+  
+  setStages(prev => prev.map(s => s.id === id ? {...s, ...patch} : s));
+};
 
   return (
   <>
@@ -1520,16 +1536,20 @@ monthlyData.push({
                       className="stage-input"
                     />
                   </td>
-                  <td>
-                    <input 
-                      type="number" 
-                      value={stage.pct} 
-                      onChange={e => updStage(stage.id, {pct: +e.target.value})}
-                      placeholder="%"
-                      className="stage-input-small"
-                    />
-                  </td>
-                  <td>
+                <td>
+  <input 
+    type="text" 
+    value={stage.pct} 
+    onChange={e => {
+      const value = parseFloat(e.target.value);
+      if (!isNaN(value) && value >= 0 && value <= 100) {
+        updStage(stage.id, {pct: value});
+      }
+    }}
+    placeholder="%"
+    className="stage-input-small"
+  />
+</td>
                     <input 
                       type="number" 
                       value={stage.month} 
@@ -1550,14 +1570,14 @@ monthlyData.push({
           
           <div className="row" style={{marginTop: 8, alignItems: 'center', justifyContent: 'space-between'}}>
             <button className="btn primary" onClick={addStage}>{t.addStage}</button>
-            <div className="pill">
-              {t.stagesSum} {Math.round(stagesSumPct * 100) / 100}%
-              {stagesSumPct !== 100 && (
-                <span className="warning">
-                  {stagesSumPct < 100 ? t.notEnough : t.exceeds} 100%
-                </span>
-              )}
-            </div>
+        <div className="pill">
+  {t.stagesSum} {stagesSumPct.toFixed(2)}%
+  {stagesSumPct !== 100 && (
+    <span className="warning">
+      {stagesSumPct < 100 ? t.notEnough : t.exceeds} 100%
+    </span>
+  )}
+</div>
           </div>
         </div>
       </div>
