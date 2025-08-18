@@ -1106,37 +1106,51 @@ monthlyData.push({
     const disc = clamp(+line.discountPct || 0, 0, 20);
     const base = base0 * (1 - disc / 100);
     const prePct = clamp(line.prePct ?? 0, 50, 100);
-    const k = stagesSumPct === 0 ? 0 : prePct / stagesSumPct;
-    const preSchedule = stages.map(s => ({
-      month: Math.max(0, Math.min(handoverMonth, Math.round(+s.month || 0))),
-      label: s.label,
-      amountUSD: base * (((+s.pct || 0) * k) / 100),
-    })).filter(r => r.amountUSD > 0).sort((a, b) => a.month - b.month);
-    const preTotalOne = preSchedule.reduce((s, r) => s + r.amountUSD, 0);
 
-    const vMonths = line.ownTerms && line.months ? line.months : months;
-    const rate = (line.ownTerms && line.monthlyRatePct != null) ? (line.monthlyRatePct / 100) : (monthlyRatePct / 100);
-    const firstPostUSD = Math.max(0, +line.firstPostUSD || 0);
-    const principalBase = Math.max(0, base - preTotalOne - firstPostUSD);
+// НОВОЕ: Сначала рассчитываем итоговую цену
+const vMonths = line.ownTerms && line.months ? line.months : months;
+const rate = (line.ownTerms && line.monthlyRatePct != null) ? (line.monthlyRatePct / 100) : (monthlyRatePct / 100);
+const firstPostUSD = Math.max(0, +line.firstPostUSD || 0);
 
-    let bal = principalBase, totalInterest = 0;
-    const principalShare = vMonths > 0 ? principalBase / vMonths : 0;
-    const postRows = [];
-    for (let i = 1; i <= vMonths; i++) {
-      const interest = bal * rate;
-      totalInterest += interest;
-      const payment = principalShare + interest;
-      postRows.push({
-        month: handoverMonth + i,
-        label: `${t.month} ${i}`,
-        principalUSD: principalShare,
-        interestUSD: interest,
-        paymentUSD: payment,
-        balanceAfterUSD: Math.max(0, bal - principalShare)
-      });
-      bal -= principalShare;
-    }
-    const lineTotalOne = base + totalInterest;
+// Временно рассчитываем preTotalOne от базовой цены для определения principalBase
+const k = stagesSumPct === 0 ? 0 : prePct / stagesSumPct;
+const tempPreSchedule = stages.map(s => ({
+  month: Math.max(0, Math.min(handoverMonth, Math.round(+s.month || 0))),
+  label: s.label,
+  amountUSD: base * (((+s.pct || 0) * k) / 100),
+})).filter(r => r.amountUSD > 0).sort((a, b) => a.month - b.month);
+const tempPreTotalOne = tempPreSchedule.reduce((s, r) => s + r.amountUSD, 0);
+
+const principalBase = Math.max(0, base - tempPreTotalOne - firstPostUSD);
+
+let bal = principalBase, totalInterest = 0;
+const principalShare = vMonths > 0 ? principalBase / vMonths : 0;
+const postRows = [];
+for (let i = 1; i <= vMonths; i++) {
+  const interest = bal * rate;
+  totalInterest += interest;
+  const payment = principalShare + interest;
+  postRows.push({
+    month: handoverMonth + i,
+    label: `${t.month} ${i}`,
+    principalUSD: principalShare,
+    interestUSD: interest,
+    paymentUSD: payment,
+    balanceAfterUSD: Math.max(0, bal - principalShare)
+  });
+  bal -= principalShare;
+}
+
+// ИТОГОВАЯ ЦЕНА = базовая цена + проценты
+const lineTotalOne = base + totalInterest;
+
+// НОВОЕ: Теперь рассчитываем preSchedule от итоговой цены
+const preSchedule = stages.map(s => ({
+  month: Math.max(0, Math.min(handoverMonth, Math.round(+s.month || 0))),
+  label: s.label,
+  amountUSD: lineTotalOne * (((+s.pct || 0) * k) / 100), // ✅ НОВОЕ: от lineTotalOne
+})).filter(r => r.amountUSD > 0).sort((a, b) => a.month - b.month);
+const preTotalOne = preSchedule.reduce((s, r) => s + r.amountUSD, 0);
 
     const qty = Math.max(1, parseInt(line.qty || 1, 10));
     const preScheduleQ = preSchedule.map(r => ({...r, amountUSD: r.amountUSD * qty}));
