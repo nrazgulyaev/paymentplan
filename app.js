@@ -438,7 +438,13 @@ function App() {
   // ИСПРАВЛЕНИЕ: Добавить недостающие функции и переменные
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
   const fmtMoney = (n, c = 'USD') => new Intl.NumberFormat('en-US', {style: 'currency', currency: c, maximumFractionDigits: 2}).format(n || 0);
-  const stagesSumPct = stages.reduce((s, x) => s + (+x.pct || 0), 0);
+  // Сумма этапов (как было)
+const stagesSumPct = stages.reduce((s, x) => s + (+x.pct || 0), 0);
+
+// Целевой процент до ключей из выбранных вилл
+const targetPrePct = lines.length > 0 ? 
+  lines.reduce((sum, line) => sum + (line.prePct || 0), 0) / lines.length : 
+  0;
 
   // Форматирование месяца для кэшфлоу (ВОССТАНОВЛЕНО СТАРОЕ)
   const formatMonth = (monthOffset) => {
@@ -1545,11 +1551,11 @@ const addStage = () => {
           
           <div className="row" style={{marginTop: 8, alignItems: 'center', justifyContent: 'space-between'}}>
             <button className="btn primary" onClick={addStage}>{t.addStage}</button>
-        <div className="pill">
+<div className="pill">
   {t.stagesSum} {stagesSumPct.toFixed(2)}%
-  {stagesSumPct !== 100 && (
+  {lines.length > 0 && stagesSumPct !== targetPrePct && (
     <span className="warning">
-      {stagesSumPct < 100 ? t.notEnough : t.exceeds} 100%
+      {stagesSumPct < targetPrePct ? t.notEnough : t.exceeds} {targetPrePct.toFixed(2)}%
     </span>
   )}
 </div>
