@@ -1772,80 +1772,81 @@ const addStage = () => {
     {/* НОВАЯ СТРУКТУРА: Настройки справа, Рассрочка слева на одной линии */}
     <div className="top-section">
       {/* ЛЕВАЯ ЧАСТЬ: Рассрочка до получения ключей */}
-      <div className="card stages-card">
-        <div className="stages-section">
-          <h3>{t.stagesTitle}</h3>
-          
-        <table className="stages-table">
-  <thead>
-    <tr>
-      <th>{t.stage}</th>
-      <th>{t.percent}</th>
-      <th>{t.month}</th>
-      <th>{t.actions}</th>
-    </tr>
-  </thead>
-  <tbody>
-    {stages.map(stage => (
-      <tr key={stage.id}>
-        <td>
-          <input 
-            type="text" 
-            value={stage.label} 
-            onChange={e => updStage(stage.id, {label: e.target.value})}
-            placeholder="Название этапа"
-            className="stage-input-small"
-          />
-        </td>
-        <td>
-  <input 
-    type="number" 
-    value={stage.pct} 
-    onChange={e => {
-      const value = parseFloat(e.target.value);
-      if (!isNaN(value) && value >= 0 && value <= 100) {
-        updStage(stage.id, {pct: value});
-      }
-    }}
-    min="0"
-    max="100"
-    step="0.01"
-    placeholder="%"
-    className="stage-input-small"
-  />
-</td>
-        <td>
-          <input 
-            type="number" 
-            value={stage.month} 
-            onChange={e => updStage(stage.id, {month: +e.target.value})}
-            placeholder="Месяц"
-            className="stage-input-small"
-          />
-        </td>
-        <td>
-          <button onClick={() => delStage(stage.id)} className="btn danger small">
-            {t.delete}
-          </button>
-        </td>
-      </tr>
-    ))}
-  </tbody>
-</table>
-          
-          <div className="row" style={{marginTop: 8, alignItems: 'center', justifyContent: 'space-between'}}>
-            <button className="btn primary" onClick={addStage}>{t.addStage}</button>
-<div className="pill">
-  {t.stagesSum} {stagesSumPct.toFixed(2)}%
-  {lines.length > 0 && stagesSumPct !== targetPrePct && (
-    <span className="warning">
-      {stagesSumPct < targetPrePct ? t.notEnough : t.exceeds} {targetPrePct.toFixed(2)}%
-    </span>
-  )}
-</div>
-          </div>
-        </div>
+     {/* ЛЕВАЯ ЧАСТЬ: Рассрочка до получения ключей */}
+<div className="card stages-card">
+  <div className="stages-section">
+    <h3>{t.stagesTitle}</h3>
+    
+    <table className="stages-table">
+      <thead>
+        <tr>
+          <th>{t.stage}</th>
+          <th>{t.percent}</th>
+          <th>{t.month}</th>
+          <th>{t.actions}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {stages.map(stage => (
+          <tr key={stage.id}>
+            <td>
+              <input 
+                type="text" 
+                value={stage.label} 
+                onChange={e => updStage(stage.id, {label: e.target.value})}
+                placeholder="Название этапа"
+                className="stage-input-small"
+              />
+            </td>
+            <td>
+              <input 
+                type="number" 
+                value={stage.pct} 
+                onChange={e => {
+                  const value = parseFloat(e.target.value);
+                  if (!isNaN(value) && value >= 0 && value <= 100) {
+                    updStage(stage.id, {pct: value});
+                  }
+                }}
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder="%"
+                className="stage-input-small"
+              />
+            </td>
+            <td>
+              <input 
+                type="number" 
+                value={stage.month} 
+                onChange={e => updStage(stage.id, {month: +e.target.value})}
+                placeholder="Месяц"
+                className="stage-input-small"
+              />
+            </td>
+            <td>
+              <button onClick={() => delStage(stage.id)} className="btn danger small">
+                {t.delete}
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    
+    <div className="row" style={{marginTop: 8, alignItems: 'center', justifyContent: 'space-between'}}>
+      <button className="btn primary" onClick={addStage}>{t.addStage}</button>
+      <div className="pill">
+        {t.stagesSum} {stagesSumPct.toFixed(2)}%
+        {lines.length > 0 && stagesSumPct !== targetPrePct && (
+          <span className="warning">
+            {stagesSumPct < targetPrePct ? t.notEnough : t.exceeds} {targetPrePct.toFixed(2)}%
+          </span>
+        )}
       </div>
+    </div>
+  </div>
+</div>
 
       {/* ПРАВАЯ ЧАСТЬ: Настройки */}
       <div className="card settings-card">
