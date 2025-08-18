@@ -1884,61 +1884,68 @@ monthlyData.push({
   <div className="v">{fmtMoney(project.totals.finalUSD, currency)}</div>
 </div>
 
-{/* НОВЫЙ KPI: ROI при продаже перед ключами */}
-<div className="kpi">
-  <div className="muted">ROI при продаже перед ключами</div>
-  <div className="v">
-    {(() => {
-      // Находим месяц перед получением ключей
-      const monthBeforeKeys = handoverMonth - 1;
-      
-      // Получаем данные из таблицы факторов 2 для этого месяца
-      if (lines.length > 0) {
-        const selectedVilla = catalog
-          .flatMap(p => p.villas)
-          .find(v => v.villaId === lines[0]?.villaId);
+{/* ОБЪЕДИНЕННЫЙ KPI: ROI при продаже перед ключами + Чистый доход */}
+<div className="kpi combined-roi-kpi">
+  <div className="roi-section">
+    <div className="muted adaptive-text">ROI при продаже перед ключами</div>
+    <div className="v roi-value">
+      {(() => {
+        // Находим месяц перед получением ключей
+        const monthBeforeKeys = handoverMonth - 1;
         
-        if (selectedVilla && selectedVilla.leaseholdEndDate) {
-          const monthlyData = generateMonthlyPricingData(selectedVilla);
-          const monthData = monthlyData.find(d => d.month === monthBeforeKeys);
+        // Получаем данные из таблицы факторов 2 для этого месяца
+        if (lines.length > 0) {
+          const selectedVilla = catalog
+            .flatMap(p => p.villas)
+            .find(v => v.villaId === lines[0]?.villaId);
           
-          if (monthData) {
-            // ROI = ((Final Price - Итоговая цена KPI) / Сумма всех платежей) × 100%
-            const roiRaw = ((monthData.finalPrice - project.totals.finalUSD) / monthData.totalPaymentsToDate) * 100;
-            // Переводим в годовые
-            const roiAnnual = roiRaw * (12 / (monthBeforeKeys + 1));
-            return roiAnnual.toFixed(1) + '%';
+          if (selectedVilla && selectedVilla.leaseholdEndDate) {
+            const monthlyData = generateMonthlyPricingData(selectedVilla);
+            const monthData = monthlyData.find(d => d.month === monthBeforeKeys);
+            
+            if (monthData) {
+              // ROI = ((Final Price - Итоговая цена KPI) / Сумма всех платежей) × 100%
+              const roiRaw = ((monthData.finalPrice - project.totals.finalUSD) / monthData.totalPaymentsToDate) * 100;
+              // Переводим в годовые
+              const roiAnnual = roiRaw * (12 / (monthBeforeKeys + 1));
+              return roiAnnual.toFixed(1) + '%';
+            }
           }
         }
-      }
-      return '0.0%';
-    })()}
+        return '0.0%';
+      })()}
+    </div>
   </div>
-  {/* НОВОЕ ПОЛЕ: Чистый доход */}
-  <div className="muted" style={{fontSize: '0.8em', marginTop: '4px'}}>
-    Чистый доход: {(() => {
-      // Находим месяц перед получением ключами
-      const monthBeforeKeys = handoverMonth - 1;
-      
-      // Получаем данные из таблицы факторов 2 для этого месяца
-      if (lines.length > 0) {
-        const selectedVilla = catalog
-          .flatMap(p => p.villas)
-          .find(v => v.villaId === lines[0]?.villaId);
+  
+  <div className="divider-line"></div>
+  
+  <div className="net-income-section">
+    <div className="muted adaptive-text">Чистый доход</div>
+    <div className="v net-income-value">
+      {(() => {
+        // Находим месяц перед получением ключей
+        const monthBeforeKeys = handoverMonth - 1;
         
-        if (selectedVilla && selectedVilla.leaseholdEndDate) {
-          const monthlyData = generateMonthlyPricingData(selectedVilla);
-          const monthData = monthlyData.find(d => d.month === monthBeforeKeys);
+        // Получаем данные из таблицы факторов 2 для этого месяца
+        if (lines.length > 0) {
+          const selectedVilla = catalog
+            .flatMap(p => p.villas)
+            .find(v => v.villaId === lines[0]?.villaId);
           
-          if (monthData) {
-            // Чистый доход = Final Price в месяц перед ключами - Итоговая цена из KPI
-            const netIncome = monthData.finalPrice - project.totals.finalUSD;
-            return fmtMoney(netIncome, currency);
+          if (selectedVilla && selectedVilla.leaseholdEndDate) {
+            const monthlyData = generateMonthlyPricingData(selectedVilla);
+            const monthData = monthlyData.find(d => d.month === monthBeforeKeys);
+            
+            if (monthData) {
+              // Чистый доход = Final Price в месяц перед ключами - Итоговая цена из KPI
+              const netIncome = monthData.finalPrice - project.totals.finalUSD;
+              return fmtMoney(netIncome, currency);
+            }
           }
         }
-      }
-      return fmtMoney(0, currency);
-    })()}
+        return fmtMoney(0, currency);
+      })()}
+    </div>
   </div>
 </div>
           {/* НОВЫЙ ПАРАМЕТР: Чистый срок лизхолда */}
