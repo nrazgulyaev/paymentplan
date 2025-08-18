@@ -1438,120 +1438,239 @@ monthlyData.push({
     <>
       {/* Внизу по порядку: */}
       
-      {/* 1. Настройки (ВОССТАНОВЛЕН СТАРЫЙ ДИЗАЙН) */}
-      <div className="card">
-        {/* Ряд 1: Все настройки в один ряд */}
-        <div className="row">
-          <div className="field compact">
-            <label>{t.lang}</label>
-            <select value={lang} onChange={e => setLang(e.target.value)}>
-              <option value="ru">Русский</option>
-              <option value="en">English</option>
-            </select>
-          </div>
-          
-          <div className="field compact">
-            <label>{t.currencyDisplay}</label>
-            <select value={currency} onChange={e => setCurrency(e.target.value)}>
-              <option>USD</option>
-              <option>IDR</option>
-              <option>EUR</option>
-            </select>
-          </div>
+  {/* Контейнер для двух блоков на одной линии */}
+<div className="top-sections-container">
+  {/* ЛЕВЫЙ БЛОК: Настройки */}
+  <div className="card">
+    <div className="row">
+      <div className="field compact">
+        <label>{t.lang}</label>
+        <select value={lang} onChange={e => setLang(e.target.value)}>
+          <option value="ru">Русский</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+      
+      <div className="field compact">
+        <label>{t.currencyDisplay}</label>
+        <select value={currency} onChange={e => setCurrency(e.target.value)}>
+          <option>USD</option>
+          <option>IDR</option>
+          <option>EUR</option>
+        </select>
+      </div>
 
-          {/* Курсы валют (только для редактора) - ВОССТАНОВЛЕНО СТАРОЕ ПОВЕДЕНИЕ */}
-          {!isClient && (
-            <>
-              <div className="field compact">
-                <label>{t.idrRate}</label>
-                <input 
-                  type="number" 
-                  min="1" 
-                  step="1" 
-                  value={idrPerUsd} 
-                  onChange={e => setIdrPerUsd(clamp(parseFloat(e.target.value || 0), 1, 1e9))}
-                />
-              </div>
-              <div className="field compact">
-                <label>{t.eurRate}</label>
-                <input 
-                  type="number" 
-                  min="0.01" 
-                  step="0.01" 
-                  value={eurPerUsd} 
-                  onChange={e => setEurPerUsd(clamp(parseFloat(e.target.value || 0), 0.01, 100))}
-                />
-              </div>
-            </>
-          )}
-
+      {/* Курсы валют (только для редактора) */}
+      {!isClient && (
+        <>
           <div className="field compact">
-            <label>{t.startMonth}</label>
-            <div className="info-display">
-              {startMonth.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { 
-                month: 'long', 
-                year: 'numeric' 
-              })}
-            </div>
-          </div>
-
-          <div className="field compact">
-            <label>{t.handoverMonth}</label>
+            <label>{t.idrRate}</label>
             <input 
               type="number" 
               min="1" 
               step="1" 
-              value={handoverMonth} 
-              onChange={e => setHandoverMonth(clamp(parseInt(e.target.value || 0, 10), 1, 120))}
+              value={idrPerUsd} 
+              onChange={e => setIdrPerUsd(clamp(parseFloat(e.target.value || 0), 1, 1e9))}
             />
           </div>
+          <div className="field compact">
+            <label>{t.eurRate}</label>
+            <input 
+              type="number" 
+              min="0.01" 
+              step="0.01" 
+              value={eurPerUsd} 
+              onChange={e => setEurPerUsd(clamp(parseFloat(e.target.value || 0), 0.01, 100))}
+            />
+          </div>
+        </>
+      )}
 
-          {!isClient ? (
-            <>
-              <div className="field compact">
-                <label>{t.globalRate}</label>
-                <input 
-                  type="number" 
-                  min="0" 
-                  step="0.01" 
-                  value={monthlyRatePct} 
-                  onChange={e => setMonthlyRatePct(clamp(parseFloat(e.target.value || 0), 0, 1000))}
-                />
-              </div>
-              <div className="field compact">
-                <label>{t.globalTerm}</label>
-                <input 
-                  type="range" 
-                  min="6" 
-                  max="24" 
-                  step="1" 
-                  value={months} 
-                  onChange={e => setMonths(parseInt(e.target.value, 10))}
-                />
-                <div className="pill">{t.months}: {months}</div>
-              </div>
-            </>
-          ) : (
-            <div className="field compact">
-              <label>{t.clientTerm}</label>
-              <input 
-                type="number" 
-                min="6" 
-                step="1" 
-                value={months} 
-                onChange={e => setMonths(clamp(parseInt(e.target.value || 0, 10), 6, 120))}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Ряд 2: Кнопка переключения режима */}
-        <div className="row">
-          <button className="btn" onClick={toggleMode}>
-            {isClient ? t.toggleToEditor : t.toggleToClient}
-          </button>
+      <div className="field compact">
+        <label>{t.startMonth}</label>
+        <div className="info-display">
+          {startMonth.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { 
+            month: 'long', 
+            year: 'numeric' 
+          })}
         </div>
       </div>
+
+      <div className="field compact">
+        <label>{t.handoverMonth}</label>
+        <input 
+          type="number" 
+          min="1" 
+          step="1" 
+          value={handoverMonth} 
+          onChange={e => setHandoverMonth(clamp(parseInt(e.target.value || 0, 10), 1, 120))}
+        />
+      </div>
+
+      {!isClient ? (
+        <>
+          <div className="field compact">
+            <label>{t.globalRate}</label>
+            <input 
+              type="number" 
+              min="0" 
+              step="0.01" 
+              value={monthlyRatePct} 
+              onChange={e => setMonthlyRatePct(clamp(parseFloat(e.target.value || 0), 0, 1000))}
+            />
+          </div>
+          <div className="field compact">
+            <label>{t.globalTerm}</label>
+            <input 
+              type="range" 
+              min="6" 
+              max="24" 
+              step="1" 
+              value={months} 
+              onChange={e => setMonths(parseInt(e.target.value, 10))}
+            />
+            <div className="pill">{t.months}: {months}</div>
+          </div>
+        </>
+      ) : (
+        <div className="field compact">
+          <label>{t.clientTerm}</label>
+          <input 
+            type="number" 
+            min="6" 
+            step="1" 
+            value={months} 
+            onChange={e => setMonths(clamp(parseInt(e.target.value || 0, 10), 6, 120))}
+          />
+        </div>
+      )}
+    </div>
+
+    {/* Ряд 2: Кнопка переключения режима */}
+    <div className="row">
+      <button className="btn" onClick={toggleMode}>
+        {isClient ? t.toggleToEditor : t.toggleToClient}
+      </button>
+    </div>
+  </div>
+
+  {/* ПРАВЫЙ БЛОК: Рассрочка до ключей */}
+  <div className="card">
+    <h3>Рассрочка до получения ключей (установите комфортный план оплаты)</h3>
+    <div className="installment-form">
+      <div className="form-row">
+        <div className="form-group">
+          <label>Месяц 0:</label>
+          <input
+            type="number"
+            value={monthlyPayments[0] || 0}
+            onChange={(e) => updateMonthlyPayment(0, Number(e.target.value))}
+            placeholder="0"
+          />
+        </div>
+        <div className="form-group">
+          <label>Месяц 1:</label>
+          <input
+            type="number"
+            value={monthlyPayments[1] || 0}
+            onChange={(e) => updateMonthlyPayment(1, Number(e.target.value))}
+            placeholder="0"
+          />
+        </div>
+        <div className="form-group">
+          <label>Месяц 2:</label>
+          <input
+            type="number"
+            value={monthlyPayments[2] || 0}
+            onChange={(e) => updateMonthlyPayment(2, Number(e.target.value))}
+            placeholder="0"
+          />
+        </div>
+        <div className="form-group">
+          <label>Месяц 3:</label>
+          <input
+            type="number"
+            value={monthlyPayments[3] || 0}
+            onChange={(e) => updateMonthlyPayment(3, Number(e.target.value))}
+            placeholder="0"
+          />
+        </div>
+        <div className="form-group">
+          <label>Месяц 4:</label>
+          <input
+            type="number"
+            value={monthlyPayments[4] || 0}
+            onChange={(e) => updateMonthlyPayment(4, Number(e.target.value))}
+            placeholder="0"
+          />
+        </div>
+        <div className="form-group">
+          <label>Месяц 5:</label>
+          <input
+            type="number"
+            value={monthlyPayments[5] || 0}
+            onChange={(e) => updateMonthlyPayment(5, Number(e.target.value))}
+            placeholder="0"
+          />
+        </div>
+        <div className="form-group">
+          <label>Месяц 6:</label>
+          <input
+            type="number"
+            value={monthlyPayments[6] || 0}
+            onChange={(e) => updateMonthlyPayment(6, Number(e.target.value))}
+            placeholder="0"
+          />
+        </div>
+        <div className="form-group">
+          <label>Месяц 7:</label>
+          <input
+            type="number"
+            value={monthlyPayments[7] || 0}
+            onChange={(e) => updateMonthlyPayment(7, Number(e.target.value))}
+            placeholder="0"
+          />
+        </div>
+        <div className="form-group">
+          <label>Месяц 8:</label>
+          <input
+            type="number"
+            value={monthlyPayments[8] || 0}
+            onChange={(e) => updateMonthlyPayment(8, Number(e.target.value))}
+            placeholder="0"
+          />
+        </div>
+        <div className="form-group">
+          <label>Месяц 9:</label>
+          <input
+            type="number"
+            value={monthlyPayments[9] || 0}
+            onChange={(e) => updateMonthlyPayment(9, Number(e.target.value))}
+            placeholder="0"
+          />
+        </div>
+        <div className="form-group">
+          <label>Месяц 10:</label>
+          <input
+            type="number"
+            value={monthlyPayments[10] || 0}
+            onChange={(e) => updateMonthlyPayment(10, Number(e.target.value))}
+            placeholder="0"
+          />
+        </div>
+        <div className="form-group">
+          <label>Месяц 11:</label>
+          <input
+            type="number"
+            value={monthlyPayments[11] || 0}
+            onChange={(e) => updateMonthlyPayment(11, Number(e.target.value))}
+            placeholder="0"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
       {/* 2. Расчёт (позиции) - ОБНОВЛЕН С НОВЫМИ ПОЛЯМИ ДЛЯ АРЕНДЫ */}
       <div className="card">
@@ -1915,74 +2034,7 @@ monthlyData.push({
         </div>
       </div>
 
-      {/* 4. Базовая рассрочка - ВОССТАНОВЛЕН СТАРЫЙ ДИЗАЙН (БЕЗ БЕЛЫХ ПРЯМОУГОЛЬНИКОВ) */}
-      <div className="card">
-        <div className="stages-section">
-          <h3>{t.stagesTitle}</h3>
-          
-          {/* ПРОСТАЯ ТАБЛИЦА БЕЗ БЕЛЫХ ПРЯМОУГОЛЬНИКОВ - ВОССТАНОВЛЕНО СТАРОЕ */}
-          <table className="stages-table">
-            <thead>
-              <tr>
-                <th>{t.stage}</th>
-                <th>{t.percent}</th>
-                <th>{t.month}</th>
-                <th>{t.actions}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stages.map(stage => (
-                <tr key={stage.id}>
-                  <td>
-                    <input 
-                      type="text" 
-                      value={stage.label} 
-                      onChange={e => updStage(stage.id, {label: e.target.value})}
-                      placeholder="Название этапа"
-                      className="stage-input"
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="number" 
-                      value={stage.pct} 
-                      onChange={e => updStage(stage.id, {pct: +e.target.value})}
-                      placeholder="%"
-                      className="stage-input-small"
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="number" 
-                      value={stage.month} 
-                      onChange={e => updStage(stage.id, {month: +e.target.value})}
-                      placeholder="Месяц"
-                      className="stage-input-small"
-                    />
-                  </td>
-                  <td>
-                    <button onClick={() => delStage(stage.id)} className="btn danger small">
-                      {t.delete}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          
-          <div className="row" style={{marginTop: 8, alignItems: 'center', justifyContent: 'space-between'}}>
-            <button className="btn primary" onClick={addStage}>{t.addStage}</button>
-            <div className="pill">
-              {t.stagesSum} {Math.round(stagesSumPct * 100) / 100}%
-              {stagesSumPct !== 100 && (
-                <span className="warning">
-                  {stagesSumPct < 100 ? t.notEnough : t.exceeds} 100%
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+   
 
       {/* 5. Сводный кэшфлоу по месяцам - ОБНОВЛЕН С НОВЫМИ КОЛОНКАМИ */}
       <div className="cashflow-block">
