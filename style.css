@@ -2399,15 +2399,13 @@ h1 {
 }
 
 .factors-table-container {
-  /* Возвращаем разумное ограничение по высоте */
-  max-height: 400px;
-  overflow: hidden;
+  max-height: none !important;
+  overflow: visible !important;
 }
 
 .factors-table-scroll {
-  /* Возвращаем ограничение для прокрутки */
-  max-height: 350px;
-  overflow-y: auto;
+  max-height: none !important;
+  overflow: visible !important;
 }
 
 .factors-table {
