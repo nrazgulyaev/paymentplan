@@ -15,7 +15,7 @@ function App() {
   const [eurPerUsd, setEurPerUsd] = useState(0.88);
   const [handoverMonth, setHandoverMonth] = useState(12);
   const [months, setMonths] = useState(12);
-  const [monthlyRatePct, setMonthlyRatePct] = useState(8.33);
+  const [monthlyRatePct, setMonthlyRatePct] = useState(8,33);
   const [startMonth, setStartMonth] = useState(new Date());
   
   // НОВЫЕ ПАРАМЕТРЫ ЦЕНООБРАЗОВАНИЯ
@@ -302,7 +302,55 @@ function App() {
       cumulativeIncome: 'Накопительный доход',
       actions: 'Действия',
       // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
-      monthlyPriceGrowth: 'Месячный рост цены до ключей (%)'
+      monthlyPriceGrowth: 'Месячный рост цены до ключей (%)',
+      
+      // НОВЫЕ ПЕРЕВОДЫ ДЛЯ KPI И ТАБЛИЦ
+      paymentBeforeKeys: 'Оплата до ключей',
+      paymentAfterKeys: 'Оплата после ключей',
+      finalValue: 'Итоговая стоимость',
+      roiBeforeKeys: 'ROI при продаже перед ключами',
+      netIncome: 'Чистый доход',
+      exitPointMaxIrr: 'Точка выхода с макс. IRR',
+      finalCumulativeRoi: 'Итоговый ROI (накопительный)',
+      
+      // НОВЫЕ ПЕРЕВОДЫ ДЛЯ ФИНМОДЕЛИ
+      financialModelTitle: 'Финмодель доходности инвестиций',
+      inflation: 'Инфляция',
+      aging: 'Старение',
+      leaseDecay: 'Lease Decay',
+      brandFactor: 'Brand Factor',
+      peak: 'Пик',
+      perYear: '/год',
+      
+      // НОВЫЕ ПЕРЕВОДЫ ДЛЯ ГРАФИКОВ
+      pricingChartTitle: 'Динамика стоимости виллы и арендного дохода',
+      pricingChartSubtitle: 'Влияние факторов на цену и доходность от аренды',
+      marketValue: 'Рыночная стоимость',
+      rentalIncome: 'Арендный доход',
+      
+      // НОВЫЕ ПЕРЕВОДЫ ДЛЯ ТАБЛИЦ
+      calculationIndicatorsAnnual: 'Расчет показателей (годовой)',
+      calculationIndicatorsPeriod: 'Расчет показателей (на период рассрочки)',
+      year: 'Год',
+      period: 'Период',
+      inflationCoefficient: 'Коэффициент инфляции',
+      totalCapitalization: 'Совокупная капитализация',
+      installmentPayment: 'Платеж по рассрочке',
+      monthlyRoi: 'ROI за месяц (%)',
+      yearlyRoi: 'ROI за год (%)',
+      cumulativeRoi: 'Итоговый ROI (%)',
+      irr: 'IRR (%)',
+      
+      // НОВЫЕ ПЕРЕВОДЫ ДЛЯ ЗАГОЛОВКОВ ТАБЛИЦ
+      leaseFactor: 'Lease Factor',
+      ageFactor: 'Age Factor',
+      
+      // НОВЫЕ ПЕРЕВОДЫ ДЛЯ KPI БЛОКОВ
+      paymentScheduleKpi: 'График платежей',
+      combinedRoiKpi: 'ROI и доходность',
+      
+      // НОВЫЕ ПЕРЕВОДЫ ДЛЯ АДАПТИВНОГО ТЕКСТА
+      adaptiveText: 'Адаптивный текст'
     },
     en: {
       title: 'Arconique / Installments Calculator & Financial Model',
@@ -418,7 +466,55 @@ function App() {
       cumulativeIncome: 'Cumulative income',
       actions: 'Actions',
       // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
-      monthlyPriceGrowth: 'Monthly price growth until keys (%)'
+      monthlyPriceGrowth: 'Monthly price growth until keys (%)',
+      
+      // NEW TRANSLATIONS FOR KPI AND TABLES
+      paymentBeforeKeys: 'Payment before keys',
+      paymentAfterKeys: 'Payment after keys',
+      finalValue: 'Final value',
+      roiBeforeKeys: 'ROI when selling before keys',
+      netIncome: 'Net income',
+      exitPointMaxIrr: 'Exit point with max IRR',
+      finalCumulativeRoi: 'Final cumulative ROI',
+      
+      // NEW TRANSLATIONS FOR FINANCIAL MODEL
+      financialModelTitle: 'Investment Return Financial Model',
+      inflation: 'Inflation',
+      aging: 'Aging',
+      leaseDecay: 'Lease Decay',
+      brandFactor: 'Brand Factor',
+      peak: 'Peak',
+      perYear: '/year',
+      
+      // NEW TRANSLATIONS FOR CHARTS
+      pricingChartTitle: 'Villa cost and rental income dynamics',
+      pricingChartSubtitle: 'Impact of factors on price and rental yield',
+      marketValue: 'Market value',
+      rentalIncome: 'Rental income',
+      
+      // NEW TRANSLATIONS FOR TABLES
+      calculationIndicatorsAnnual: 'Calculation of indicators (annual)',
+      calculationIndicatorsPeriod: 'Calculation of indicators (for installment period)',
+      year: 'Year',
+      period: 'Period',
+      inflationCoefficient: 'Inflation coefficient',
+      totalCapitalization: 'Total capitalization',
+      installmentPayment: 'Installment payment',
+      monthlyRoi: 'Monthly ROI (%)',
+      yearlyRoi: 'Yearly ROI (%)',
+      cumulativeRoi: 'Cumulative ROI (%)',
+      irr: 'IRR (%)',
+      
+      // NEW TRANSLATIONS FOR TABLE HEADERS
+      leaseFactor: 'Lease Factor',
+      ageFactor: 'Age Factor',
+      
+      // NEW TRANSLATIONS FOR KPI BLOCKS
+      paymentScheduleKpi: 'Payment schedule',
+      combinedRoiKpi: 'ROI and yield',
+      
+      // NEW TRANSLATIONS FOR ADAPTIVE TEXT
+      adaptiveText: 'Adaptive text'
     }
   };
 
@@ -679,7 +775,7 @@ const targetPrePct = lines.length > 0 ?
         const finalPrice = marketPriceAtHandover * 
           Math.pow(1 + pricingConfig.inflationRatePct / 100, year) * 
           leaseFactor(year, totalYears, pricingConfig.leaseAlpha) * 
-          ageFactor(year, pricingConfig.agingBeta) * 
+          ageFactor(year, totalYears, pricingConfig.agingBeta) * 
           brandFactor(year, pricingConfig);
         
         data.push({
@@ -1793,7 +1889,7 @@ const addStage = () => {
                   )}
                   <td className="col-pre">
                     {/* ВОССТАНОВЛЕН СТАРЫЙ ПОЛЗУНОК "До ключей, %" */}
-                    <input 
+                                       <input 
                       type="range" 
                       min="50" 
                       max="100" 
@@ -1925,11 +2021,11 @@ const addStage = () => {
           )}
          <div className="kpi payment-schedule-kpi">
     <div className="payment-item">
-      <div className="muted">Оплата до ключей</div>
+      <div className="muted">{t.paymentBeforeKeys}</div>
       <div className="v">{fmtMoney(project.totals.preUSD, currency)}</div>
     </div>
     <div className="payment-item">
-      <div className="muted">Оплата после ключей</div>
+      <div className="muted">{t.paymentAfterKeys}</div>
       <div className="v">{fmtMoney(project.totals.afterUSD, currency)}</div>
     </div>
   </div>
@@ -1940,14 +2036,14 @@ const addStage = () => {
             </div>
           )}
           <div className="kpi">
-  <div className="muted">Итоговая стоимость</div>
+  <div className="muted">{t.finalValue}</div>
   <div className="v">{fmtMoney(project.totals.finalUSD, currency)}</div>
 </div>
 
 {/* ОБЪЕДИНЕННЫЙ KPI: ROI при продаже перед ключами + Чистый доход */}
 <div className="kpi combined-roi-kpi">
   <div className="roi-section">
-    <div className="muted adaptive-text">ROI при продаже перед ключами</div>
+    <div className="muted adaptive-text">{t.roiBeforeKeys}</div>
     <div className="v roi-value">
       {(() => {
         // Находим месяц перед получением ключей
@@ -1980,7 +2076,7 @@ const addStage = () => {
   <div className="divider-line"></div>
   
   <div className="net-income-section">
-    <div className="muted adaptive-text">Чистый доход</div>
+    <div className="muted adaptive-text">{t.netIncome}</div>
     <div className="v net-income-value">
       {(() => {
         // Находим месяц перед получением ключей
@@ -2015,7 +2111,7 @@ const addStage = () => {
           </div>
           {/* НОВЫЙ ПАРАМЕТР: Точка выхода с максимальным IRR */}
           <div className="kpi">
-            <div className="muted">Точка выхода с макс. IRR</div>
+            <div className="muted">{t.exitPointMaxIrr}</div>
             <div className="v">
               {(() => {
                 const realYear = startMonth.getFullYear() + handoverMonth / 12 + calculateOptimalExitPoint.year;
@@ -2026,7 +2122,7 @@ const addStage = () => {
               IRR: {calculateOptimalExitPoint.irr.toFixed(1)}%
             </div>
             <div className="muted" style={{fontSize: '0.8em'}}>
-              Итоговый ROI (накопительный): {(() => {
+              {t.finalCumulativeRoi}: {(() => {
                 if (calculateOptimalExitPoint.year === 0) return '0.0%';
                 
                 const selectedVilla = catalog
@@ -2138,32 +2234,32 @@ const addStage = () => {
       {/* 7. НОВЫЙ БЛОК: Параметры расчёта и график ценообразования */}
       {lines.length > 0 && (
         <div className="card">
-          <h3>Финмодель доходности инвестиций</h3>
+          <h3>{t.financialModelTitle}</h3>
           
           {/* Параметры расчёта (read-only) */}
           <div className="calculation-params-compact">
             <div className="param-item-compact">
-              <span className="param-label-compact">Инфляция:</span>
-              <span className="param-value-compact">g = {pricingConfig.inflationRatePct}%/год</span>
+              <span className="param-label-compact">{t.inflation}:</span>
+              <span className="param-value-compact">g = {pricingConfig.inflationRatePct}%{t.perYear}</span>
             </div>
             <div className="param-item-compact">
-              <span className="param-label-compact">Старение:</span>
-              <span className="param-value-compact">β = {pricingConfig.agingBeta}/год</span>
+              <span className="param-label-compact">{t.aging}:</span>
+              <span className="param-value-compact">β = {pricingConfig.agingBeta}{t.perYear}</span>
             </div>
             <div className="param-item-compact">
-              <span className="param-label-compact">Lease Decay:</span>
+              <span className="param-label-compact">{t.leaseDecay}:</span>
               <span className="param-value-compact">α = {pricingConfig.leaseAlpha}</span>
             </div>
             <div className="param-item-compact">
-              <span className="param-label-compact">Brand Factor:</span>
-              <span className="param-value-compact">Пик = {pricingConfig.brandPeak}x</span>
+              <span className="param-label-compact">{t.brandFactor}:</span>
+              <span className="param-value-compact">{t.peak} = {pricingConfig.brandPeak}x</span>
             </div>
           </div>
           
           {/* График ценообразования - С ОБЩИМ МАСШТАБОМ ДЛЯ ОБЕИХ ЛИНИЙ */}
           <div className="pricing-chart-container">
-            <h4>Динамика стоимости виллы и арендного дохода</h4>
-            <p className="chart-subtitle">Влияние факторов на цену и доходность от аренды</p>
+            <h4>{t.pricingChartTitle}</h4>
+            <p className="chart-subtitle">{t.pricingChartSubtitle}</p>
             <div className="pricing-chart-svg" id="pricing-chart-svg">
               <svg width="100%" height="300" viewBox="0 0 800 300">
                 <g className="chart-lines">
@@ -2318,9 +2414,9 @@ const addStage = () => {
                         {/* Легенда - ОБЕ ЛИНИИ */}
                         <g className="chart-legend">
                           <rect x="600" y="20" width="15" height="15" fill="#2196F3"/>
-                          <text x="620" y="32" fontSize="12" fill="#333">Рыночная стоимость</text>
+                          <text x="620" y="32" fontSize="12" fill="#333">{t.marketValue}</text>
                           <rect x="600" y="40" width="15" height="15" fill="#4CAF50"/>
-                          <text x="620" y="52" fontSize="12" fill="#333">Арендный доход</text>
+                          <text x="620" y="52" fontSize="12" fill="#333">{t.rentalIncome}</text>
                         </g>
                       </>
                     );
@@ -2332,23 +2428,23 @@ const addStage = () => {
 
           {/* Таблица факторов - ОБНОВЛЕННАЯ С ТРЕМЯ НОВЫМИ СТОЛБЦАМИ */}
           <div className="factors-table-container">
-            <h4>Расчет показателей (годовой)</h4>
+            <h4>{t.calculationIndicatorsAnnual}</h4>
             <div className="factors-table-scroll">
               <table className="factors-table">
                 <thead>
                   <tr>
-                    <th>Год</th>
-                    <th>Lease Factor</th>
-                    <th>Age Factor</th>
-                    <th>Brand Factor</th>
-                    <th>Коэффициент инфляции</th>
-                    <th>Рыночная стоимость</th>
-                    <th>Арендный доход</th>
-                    <th>Совокупная капитализация</th>
+                    <th>{t.year}</th>
+                    <th>{t.leaseFactor}</th>
+                    <th>{t.ageFactor}</th>
+                    <th>{t.brandFactor}</th>
+                    <th>{t.inflationCoefficient}</th>
+                    <th>{t.marketValue}</th>
+                    <th>{t.rentalIncome}</th>
+                    <th>{t.totalCapitalization}</th>
                     {/* НОВЫЕ СТОЛБЦЫ */}
-                    <th>ROI за год (%)</th>
-                    <th>Итоговый ROI (%)</th>
-                    <th>IRR (%)</th>
+                    <th>{t.yearlyRoi}</th>
+                    <th>{t.cumulativeRoi}</th>
+                    <th>{t.irr}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2535,23 +2631,23 @@ const addStage = () => {
 
           {/* Таблица факторов 2 - месячная детализация */}
           <div className="factors-table-container">
-            <h4>Расчет показателей (на период рассрочки)</h4>
+            <h4>{t.calculationIndicatorsPeriod}</h4>
             <div className="factors-table-scroll">
               <table className="factors-table">
                 <thead>
                   <tr>
-                    <th>Период</th>
-                    <th>Lease Factor</th>
-                    <th>Age Factor</th>
-                    <th>Brand Factor</th>
-                    <th>Коэффициент инфляции</th>
-                    <th>Рыночная стоимость</th>
-                    <th>Арендный доход</th>
-                    <th>Совокупная капитализация</th>
-                    <th>Платеж по рассрочке</th>
-<th>ROI за месяц (%)</th>
-<th>Итоговый ROI (%)</th>
-<th>IRR (%)</th>
+                    <th>{t.period}</th>
+                    <th>{t.leaseFactor}</th>
+                    <th>{t.ageFactor}</th>
+                    <th>{t.brandFactor}</th>
+                    <th>{t.inflationCoefficient}</th>
+                    <th>{t.marketValue}</th>
+                    <th>{t.rentalIncome}</th>
+                    <th>{t.totalCapitalization}</th>
+                    <th>{t.installmentPayment}</th>
+<th>{t.monthlyRoi}</th>
+<th>{t.cumulativeRoi}</th>
+<th>{t.irr}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2720,7 +2816,7 @@ const addStage = () => {
             step="0.1" 
             value={newVillaForm.monthlyPriceGrowthPct} 
             onChange={e => setNewVillaForm(prev => ({...prev, monthlyPriceGrowthPct: +e.target.value}))}
-            placeholder="Месячный рост цены (%)"
+                        placeholder="Месячный рост цены (%)"
             className="input"
           />
         </div>
@@ -3099,4 +3195,3 @@ function CatalogManager({
 // ===== РЕНДЕРИНГ ПРИЛОЖЕНИЯ =====
 const root = createRoot(document.getElementById('root'));
 root.render(<App />);
-    
