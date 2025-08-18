@@ -1773,10 +1773,12 @@ const addStage = () => {
     <div className="top-section">
      {/* ЛЕВАЯ ЧАСТЬ: Рассрочка до получения ключей */}
 <div className="card stages-card">
-  <div className="card-header">
-    <h3 style={{margin: '6px 0'}}>{t.stagesTitle}</h3>
-    <button className="btn primary small" onClick={addStage}>{t.addStage}</button>
+  <div className="card-header stages-header">
+  <div className="stages-title-row">
+    <h3 className="stages-title">{t.stagesTitle}</h3>
+    <button className="btn primary small add-stage-btn" onClick={addStage}>{t.addStage}</button>
   </div>
+</div>
   
   <div className="stages-scroll">
     <table className="factors-table">
