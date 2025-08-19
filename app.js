@@ -8,7 +8,7 @@ const PIN_CODE = '334346';
 
 // Основной компонент приложения
 function App() {
-  const [lang, setLang] = useState('ru');
+  const [lang, setLang] = useState('en');
   const [isClient, setIsClient] = useState(true); // По умолчанию клиентский режим
   const [currency, setCurrency] = useState('USD');
   const [idrPerUsd, setIdrPerUsd] = useState(16300);
@@ -188,170 +188,6 @@ function App() {
 
   // ОБНОВЛЕНО: Переводы с новыми полями
   const T = {
-    ru: {
-      title: 'Arconique / Калькулятор рассрочки и финмодель',
-      lang: 'Язык интерфейса',
-      currencyDisplay: 'Валюта отображения',
-      idrRate: 'IDR за 1 USD',
-      eurRate: 'EUR за 1 USD',
-      handoverMonth: 'Срок строительства',
-      globalTerm: 'Глобальный срок post‑handover (6–24 мес)',
-      globalRate: 'Глобальная ставка, %/мес',
-      clientTerm: 'Post‑handover рассрочка (мес)',
-      startMonth: 'Заключение договора',
-      stagesTitle: 'Рассрочка до получения ключей (установите комфортный план оплаты)',
-      stage: 'Этап',
-      percent: '%',
-      month: 'Месяц',
-      addStage: 'Добавить этап',
-      delete: 'Удалить',
-      villasTitle: 'Объект недвижимости',
-      project: 'Проект',
-      villa: 'Вилла',
-      qty: 'Кол-во',
-      area: 'м²',
-      ppsm: '$ / м²',
-      price: 'Текущая стоимость (USD)',
-      discount: 'Скидка, %',
-      prePct: 'До ключей, %',
-      months: 'Срок рассрочки, мес',
-      rate: 'Ставка, %/мес',
-      lineTotal: 'Итоговая стоимость (с учетом выбранного плана рассрочки)',
-      addFromCatalog: 'Добавить из каталога',
-      cashflowTitle: 'Полный график платежей',
-      exportCSV: 'Экспорт CSV',
-      exportXLSX: 'Экспорт Excel',
-      exportPDF: 'Сохранить в PDF',
-      lines: 'Выбрано вилл',
-      keys: 'Ключи через',
-      client: 'Клиент',
-      editor: 'Редактор',
-      catalogTitle: 'Каталог проектов (редактор)',
-      addProject: 'Добавить проект',
-      addVilla: 'Добавить виллу',
-      importJSON: 'Импорт JSON',
-      exportJSON: 'Экспорт JSON',
-      selectFromCatalog: 'Выбор из каталога',
-      search: 'Поиск',
-      areaFrom: 'м² от',
-      areaTo: 'м² до',
-      priceFrom: 'Цена от',
-      priceTo: 'Цена до',
-      sort: 'Сортировать',
-      byPrice: 'по цене',
-      byArea: 'по площади',
-      byName: 'по названию',
-      addSelected: 'Добавить выбранные',
-      cancel: 'Отмена',
-      save: 'Сохранить',
-      edit: 'Редактировать',
-      remove: 'Удалить',
-      projectName: 'Название проекта',
-      villaName: 'Название виллы',
-      villaArea: 'Площадь (м²)',
-      villaPpsm: 'Цена за м² ($)',
-      villaBasePrice: 'Базовая цена ($)',
-      projectNameRequired: 'Введите название проекта',
-      villaNameRequired: 'Введите название виллы',
-      // Дополнительные переводы
-      toggleToEditor: 'Переключиться в редактор',
-      toggleToClient: 'Переключиться в клиент',
-      enterPin: 'Введите PIN для входа в редакторский режим:',
-      editorActivated: 'Режим редактора активирован',
-      wrongPin: 'Неверный PIN',
-      switchedToClient: 'Переключено в клиентский режим',
-      stagesSum: 'Сумма этапов:',
-      notEnough: '— не хватает',
-      exceeds: '— превышает',
-      projectExists: 'Проект с таким ID уже существует',
-      villaExists: 'Вилла с таким ID уже существует в этом проекте',
-      fillProjectId: 'Заполните ID и название проекта',
-      fillVillaId: 'Заполните ID и название виллы',
-      deleteProjectConfirm: 'Удалить проект и все его виллы?',
-      deleteVillaConfirm: 'Удалить виллу?',
-      catalogImported: 'Каталог успешно импортирован',
-      wrongFileFormat: 'Неверный формат файла',
-      importError: 'Ошибка при импорте файла',
-      xlsxNotLoaded: 'Библиотека XLSX не загружена',
-      html2pdfNotLoaded: 'Библиотека html2pdf не загружена',
-      reportTitle: 'Arconique - Отчет по рассрочке',
-      reportCreated: 'Отчет создан:',
-      projectSummary: 'Сводка проекта',
-      totalAmount: 'Общая сумма:',
-      finalPrice: 'Итоговая стоимость:',
-      interest: 'Проценты:',
-      monthlyCashflow: 'Денежный поток по месяцам',
-      month: 'Месяц',
-      description: 'Описание',
-      amountDue: 'Платеж',
-      remainingBalance: 'Остаток по договору',
-      after: 'Оплата после ключей',
-      firstPayment: 'Первый платёж',
-      // ОБНОВЛЕНО: Новые переводы для лизхолда и индексации
-      dailyRate: 'Стоимость проживания в сутки (USD)',
-      occupancyRate: 'Средняя заполняемость за месяц (%)',
-      rentalIncome: 'Прогнозируемый доход от аренды',
-      netPayment: 'Чистый платеж/доход в месяц',
-      leaseholdEndDate: 'Дата окончания лизхолда',
-      rentalPriceIndex: 'Рост цены аренды в год (%)',
-      cleanLeaseholdTerm: 'Чистый срок лизхолда (с момента получения ключей)',
-      years: 'лет',
-      months: 'месяцев',
-      rentalIncomeChart: 'График общей доходности от сдачи в аренду',
-      totalIncome: 'Общий доход за год',
-      cumulativeIncome: 'Накопительный доход',
-      actions: 'Действия',
-      // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
-      monthlyPriceGrowth: 'Месячный рост цены до ключей (%)',
-      
-      // НОВЫЕ ПЕРЕВОДЫ ДЛЯ KPI И ТАБЛИЦ
-      paymentBeforeKeys: 'Оплата до ключей',
-      paymentAfterKeys: 'Оплата после ключей',
-      finalValue: 'Итоговая стоимость',
-      roiBeforeKeys: 'ROI при продаже перед ключами',
-      netIncome: 'Чистый доход',
-      exitPointMaxIrr: 'Точка выхода с макс. IRR',
-      finalCumulativeRoi: 'Итоговый ROI (накопительный)',
-      
-      // НОВЫЕ ПЕРЕВОДЫ ДЛЯ ФИНМОДЕЛИ
-      financialModelTitle: 'Финмодель доходности инвестиций',
-      inflation: 'Инфляция',
-      aging: 'Старение',
-      leaseDecay: 'Lease Decay',
-      brandFactor: 'Brand Factor',
-      peak: 'Пик',
-      perYear: '/год',
-      
-      // НОВЫЕ ПЕРЕВОДЫ ДЛЯ ГРАФИКОВ
-      pricingChartTitle: 'Динамика стоимости виллы и арендного дохода',
-      pricingChartSubtitle: 'Влияние факторов на цену и доходность от аренды',
-      marketValue: 'Рыночная стоимость',
-      rentalIncome: 'Арендный доход',
-      
-      // НОВЫЕ ПЕРЕВОДЫ ДЛЯ ТАБЛИЦ
-      calculationIndicatorsAnnual: 'Расчет показателей (годовой)',
-      calculationIndicatorsPeriod: 'Расчет показателей (на период рассрочки)',
-      year: 'Год',
-      period: 'Период',
-      inflationCoefficient: 'Коэффициент инфляции',
-      totalCapitalization: 'Совокупная капитализация',
-      installmentPayment: 'Платеж по рассрочке',
-      monthlyRoi: 'ROI за месяц (%)',
-      yearlyRoi: 'ROI за год (%)',
-      cumulativeRoi: 'Итоговый ROI (%)',
-      irr: 'IRR (%)',
-      
-      // НОВЫЕ ПЕРЕВОДЫ ДЛЯ ЗАГОЛОВКОВ ТАБЛИЦ
-      leaseFactor: 'Lease Factor',
-      ageFactor: 'Age Factor',
-      
-      // НОВЫЕ ПЕРЕВОДЫ ДЛЯ KPI БЛОКОВ
-      paymentScheduleKpi: 'График платежей',
-      combinedRoiKpi: 'ROI и доходность',
-      
-      // НОВЫЕ ПЕРЕВОДЫ ДЛЯ АДАПТИВНОГО ТЕКСТА
-      adaptiveText: 'Адаптивный текст'
-    },
     en: {
       title: 'Arconique / Installments Calculator & Financial Model',
       lang: 'Language',
@@ -515,11 +351,176 @@ function App() {
       
       // NEW TRANSLATIONS FOR ADAPTIVE TEXT
       adaptiveText: 'Adaptive text'
+    },
+ru: {
+      title: 'Arconique / Калькулятор рассрочки и финмодель',
+      lang: 'Язык интерфейса',
+      currencyDisplay: 'Валюта отображения',
+      idrRate: 'IDR за 1 USD',
+      eurRate: 'EUR за 1 USD',
+      handoverMonth: 'Срок строительства',
+      globalTerm: 'Глобальный срок post‑handover (6–24 мес)',
+      globalRate: 'Глобальная ставка, %/мес',
+      clientTerm: 'Post‑handover рассрочка (мес)',
+      startMonth: 'Заключение договора',
+      stagesTitle: 'Рассрочка до получения ключей (установите комфортный план оплаты)',
+      stage: 'Этап',
+      percent: '%',
+      month: 'Месяц',
+      addStage: 'Добавить этап',
+      delete: 'Удалить',
+      villasTitle: 'Объект недвижимости',
+      project: 'Проект',
+      villa: 'Вилла',
+      qty: 'Кол-во',
+      area: 'м²',
+      ppsm: '$ / м²',
+      price: 'Текущая стоимость (USD)',
+      discount: 'Скидка, %',
+      prePct: 'До ключей, %',
+      months: 'Срок рассрочки, мес',
+      rate: 'Ставка, %/мес',
+      lineTotal: 'Итоговая стоимость (с учетом выбранного плана рассрочки)',
+      addFromCatalog: 'Добавить из каталога',
+      cashflowTitle: 'Полный график платежей',
+      exportCSV: 'Экспорт CSV',
+      exportXLSX: 'Экспорт Excel',
+      exportPDF: 'Сохранить в PDF',
+      lines: 'Выбрано вилл',
+      keys: 'Ключи через',
+      client: 'Клиент',
+      editor: 'Редактор',
+      catalogTitle: 'Каталог проектов (редактор)',
+      addProject: 'Добавить проект',
+      addVilla: 'Добавить виллу',
+      importJSON: 'Импорт JSON',
+      exportJSON: 'Экспорт JSON',
+      selectFromCatalog: 'Выбор из каталога',
+      search: 'Поиск',
+      areaFrom: 'м² от',
+      areaTo: 'м² до',
+      priceFrom: 'Цена от',
+      priceTo: 'Цена до',
+      sort: 'Сортировать',
+      byPrice: 'по цене',
+      byArea: 'по площади',
+      byName: 'по названию',
+      addSelected: 'Добавить выбранные',
+      cancel: 'Отмена',
+      save: 'Сохранить',
+      edit: 'Редактировать',
+      remove: 'Удалить',
+      projectName: 'Название проекта',
+      villaName: 'Название виллы',
+      villaArea: 'Площадь (м²)',
+      villaPpsm: 'Цена за м² ($)',
+      villaBasePrice: 'Базовая цена ($)',
+      projectNameRequired: 'Введите название проекта',
+      villaNameRequired: 'Введите название виллы',
+      // Дополнительные переводы
+      toggleToEditor: 'Переключиться в редактор',
+      toggleToClient: 'Переключиться в клиент',
+      enterPin: 'Введите PIN для входа в редакторский режим:',
+      editorActivated: 'Режим редактора активирован',
+      wrongPin: 'Неверный PIN',
+      switchedToClient: 'Переключено в клиентский режим',
+      stagesSum: 'Сумма этапов:',
+      notEnough: '— не хватает',
+      exceeds: '— превышает',
+      projectExists: 'Проект с таким ID уже существует',
+      villaExists: 'Вилла с таким ID уже существует в этом проекте',
+      fillProjectId: 'Заполните ID и название проекта',
+      fillVillaId: 'Заполните ID и название виллы',
+      deleteProjectConfirm: 'Удалить проект и все его виллы?',
+      deleteVillaConfirm: 'Удалить виллу?',
+      catalogImported: 'Каталог успешно импортирован',
+      wrongFileFormat: 'Неверный формат файла',
+      importError: 'Ошибка при импорте файла',
+      xlsxNotLoaded: 'Библиотека XLSX не загружена',
+      html2pdfNotLoaded: 'Библиотека html2pdf не загружена',
+      reportTitle: 'Arconique - Отчет по рассрочке',
+      reportCreated: 'Отчет создан:',
+      projectSummary: 'Сводка проекта',
+      totalAmount: 'Общая сумма:',
+      finalPrice: 'Итоговая стоимость:',
+      interest: 'Проценты:',
+      monthlyCashflow: 'Денежный поток по месяцам',
+      month: 'Месяц',
+      description: 'Описание',
+      amountDue: 'Платеж',
+      remainingBalance: 'Остаток по договору',
+      after: 'Оплата после ключей',
+      firstPayment: 'Первый платёж',
+      // ОБНОВЛЕНО: Новые переводы для лизхолда и индексации
+      dailyRate: 'Стоимость проживания в сутки (USD)',
+      occupancyRate: 'Средняя заполняемость за месяц (%)',
+      rentalIncome: 'Прогнозируемый доход от аренды',
+      netPayment: 'Чистый платеж/доход в месяц',
+      leaseholdEndDate: 'Дата окончания лизхолда',
+      rentalPriceIndex: 'Рост цены аренды в год (%)',
+      cleanLeaseholdTerm: 'Чистый срок лизхолда (с момента получения ключей)',
+      years: 'лет',
+      months: 'месяцев',
+      rentalIncomeChart: 'График общей доходности от сдачи в аренду',
+      totalIncome: 'Общий доход за год',
+      cumulativeIncome: 'Накопительный доход',
+      actions: 'Действия',
+      // НОВОЕ ПОЛЕ: Месячный рост цены до получения ключей
+      monthlyPriceGrowth: 'Месячный рост цены до ключей (%)',
+      
+      // НОВЫЕ ПЕРЕВОДЫ ДЛЯ KPI И ТАБЛИЦ
+      paymentBeforeKeys: 'Оплата до ключей',
+      paymentAfterKeys: 'Оплата после ключей',
+      finalValue: 'Итоговая стоимость',
+      roiBeforeKeys: 'ROI при продаже перед ключами',
+      netIncome: 'Чистый доход',
+      exitPointMaxIrr: 'Точка выхода с макс. IRR',
+      finalCumulativeRoi: 'Итоговый ROI (накопительный)',
+      
+      // НОВЫЕ ПЕРЕВОДЫ ДЛЯ ФИНМОДЕЛИ
+      financialModelTitle: 'Финмодель доходности инвестиций',
+      inflation: 'Инфляция',
+      aging: 'Старение',
+      leaseDecay: 'Lease Decay',
+      brandFactor: 'Brand Factor',
+      peak: 'Пик',
+      perYear: '/год',
+      
+      // НОВЫЕ ПЕРЕВОДЫ ДЛЯ ГРАФИКОВ
+      pricingChartTitle: 'Динамика стоимости виллы и арендного дохода',
+      pricingChartSubtitle: 'Влияние факторов на цену и доходность от аренды',
+      marketValue: 'Рыночная стоимость',
+      rentalIncome: 'Арендный доход',
+      
+      // НОВЫЕ ПЕРЕВОДЫ ДЛЯ ТАБЛИЦ
+      calculationIndicatorsAnnual: 'Расчет показателей (годовой)',
+      calculationIndicatorsPeriod: 'Расчет показателей (на период рассрочки)',
+      year: 'Год',
+      period: 'Период',
+      inflationCoefficient: 'Коэффициент инфляции',
+      totalCapitalization: 'Совокупная капитализация',
+      installmentPayment: 'Платеж по рассрочке',
+      monthlyRoi: 'ROI за месяц (%)',
+      yearlyRoi: 'ROI за год (%)',
+      cumulativeRoi: 'Итоговый ROI (%)',
+      irr: 'IRR (%)',
+      
+      // НОВЫЕ ПЕРЕВОДЫ ДЛЯ ЗАГОЛОВКОВ ТАБЛИЦ
+      leaseFactor: 'Lease Factor',
+      ageFactor: 'Age Factor',
+      
+      // НОВЫЕ ПЕРЕВОДЫ ДЛЯ KPI БЛОКОВ
+      paymentScheduleKpi: 'График платежей',
+      combinedRoiKpi: 'ROI и доходность',
+      
+      // НОВЫЕ ПЕРЕВОДЫ ДЛЯ АДАПТИВНОГО ТЕКСТА
+      adaptiveText: 'Адаптивный текст'
     }
+
   };
 
   // Получаем переводы для текущего языка
-  const t = T[lang] || T.ru; // fallback на русский
+  const t = T[lang] || T.en; // fallback на русский
 
   // Обновление заголовка страницы
   useEffect(() => {
@@ -1855,10 +1856,10 @@ const addStage = () => {
         <div className="row">
           <div className="field compact">
             <label>{t.lang}</label>
-            <select value={lang} onChange={e => setLang(e.target.value)}>
-              <option value="ru">Русский</option>
-              <option value="en">English</option>
-            </select>
+           <select value={lang} onChange={e => setLang(e.target.value)}>
+  <option value="en">English</option>
+  <option value="ru">Русский</option>
+</select>
           </div>
           
           <div className="field compact">
