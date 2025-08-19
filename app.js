@@ -1849,125 +1849,121 @@ const addStage = () => {
   </div>
 </div>
 
-   {/* ПРАВАЯ ЧАСТЬ: Настройки */}
-<div className="card settings-card">
-  {/* Ряд 1: Язык и валюта */}
-  <div className="row">
-    <div className="field compact">
-      <label>{t.lang}</label>
-      <select value={lang} onChange={e => setLang(e.target.value)}>
-        <option value="ru">Русский</option>
-        <option value="en">English</option>
-      </select>
-    </div>
-    
-    <div className="field compact">
-      <label>{t.currencyDisplay}</label>
-      <select value={currency} onChange={e => setCurrency(e.target.value)}>
-        <option>USD</option>
-        <option>IDR</option>
-        <option>EUR</option>
-      </select>
-    </div>
-  </div>
+      {/* ПРАВАЯ ЧАСТЬ: Настройки */}
+      <div className="card settings-card">
+        {/* Ряд 1: Все настройки в один ряд */}
+        <div className="row">
+          <div className="field compact">
+            <label>{t.lang}</label>
+            <select value={lang} onChange={e => setLang(e.target.value)}>
+              <option value="ru">Русский</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+          
+          <div className="field compact">
+            <label>{t.currencyDisplay}</label>
+            <select value={currency} onChange={e => setCurrency(e.target.value)}>
+              <option>USD</option>
+              <option>IDR</option>
+              <option>EUR</option>
+            </select>
+          </div>
 
-  {/* Ряд 2: Заключение договора и срок строительства */}
-  <div className="row">
-    <div className="field compact">
-      <label>{t.startMonth}</label>
-      <div className="info-display">
-        {startMonth.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { 
-          month: 'long', 
-          year: 'numeric' 
-        })}
+          {/* Курсы валют (только для редактора) */}
+          {!isClient && (
+            <>
+              <div className="field compact">
+                <label>{t.idrRate}</label>
+                <input 
+                  type="number" 
+                  min="1" 
+                  step="1" 
+                  value={idrPerUsd} 
+                  onChange={e => setIdrPerUsd(clamp(parseFloat(e.target.value || 0), 1, 1e9))}
+                />
+              </div>
+              <div className="field compact">
+                <label>{t.eurRate}</label>
+                <input 
+                  type="number" 
+                  min="0.01" 
+                  step="0.01" 
+                  value={eurPerUsd} 
+                  onChange={e => setEurPerUsd(clamp(parseFloat(e.target.value || 0), 0.01, 100))}
+                />
+              </div>
+            </>
+          )}
+
+          <div className="field compact">
+            <label>{t.startMonth}</label>
+            <div className="info-display">
+              {startMonth.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { 
+                month: 'long', 
+                year: 'numeric' 
+              })}
+            </div>
+          </div>
+
+          <div className="field compact">
+            <label>{t.handoverMonth}</label>
+            <input 
+              type="number" 
+              min="1" 
+              step="1" 
+              value={handoverMonth} 
+              onChange={e => setHandoverMonth(clamp(parseInt(e.target.value || 0, 10), 1, 120))}
+            />
+          </div>
+
+          {!isClient ? (
+            <>
+              <div className="field compact">
+                <label>{t.globalRate}</label>
+                <input 
+                  type="number" 
+                  min="0" 
+                  step="0.01" 
+                  value={monthlyRatePct} 
+                  onChange={e => setMonthlyRatePct(clamp(parseFloat(e.target.value || 0), 0, 1000))}
+                />
+              </div>
+              <div className="field compact">
+                <label>{t.globalTerm}</label>
+                <input 
+                  type="range" 
+                  min="6" 
+                  max="24" 
+                  step="1" 
+                  value={months} 
+                  onChange={e => setMonths(parseInt(e.target.value, 10))}
+                />
+                <div className="pill">{t.months}: {months}</div>
+              </div>
+            </>
+          ) : (
+            <div className="field compact">
+              <label>{t.clientTerm}</label>
+              <input 
+                type="number" 
+                min="6" 
+                step="1" 
+                value={months} 
+                onChange={e => setMonths(clamp(parseInt(e.target.value || 0, 10), 6, 120))}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Ряд 2: Кнопка переключения режима */}
+        <div className="row">
+          <button className="btn" onClick={toggleMode}>
+            {isClient ? t.toggleToEditor : t.toggleToClient}
+          </button>
+        </div>
       </div>
     </div>
-
-    <div className="field compact">
-      <label>{t.handoverMonth}</label>
-      <input 
-        type="number" 
-        min="1" 
-        step="1" 
-        value={handoverMonth} 
-        onChange={e => setHandoverMonth(clamp(parseInt(e.target.value || 0, 10), 1, 120))}
-      />
-    </div>
-  </div>
-
-  {/* Ряд 3: Post-handover рассрочка и кнопка переключения */}
-  <div className="row">
-    <div className="field compact">
-      <label>{t.clientTerm}</label>
-      <input 
-        type="number" 
-        min="6" 
-        step="1" 
-        value={months} 
-        onChange={e => setMonths(clamp(parseInt(e.target.value || 0, 10), 6, 120))}
-      />
-    </div>
-    
-    <button className="btn" onClick={toggleMode}>
-      {isClient ? t.toggleToEditor : t.toggleToClient}
-    </button>
-  </div>
-
-  {/* Ряд 4: Глобальные настройки (только для редактора) */}
-  {!isClient && (
-    <div className="row">
-      <div className="field compact">
-        <label>{t.globalRate}</label>
-        <input 
-          type="number" 
-          min="0" 
-          step="0.01" 
-          value={monthlyRatePct} 
-          onChange={e => setMonthlyRatePct(clamp(parseFloat(e.target.value || 0), 0, 1000))}
-        />
-      </div>
-      
-      <div className="field compact">
-        <label>{t.globalTerm}</label>
-        <input 
-          type="range" 
-          min="6" 
-          max="24" 
-          step="1" 
-          value={months} 
-          onChange={e => setMonths(parseInt(e.target.value, 10))}
-        />
-        <div className="pill">{t.months}: {months}</div>
-      </div>
-    </div>
-  )}
-
-  {/* Ряд 5: Курсы валют (только для редактора) */}
-  {!isClient && (
-    <div className="row">
-      <div className="field compact">
-        <label>{t.idrRate}</label>
-        <input 
-          type="number" 
-          min="1" 
-          step="1" 
-          value={idrPerUsd} 
-          onChange={e => setIdrPerUsd(clamp(parseFloat(e.target.value || 0), 1, 1e9))}
-        />
-      </div>
-      <div className="field compact">
-        <label>{t.eurRate}</label>
-        <input 
-          type="number" 
-          min="0.01" 
-          step="0.01" 
-          value={eurPerUsd} 
-          onChange={e => setEurPerUsd(clamp(parseFloat(e.target.value || 0), 0.01, 100))}
-        />
-      </div>
-    </div>
-  )}
-</div>
 
 
 
