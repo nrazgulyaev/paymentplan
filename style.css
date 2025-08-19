@@ -2261,4 +2261,93 @@ h1 {
   animation: shimmer 1.5s infinite;
 }
 
+/* ===== АДАПТИВНЫЕ СТИЛИ ДЛЯ НАСТРОЕК ===== */
+
+/* Десктопная версия (по умолчанию) */
+.settings-card .row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.settings-card .field.compact {
+  flex: 0 0 auto;
+}
+
+/* Мобильная версия */
+@media (max-width: 768px) {
+  .settings-card .row {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .settings-card .field.compact {
+    flex: none;
+    width: 100%;
+  }
+  
+  /* Первый ряд: язык и валюта в одну строку */
+  .settings-card .row:first-child {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  
+  /* Второй ряд: заключение договора и срок строительства */
+  .settings-card .row:nth-child(2) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  
+  /* Третий ряд: post-handover и кнопка переключения */
+  .settings-card .row:nth-child(3) {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+  }
+  
+  /* Четвертый ряд: глобальные настройки (только для редактора) */
+  .settings-card .row:nth-child(4) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  
+  /* Пятый ряд: кнопка переключения режима */
+  .settings-card .row:last-child {
+    display: flex;
+    justify-content: center;
+  }
+  
+  /* Курсы валют на мобильных - в одну строку */
+  .settings-card .row:nth-child(5) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+}
+
+/* Очень маленькие экраны */
+@media (max-width: 480px) {
+  .settings-card .row:first-child,
+  .settings-card .row:nth-child(2),
+  .settings-card .row:nth-child(4),
+  .settings-card .row:nth-child(5) {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .settings-card .row:nth-child(3) {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .settings-card .field.compact {
+    margin-bottom: 8px;
+  }
+}
 /* ===== КОНЕЦ СТИЛЕЙ ===== */
