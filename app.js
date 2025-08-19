@@ -654,15 +654,15 @@ const targetPrePct = lines.length > 0 ?
     }
   };
 
-  const ageFactor = (year, beta) => {
-    try {
-      if (year < 0 || beta < 0) return 1;
-      return Math.exp(-beta * year);
-    } catch (error) {
-      console.error('Ошибка в ageFactor:', error);
-      return 1;
-    }
-  };
+const ageFactor = (year, beta) => {
+  try {
+    if (year < 0 || beta < 0) return 1;
+    return Math.exp(-beta * year);
+  } catch (error) {
+    console.error('Ошибка в ageFactor:', error);
+    return 1;
+  }
+};
 
   const brandFactor = (year, config) => {
     try {
@@ -764,7 +764,7 @@ const targetPrePct = lines.length > 0 ?
       const basePrice = villa.baseUSD;
       
       const leaseF = leaseFactor(yearOffset, totalYears, pricingConfig.leaseAlpha);
-      const ageF = ageFactor(yearOffset, pricingConfig.agingBeta);
+     const ageF = ageFactor(yearOffset, pricingConfig.agingBeta);
       const brandF = brandFactor(yearOffset, pricingConfig);
       const inflationF = Math.pow(1 + pricingConfig.inflationRatePct / 100, yearOffset);
       
@@ -775,46 +775,44 @@ const targetPrePct = lines.length > 0 ?
     }
   };
 
-  // ИСПРАВЛЕНО: Используем startMonth вместо new Date()
-  // ИСПРАВЛЕНО: Функция generatePricingData - убрано ограничение по годам
-  const generatePricingData = (villa) => {
-    try {
-      if (!villa || !villa.leaseholdEndDate) return [];
+  
+ // ИСПРАВЛЕНО: Функция generatePricingData - правильный расчет Final Price
+const generatePricingData = (villa) => {
+  try {
+    if (!villa || !villa.leaseholdEndDate) return [];
+    
+    const totalYears = Math.ceil((villa.leaseholdEndDate - startMonth) / (365 * 24 * 60 * 60 * 1000));
+    const data = [];
+    
+    // Получаем линию для расчета месячного роста
+    const selectedLine = lines.find(l => l.villaId === villa.villaId);
+    
+    // Рыночная цена на ключах
+    const marketPriceAtHandover = calculateMarketPriceAtHandover(villa, selectedLine);
+    
+    for (let year = 0; year <= totalYears; year++) {
+      // ИСПРАВЛЕНО: Final Price = рыночная цена на ключах × коэффициенты × инфляция
+      const finalPrice = marketPriceAtHandover * 
+        Math.pow(1 + pricingConfig.inflationRatePct / 100, year) * 
+        leaseFactor(year, totalYears, pricingConfig.leaseAlpha) * 
+        ageFactor(year, pricingConfig.agingBeta) * 
+        brandFactor(year, pricingConfig);
       
-      const totalYears = Math.ceil((villa.leaseholdEndDate - startMonth) / (365 * 24 * 60 * 60 * 1000));
-      const data = [];
-      
-      // УБРАНО ОГРАНИЧЕНИЕ: было Math.min(totalYears, 20), теперь все годы
-      for (let year = 0; year <= totalYears; year++) {
-        
-        // Получаем линию для расчета месячного роста
-        const selectedLine = lines.find(l => l.villaId === villa.villaId);
-
-        // Рыночная цена на ключах
-        const marketPriceAtHandover = calculateMarketPriceAtHandover(villa, selectedLine);
-
-        // Final Price = рыночная цена на ключах × коэффициенты × инфляция
-        const finalPrice = marketPriceAtHandover * 
-          Math.pow(1 + pricingConfig.inflationRatePct / 100, year) * 
-          leaseFactor(year, totalYears, pricingConfig.leaseAlpha) * 
-          ageFactor(year, totalYears, pricingConfig.agingBeta) * 
-          brandFactor(year, pricingConfig);
-        
-        data.push({
-          year,
-          finalPrice,
-          leaseFactor: leaseFactor(year, totalYears, pricingConfig.leaseAlpha),
-          ageFactor: ageFactor(year, pricingConfig.agingBeta),
-          brandFactor: brandFactor(year, pricingConfig)
-        });
-      }
-      
-      return data;
-    } catch (error) {
-      console.error('Ошибка в generatePricingData:', error);
-      return [];
+      data.push({
+        year,
+        finalPrice,
+        leaseFactor: leaseFactor(year, totalYears, pricingConfig.leaseAlpha),
+        ageFactor: ageFactor(year, pricingConfig.agingBeta),
+        brandFactor: brandFactor(year, pricingConfig)
+      });
     }
-  };
+    
+    return data;
+  } catch (error) {
+    console.error('Ошибка в generatePricingData:', error);
+    return [];
+  }
+};
 
   // ОБНОВЛЕННАЯ ФУНКЦИЯ: Генерация месячных данных для таблицы факторов 2
 const generateMonthlyPricingData = (villa) => {
@@ -863,8 +861,9 @@ const totalLeaseholdYears = Math.ceil((villa.leaseholdEndDate - startMonth) / (3
         const yearOffset = (month - handoverMonth) / 12;
         
         // Месячные коэффициенты (делим годовые на 12)
-       leaseFactorValue = leaseFactor(yearOffset, totalLeaseholdYears, pricingConfig.leaseAlpha);
-        ageFactorValue = ageFactor(yearOffset, pricingConfig.agingBeta / 12);
+       // Месячные коэффициенты (делим годовые на 12)
+leaseFactorValue = leaseFactor(yearOffset, totalLeaseholdYears, pricingConfig.leaseAlpha);
+ageFactorValue = ageFactor(yearOffset, pricingConfig.agingBeta / 12);
         brandFactorValue = brandFactor(yearOffset, pricingConfig);
         inflationFactor = Math.pow(1 + pricingConfig.inflationRatePct / 100, yearOffset);
         
